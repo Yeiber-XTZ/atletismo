@@ -1,0 +1,72 @@
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es" class="light">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Liga de Atletismo del Chocó | Kinetic Tropics" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+		<style>
+			@import "../styles/global.css";
+		</style>
+	</head>
+	<body class="bg-[#ddffe2] font-body text-[#0b361d] selection:bg-[#fdd835]">
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--primary: #006b1b;
+		--secondary: #fdd835;
+		--tertiary: #4252b4;
+		--surface: #ddffe2;
+		--surface-container: #bef5ca;
+		--on-surface: #0b361d;
+	}
+
+	html {
+		font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+	}
+
+	.font-headline {
+		font-family: 'Lexend', sans-serif;
+	}
+
+	.kinetic-slant {
+		clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+	}
+
+	.kinetic-slant-reverse {
+		clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%);
+	}
+
+	.speed-line {
+		position: relative;
+	}
+
+	.speed-line::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 60px;
+		height: 4px;
+		background: #fdd835;
+	}
+
+	.material-symbols-outlined {
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	}
+</style>
