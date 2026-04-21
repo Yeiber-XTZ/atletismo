@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const role = (user.roles?.[0] ?? 'PUBLICO') as any;
-    if (role !== 'SUPERADMIN' && role !== 'ADMIN' && role !== 'LIGA') {
+    if (role !== 'SUPERADMIN' && role !== 'ADMIN' && role !== 'ORGANO_ADMIN' && role !== 'LIGA') {
       await logAudit({ userId: user.id, action: 'admin_login_denied', meta: { role }, request });
       return Response.redirect(new URL('/admin/login?error=invalid', request.url), 302);
     }

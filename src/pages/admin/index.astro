@@ -1,8 +1,9 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AdminShell from '../../components/admin/AdminShell.astro';
 import { getAdminData, listDocuments } from '../../lib/admin';
 import { hasPermission, PERMISSIONS, ROLES, type AuthUser } from '../../lib/rbac';
+import { listRolePermissionMatrix } from '../../lib/role-permissions';
 import { listUsers } from '../../lib/users';
 import { listPqrs } from '../../lib/pqrs';
 import { listPostulaciones, PostulationStatus, summarizePostulaciones } from '../../lib/postulaciones';
@@ -23,7 +24,8 @@ const tabAliases: Record<string, string> = {
   liga: 'liga-publica',
   analytics: 'dashboard',
   calendar: 'competencias',
-  calendario: 'competencias'
+  calendario: 'competencias',
+  permissions: 'permisos'
 };
 const navAliases: Record<string, string> = {
   home: 'settings',
@@ -33,7 +35,8 @@ const navAliases: Record<string, string> = {
   liga: 'liga-publica',
   analytics: 'dashboard',
   calendar: 'competencias',
-  calendario: 'competencias'
+  calendario: 'competencias',
+  permissions: 'permisos'
 };
 const activeTab = navAliases[requestedTab] ?? requestedTab;
 const contentTab = tabAliases[requestedTab] ?? requestedTab;
@@ -132,6 +135,16 @@ for (const [index, item] of (data.home.news ?? []).entries()) {
 const currentFeaturedCompetenciaTitle = String(data.home?.eventHighlight?.sourceCompetenciaTitle ?? '');
 const currentFeaturedEventDateTime = String(data.home?.eventHighlight?.eventDateTime ?? '');
 const pageHeroMap = data.publicSite?.pageHeroes ?? {};
+const rolePermissionData = isSuperAdmin
+  ? await listRolePermissionMatrix()
+  : {
+      roles: [] as Array<{ name: (typeof ROLES)[number]; description: string }>,
+      permissions: [] as Array<{ name: (typeof PERMISSIONS)[number]; description: string }>,
+      matrix: new Map<(typeof ROLES)[number], Set<(typeof PERMISSIONS)[number]>>()
+    };
+const rolesMeta = rolePermissionData.roles;
+const permissionsMeta = rolePermissionData.permissions;
+const rolePermissionMatrix = rolePermissionData.matrix;
 const laLigaContent = data.publicSite?.laLiga;
 const laLigaPrinciplesRows = (laLigaContent?.principles?.length ? laLigaContent.principles : [{ icon: 'star', title: '', desc: '' }]);
 const laLigaGovernanceRows = (laLigaContent?.governanceItems?.length ? laLigaContent.governanceItems : [{ label: '', title: '' }]);
@@ -157,6 +170,8 @@ const rawNavItems = [
   { id: 'settings', label: 'Configuración', icon: 'settings' },
   { id: 'liga-publica', label: 'Liga pública', icon: 'public' },
   { id: 'users', label: 'Usuarios', icon: 'manage_accounts' },
+  { id: 'roles', label: 'Roles', icon: 'badge' },
+  { id: 'permisos', label: 'Permisos', icon: 'verified_user' },
   { id: 'pqrs', label: 'PQRS', icon: 'support_agent' },
   { id: 'asambleas', label: 'Asambleas', icon: 'groups_2' },
   { id: 'alertas', label: 'Alertas', icon: 'warning' },
@@ -178,6 +193,8 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
   'liga-publica': 'admin:all',
   dashboard: 'records:manage',
   users: 'admin:all',
+  roles: 'super:all',
+  permisos: 'super:all',
   pqrs: 'admin:all',
   asambleas: 'admin:all',
   alertas: 'records:manage',
@@ -1095,9 +1112,15 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Usuarios y Roles</h4>
         </div>
         <div class="admin-card-body space-y-8">
-          <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
-            <h5 class="text-sm font-semibold text-gray-700 mb-4">Crear usuario</h5>
-            <form method="POST" action="/api/admin/users" class="grid gap-4 md:grid-cols-6">
+          <div class="space-y-4">
+            <button type="button" id="toggle-create-user" class="admin-btn admin-btn-secondary">
+              <span class="material-symbols-outlined">person_add</span>
+              Crear usuario
+            </button>
+
+            <div id="create-user-panel" class="rounded-xl border border-gray-200 bg-gray-50 p-5 hidden">
+              <h5 class="text-sm font-semibold text-gray-700 mb-4">Crear usuario</h5>
+              <form method="POST" action="/api/admin/users" class="grid gap-4 md:grid-cols-6">
               <input type="hidden" name="intent" value="create" />
               <div class="md:col-span-2">
                 <label class="admin-label">Email</label>
@@ -1129,7 +1152,8 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                   Crear
                 </button>
               </div>
-            </form>
+              </form>
+            </div>
           </div>
 
           <div>
@@ -1290,6 +1314,113 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               ) : null}
             </div>
           </div>
+        </div>
+      </section>
+    ) : null}
+
+    {contentTab === 'roles' ? (
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Roles del sistema</h4>
+        </div>
+        <div class="admin-card-body space-y-4">
+          <p class="text-sm text-gray-500">
+            Catálogo de roles definidos para la plataforma.
+          </p>
+          <div class="overflow-auto rounded-xl border border-gray-200">
+            <table class="min-w-[760px] w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                  <th class="text-left p-3 font-medium">Rol</th>
+                  <th class="text-left p-3 font-medium">Descripción</th>
+                  <th class="text-left p-3 font-medium">Permisos actuales</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                {rolesMeta.map((role) => (
+                  <tr>
+                    <td class="p-3 font-semibold text-gray-700">{role.name}</td>
+                    <td class="p-3 text-gray-600">{role.description || 'Sin descripción en base de datos.'}</td>
+                    <td class="p-3 text-gray-600">{rolePermissionMatrix.get(role.name)?.size ?? 0}</td>
+                  </tr>
+                ))}
+                {rolesMeta.length === 0 ? (
+                  <tr>
+                    <td class="p-6 text-center text-gray-400" colSpan={3}>
+                      Solo SUPERADMIN puede visualizar esta sección.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    ) : null}
+
+    {contentTab === 'permisos' ? (
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Matriz de permisos por rol</h4>
+        </div>
+        <div class="admin-card-body space-y-4">
+          <p class="text-sm text-gray-500">
+            SUPERADMIN puede activar o desactivar permisos por rol usando checklist.
+          </p>
+          {saved === '1' ? (
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+              Matriz actualizada correctamente.
+            </div>
+          ) : null}
+          {error === 'forbidden_superadmin_only' ? (
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              Esta vista es exclusiva para SUPERADMIN.
+            </div>
+          ) : null}
+
+          <form method="POST" action="/api/admin/role-permissions" class="space-y-4">
+            <div class="overflow-auto rounded-xl border border-gray-200">
+              <table class="min-w-[1100px] w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th class="text-left p-3 font-medium sticky left-0 bg-gray-50 z-10">Permiso</th>
+                    {rolesMeta.filter((role) => role.name !== 'SUPERADMIN').map((role) => (
+                      <th class="text-left p-3 font-medium">{role.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                  {permissionsMeta.map((permission) => (
+                    <tr>
+                      <td class="p-3 align-top sticky left-0 bg-white z-10">
+                        <div class="font-mono text-xs text-gray-700">{permission.name}</div>
+                        <div class="text-xs text-gray-500 mt-1">{permission.description || 'Sin descripción.'}</div>
+                      </td>
+                      {rolesMeta.filter((role) => role.name !== 'SUPERADMIN').map((role) => (
+                        <td class="p-3 align-top">
+                          <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                            <input
+                              type="checkbox"
+                              name={`perm:${role.name}:${permission.name}`}
+                              value="1"
+                              checked={rolePermissionMatrix.get(role.name)?.has(permission.name) ?? false}
+                            />
+                            <span>Permitir</span>
+                          </label>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div class="flex justify-end">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar matriz
+              </button>
+            </div>
+          </form>
         </div>
       </section>
     ) : null}
@@ -2661,6 +2792,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         const createToggle = targetEl.closest('#toggle-create-document');
         if (createToggle) {
           const panel = root.querySelector('#create-document-panel');
+          if (!panel) return;
+          panel.classList.toggle('hidden');
+          return;
+        }
+
+        const createUserToggle = targetEl.closest('#toggle-create-user');
+        if (createUserToggle) {
+          const panel = root.querySelector('#create-user-panel');
           if (!panel) return;
           panel.classList.toggle('hidden');
           return;

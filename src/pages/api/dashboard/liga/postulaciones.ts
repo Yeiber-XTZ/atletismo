@@ -13,7 +13,7 @@ const schema = z.object({
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const user = await requireUser(cookies);
-    requireRoles(user, ['SUPERADMIN', 'LIGA', 'ADMIN']);
+    requireRoles(user, ['SUPERADMIN', 'ORGANO_ADMIN', 'LIGA', 'ADMIN']);
 
     const form = await request.formData();
     const payload = {
@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return new Response('Invalid payload', { status: 400 });
     }
 
-    // Regla de negocio: solo LIGA puede cambiar el estado a "Aprobado"
+    // Regla de negocio: solo LIGA/ORGANO_ADMIN (o SUPERADMIN) puede cambiar a "Aprobado"
     assertPostulationStatusChange(user, parsed.data.status);
 
     const updated = await updatePostulacionStatus(parsed.data.id, parsed.data.status, parsed.data.notes || undefined);

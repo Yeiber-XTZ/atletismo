@@ -60,7 +60,9 @@ try {
   const roles = [
     ['SUPERADMIN', 'Control total con seguridad avanzada'],
     ['ADMIN', 'Control total'],
+    ['ORGANO_ADMIN', 'Gestion de organo administrativo'],
     ['LIGA', 'Gestión deportiva e institucional'],
+    ['ATLETA', 'Perfil de atleta'],
     ['CLUB', 'Gestión del club e inscripciones'],
     ['ASAMBLEISTA', 'Lectura privada'],
     ['PUBLICO', 'Lectura pública']
@@ -90,7 +92,20 @@ try {
     ['documents:manage', 'Gestionar documentos'],
     ['documents:read_private', 'Leer documentos privados'],
     ['postulations:approve', 'Aprobar postulaciones'],
-    ['club:self_manage', 'Gestión propia de club']
+    ['club:self_manage', 'Gestión propia de club'],
+    ['athlete:self_manage', 'Gestion propia de atleta'],
+    ['athlete:self_read', 'Lectura del perfil deportivo propio'],
+    ['postulations:self_read', 'Seguimiento de postulaciones propias'],
+    ['assembly:self_panel', 'Acceso al panel de asamblea'],
+    ['assembly:attendance:create', 'Registrar asistencia de asamblea'],
+    ['assembly:observations:create', 'Registrar observaciones de asamblea'],
+    ['documents:read_private_asamblea', 'Leer documentos privados de asamblea'],
+    ['clubs:approve', 'Aprobar clubes'],
+    ['users:manage', 'Administrar usuarios'],
+    ['pqrs:manage', 'Administrar PQRS'],
+    ['approvals:manage', 'Administrar flujos de aprobacion'],
+    ['audit:read', 'Consultar auditoria'],
+    ['security:manage', 'Administrar seguridad']
   ];
   for (const [name, description] of perms) {
     await client.query('INSERT INTO permissions (name, description) VALUES ($1,$2) ON CONFLICT (name) DO NOTHING', [
@@ -117,10 +132,15 @@ try {
       'documents:manage',
       'documents:read_private',
       'postulations:approve',
-      'club:self_manage'
+      'club:self_manage',
+      'users:manage',
+      'pqrs:manage',
+      'approvals:manage',
+      'audit:read'
     ],
-    LIGA: [
+    ORGANO_ADMIN: [
       'clubs:manage',
+      'clubs:approve',
       'calendar:manage',
       'convocatorias:manage',
       'competencias:manage',
@@ -128,10 +148,31 @@ try {
       'records:manage',
       'rankings:manage',
       'documents:manage',
-      'postulations:approve'
+      'postulations:approve',
+      'approvals:manage'
     ],
+    LIGA: [
+      'clubs:manage',
+      'clubs:approve',
+      'calendar:manage',
+      'convocatorias:manage',
+      'competencias:manage',
+      'results:manage',
+      'records:manage',
+      'rankings:manage',
+      'documents:manage',
+      'postulations:approve',
+      'approvals:manage'
+    ],
+    ATLETA: ['athlete:self_manage', 'athlete:self_read', 'postulations:self_read'],
     CLUB: ['club:self_manage'],
-    ASAMBLEISTA: ['documents:read_private'],
+    ASAMBLEISTA: [
+      'documents:read_private',
+      'documents:read_private_asamblea',
+      'assembly:self_panel',
+      'assembly:attendance:create',
+      'assembly:observations:create'
+    ],
     PUBLICO: []
   };
   for (const role of Object.keys(rolePerms)) {

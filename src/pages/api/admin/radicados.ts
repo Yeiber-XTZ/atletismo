@@ -9,13 +9,13 @@ import type { Role } from '../../../lib/rbac';
 const schema = z.object({
   id: z.coerce.number().int().positive(),
   decision: z.enum(['approved', 'rejected']),
-  role: z.enum(['PUBLICO', 'CLUB']).optional(),
+  role: z.enum(['PUBLICO', 'ATLETA', 'CLUB', 'ASAMBLEISTA']).optional(),
   tempPassword: z.string().min(8).max(80).optional().or(z.literal('')),
   reviewNotes: z.string().max(2000).optional().or(z.literal(''))
 });
 
 const ROLE_BY_PROFILE: Record<string, Role> = {
-  atleta: 'PUBLICO',
+  atleta: 'ATLETA',
   usuario: 'PUBLICO',
   club: 'CLUB'
 };
@@ -78,4 +78,3 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   return Response.redirect(new URL('/admin?tab=users&saved=1', request.url), 302);
 };
-

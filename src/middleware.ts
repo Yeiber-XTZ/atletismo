@@ -13,7 +13,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const isDashboardPage = pathname.startsWith('/dashboard');
   const isDashboardApi = pathname.startsWith('/api/dashboard');
-  const isConvocatoriasArea = pathname === '/convocatorias' || pathname.startsWith('/convocatorias/');
   const isClubArea = pathname.startsWith('/dashboard/club') || pathname.startsWith('/api/dashboard/club');
   const isAsambleaArea =
     pathname.startsWith('/dashboard/asamblea') ||
@@ -41,7 +40,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   if (isAdminPage || isAdminApi) {
-    const res = deny(['ADMIN', 'LIGA', 'CLUB', 'ASAMBLEISTA'], '/admin/login');
+    const res = deny(['ADMIN', 'ORGANO_ADMIN', 'LIGA', 'CLUB', 'ASAMBLEISTA'], '/admin/login');
     if (res) return res;
   }
 
@@ -51,23 +50,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
       const res = deny(['CLUB']);
       if (res) return res;
     } else if (pathname.startsWith('/dashboard/liga') || pathname.startsWith('/api/dashboard/liga')) {
-      const res = deny(['LIGA', 'ADMIN', 'SUPERADMIN']);
+      const res = deny(['LIGA', 'ORGANO_ADMIN', 'ADMIN', 'SUPERADMIN']);
       if (res) return res;
     } else if (isAsambleaArea) {
       const res = deny(['ASAMBLEISTA']);
       if (res) return res;
     } else {
-      const res = deny(['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB', 'ASAMBLEISTA']);
+      const res = deny(['SUPERADMIN', 'ADMIN', 'ORGANO_ADMIN', 'LIGA', 'ATLETA', 'CLUB', 'ASAMBLEISTA']);
       if (res) return res;
-    }
-  }
-
-  if (isConvocatoriasArea) {
-    // Convocatorias only for authenticated operational roles.
-    if (!user || !hasRole(user, ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB'])) {
-      const loginUrl = new URL('/login', context.url);
-      loginUrl.searchParams.set('next', `${pathname}${context.url.search}`);
-      return Response.redirect(loginUrl, 302);
     }
   }
 

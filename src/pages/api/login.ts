@@ -66,7 +66,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (nextPath) return Response.redirect(new URL(nextPath, request.url), 302);
 
     // Role-based redirect if no specific next path is requested
-    if (role === 'ADMIN' || role === 'LIGA' || role === 'CLUB' || role === 'ASAMBLEISTA') return Response.redirect(new URL('/admin', request.url), 302);
+    if (role === 'ADMIN' || role === 'ORGANO_ADMIN' || role === 'LIGA' || role === 'CLUB' || role === 'ASAMBLEISTA') {
+      return Response.redirect(new URL('/admin', request.url), 302);
+    }
 
     return Response.redirect(new URL('/', request.url), 302);
   } catch (error) {

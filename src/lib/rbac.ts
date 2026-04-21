@@ -1,4 +1,4 @@
-export const ROLES = ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB', 'ASAMBLEISTA', 'PUBLICO'] as const;
+export const ROLES = ['SUPERADMIN', 'ADMIN', 'ORGANO_ADMIN', 'LIGA', 'ATLETA', 'CLUB', 'ASAMBLEISTA', 'PUBLICO'] as const;
 export type Role = (typeof ROLES)[number];
 
 export const PERMISSIONS = [
@@ -19,7 +19,20 @@ export const PERMISSIONS = [
   'documents:manage',
   'documents:read_private',
   'postulations:approve',
-  'club:self_manage'
+  'club:self_manage',
+  'athlete:self_manage',
+  'athlete:self_read',
+  'postulations:self_read',
+  'assembly:self_panel',
+  'assembly:attendance:create',
+  'assembly:observations:create',
+  'documents:read_private_asamblea',
+  'clubs:approve',
+  'users:manage',
+  'pqrs:manage',
+  'approvals:manage',
+  'audit:read',
+  'security:manage'
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -53,10 +66,15 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'documents:manage',
     'documents:read_private',
     'postulations:approve',
-    'club:self_manage'
+    'club:self_manage',
+    'users:manage',
+    'pqrs:manage',
+    'approvals:manage',
+    'audit:read'
   ]),
-  LIGA: new Set<Permission>([
+  ORGANO_ADMIN: new Set<Permission>([
     'clubs:manage',
+    'clubs:approve',
     'calendar:manage',
     'convocatorias:manage',
     'competencias:manage',
@@ -64,10 +82,31 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'records:manage',
     'rankings:manage',
     'documents:manage',
-    'postulations:approve'
+    'postulations:approve',
+    'approvals:manage'
   ]),
+  LIGA: new Set<Permission>([
+    'clubs:manage',
+    'clubs:approve',
+    'calendar:manage',
+    'convocatorias:manage',
+    'competencias:manage',
+    'results:manage',
+    'records:manage',
+    'rankings:manage',
+    'documents:manage',
+    'postulations:approve',
+    'approvals:manage'
+  ]),
+  ATLETA: new Set<Permission>(['athlete:self_manage', 'athlete:self_read', 'postulations:self_read']),
   CLUB: new Set<Permission>(['club:self_manage']),
-  ASAMBLEISTA: new Set<Permission>(['documents:read_private']),
+  ASAMBLEISTA: new Set<Permission>([
+    'documents:read_private',
+    'documents:read_private_asamblea',
+    'assembly:self_panel',
+    'assembly:attendance:create',
+    'assembly:observations:create'
+  ]),
   PUBLICO: new Set<Permission>([])
 };
 
@@ -92,20 +131,20 @@ export function hasPermission(user: AuthUser | undefined | null, permission: Per
 
 export function canEditClubRecord(user: AuthUser, clubId: number) {
   const role = normalizeRole(user.role);
-  if (role === 'SUPERADMIN' || role === 'ADMIN' || role === 'LIGA') return true;
+  if (role === 'SUPERADMIN' || role === 'ADMIN' || role === 'LIGA' || role === 'ORGANO_ADMIN') return true;
   if (role === 'CLUB') return user.clubId === clubId;
   return false;
 }
 
 export function canApprovePostulation(user: AuthUser) {
   const role = normalizeRole(user.role);
-  return role === 'LIGA' || role === 'ADMIN' || role === 'SUPERADMIN';
+  return role === 'LIGA' || role === 'ORGANO_ADMIN' || role === 'ADMIN' || role === 'SUPERADMIN';
 }
 
 export function canSetPostulationStatus(user: AuthUser, nextStatus: string) {
   const role = normalizeRole(user.role);
   if (String(nextStatus).toLowerCase() === 'aprobado') {
-    return role === 'LIGA' || role === 'SUPERADMIN';
+    return role === 'LIGA' || role === 'ORGANO_ADMIN' || role === 'SUPERADMIN';
   }
-  return role === 'LIGA' || role === 'ADMIN' || role === 'SUPERADMIN';
+  return role === 'LIGA' || role === 'ORGANO_ADMIN' || role === 'ADMIN' || role === 'SUPERADMIN';
 }

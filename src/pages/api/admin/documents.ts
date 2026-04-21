@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
   }
 
-  const needsApproval = auth.user.role === 'LIGA' && isSensitive;
+  const needsApproval = (auth.user.role === 'LIGA' || auth.user.role === 'ORGANO_ADMIN') && isSensitive;
 
   if (needsApproval) {
     await createApprovalRequest({
