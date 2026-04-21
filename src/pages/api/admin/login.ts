@@ -30,6 +30,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       ip: request.headers.get('x-forwarded-for')
     });
     await logAudit({ userId: user.id, action: 'admin_login_success', meta: { role }, request });
+    if (role === 'SUPERADMIN') {
+      return Response.redirect(new URL('/admin?tab=dashboard', request.url), 302);
+    }
     return Response.redirect(new URL('/admin', request.url), 302);
   } catch (error) {
     if (isDbUnavailableError(error)) {

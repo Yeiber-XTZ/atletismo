@@ -26,6 +26,7 @@ function canAccessAdminByRole(role: Role) {
 }
 
 function defaultRedirectForRole(role: Role) {
+  if (role === 'SUPERADMIN') return '/admin?tab=dashboard';
   if (role === 'ATLETA') return '/dashboard/atleta';
   if (canAccessAdminByRole(role)) return '/admin';
   return '/';

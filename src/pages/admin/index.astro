@@ -15,7 +15,8 @@ import { listApprovalRequests } from '../../lib/approvals';
 import { listAuditLogs } from '../../lib/audit';
 import { listRadicados } from '../../lib/radicados';
 
-const requestedTab = Astro.url.searchParams.get('tab') ?? 'settings';
+const user = Astro.locals.user as AuthUser | null;
+const requestedTab = Astro.url.searchParams.get('tab') ?? ((user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') ? 'dashboard' : 'settings');
 const tabAliases: Record<string, string> = {
   home: 'settings',
   hero: 'settings',
@@ -53,7 +54,6 @@ const data = await getAdminData();
 const docs = await listDocuments();
 const marks: Array<{ id: number; athlete: string; discipline: string; value: string; unit: string; recordDate: string }> = [];
 
-const user = Astro.locals.user as AuthUser | null;
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
 if ((contentTab === 'roles' || contentTab === 'permisos') && !isSuperAdmin) {
