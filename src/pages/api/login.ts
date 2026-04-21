@@ -17,7 +17,18 @@ function safeNext(next: string | undefined) {
   if (!next) return '';
   if (!next.startsWith('/')) return '';
   if (next.startsWith('//')) return '';
+  if (/[{}]/.test(next)) return '';
   return next;
+}
+
+function canAccessAdminByRole(role: Role) {
+  return role === 'SUPERADMIN' || role === 'ADMIN' || role === 'ORGANO_ADMIN' || role === 'LIGA' || role === 'CLUB' || role === 'ASAMBLEISTA';
+}
+
+function defaultRedirectForRole(role: Role) {
+  if (role === 'ATLETA') return '/dashboard/atleta';
+  if (canAccessAdminByRole(role)) return '/admin';
+  return '/';
 }
 
 function invalidRedirectPath(next: string | undefined) {
@@ -63,14 +74,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     await logAudit({ userId: user.id, action: 'login_success', meta: { role }, request });
 
     const nextPath = safeNext(parsed.data.next);
-    if (nextPath) return Response.redirect(new URL(nextPath, request.url), 302);
-
-    // Role-based redirect if no specific next path is requested
-    if (role === 'ADMIN' || role === 'ORGANO_ADMIN' || role === 'LIGA' || role === 'CLUB' || role === 'ASAMBLEISTA') {
-      return Response.redirect(new URL('/admin', request.url), 302);
+    if (nextPath) {
+      if (role === 'ATLETA') {
+        const isAthletePath = nextPath === '/dashboard/atleta' || nextPath.startsWith('/dashboard/atleta/');
+        if (!isAthletePath) {
+          return Response.redirect(new URL(defaultRedirectForRole(role), request.url), 302);
+        }
+      }
+      if (nextPath.startsWith('/admin') && !canAccessAdminByRole(role)) {
+        return Response.redirect(new URL(defaultRedirectForRole(role), request.url), 302);
+      }
+      return Response.redirect(new URL(nextPath, request.url), 302);
     }
 
-    return Response.redirect(new URL('/', request.url), 302);
+    return Response.redirect(new URL(defaultRedirectForRole(role), request.url), 302);
   } catch (error) {
     if (isDbUnavailableError(error)) {
       return Response.redirect(new URL(dbRedirectPath(parsed.data.next), request.url), 302);

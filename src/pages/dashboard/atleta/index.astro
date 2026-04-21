@@ -1,0 +1,104 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Navbar from '../../../components/Navbar.astro';
+import FooterKinetic from '../../../components/FooterKinetic.astro';
+import { getHomeData } from '../../../lib/content';
+import { getUserById } from '../../../lib/users';
+import { listNotificationsForRole } from '../../../lib/notificaciones';
+
+const data = await getHomeData();
+const { settings, documents } = data;
+const sessionUser = Astro.locals.user;
+
+const userId = Number(sessionUser?.id ?? 0);
+const dbUser = userId > 0 ? await getUserById(userId) : null;
+const notifications = await listNotificationsForRole('ATLETA');
+const docsToShow = Array.isArray(documents) ? documents.slice(0, 6) : [];
+---
+
+<BaseLayout title="Dashboard Atleta | Liga de Atletismo del Chocó" description="Panel de atleta para consultar perfil, documentos y notificaciones.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[74px] bg-surface">
+    <section class="container mx-auto px-6 py-12 md:py-16 space-y-8">
+      <header class="rounded-2xl border border-[var(--border)] bg-white p-6 md:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-on-surface-variant font-semibold">Portal de atleta</p>
+            <h1 class="mt-2 font-headline text-3xl md:text-4xl font-black uppercase tracking-tight text-on-surface">
+              Mi Perfil Deportivo
+            </h1>
+            <p class="mt-2 text-on-surface-variant">
+              Consulta tus datos de cuenta, documentos oficiales y avisos relevantes de la Liga.
+            </p>
+          </div>
+          <form method="POST" action="/api/logout">
+            <button class="btn-secondary btn-slant" type="submit">Cerrar sesión</button>
+          </form>
+        </div>
+      </header>
+
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <article class="lg:col-span-5 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Datos de la cuenta</h2>
+          <div class="mt-4 space-y-3 text-sm">
+            <div>
+              <p class="text-on-surface-variant">Nombre</p>
+              <p class="font-semibold text-on-surface">{dbUser?.displayName || 'Sin nombre registrado'}</p>
+            </div>
+            <div>
+              <p class="text-on-surface-variant">Correo</p>
+              <p class="font-semibold text-on-surface">{dbUser?.email || sessionUser?.email || '-'}</p>
+            </div>
+            <div>
+              <p class="text-on-surface-variant">Rol activo</p>
+              <p class="font-semibold text-on-surface">{sessionUser?.role || 'ATLETA'}</p>
+            </div>
+            <div>
+              <p class="text-on-surface-variant">Estado</p>
+              <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${dbUser?.isActive ? 'text-green-700 bg-green-100 border-green-200' : 'text-red-700 bg-red-100 border-red-200'}`}>
+                {dbUser?.isActive ? 'Activo' : 'Inactivo'}
+              </span>
+            </div>
+          </div>
+        </article>
+
+        <article class="lg:col-span-7 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Notificaciones</h2>
+          <div class="mt-4 grid gap-3">
+            {notifications.map((n) => (
+              <div class="rounded-xl border border-[var(--border)] bg-surface-container-low p-4">
+                <p class="text-[11px] uppercase tracking-wide text-on-surface-variant">{n.level}</p>
+                <h3 class="font-semibold text-on-surface">{n.title}</h3>
+                <p class="text-sm text-on-surface-variant">{n.message}</p>
+                {n.actionHref ? (
+                  <a href={n.actionHref} class="text-sm text-primary font-semibold hover:underline">Ver detalle</a>
+                ) : null}
+              </div>
+            ))}
+            {notifications.length === 0 ? <p class="text-sm text-on-surface-variant">No tienes notificaciones por ahora.</p> : null}
+          </div>
+        </article>
+      </section>
+
+      <section class="rounded-2xl border border-[var(--border)] bg-white p-6">
+        <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Documentos útiles</h2>
+        <p class="mt-2 text-sm text-on-surface-variant">Accesos directos a documentos públicos de consulta frecuente.</p>
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          {docsToShow.map((doc) => (
+            <a href={doc.href} class="rounded-xl border border-[var(--border)] bg-surface-container-low p-4 hover:border-primary/30">
+              <p class="text-xs uppercase tracking-wide text-on-surface-variant">{doc.category}</p>
+              <h3 class="font-semibold text-on-surface">{doc.title}</h3>
+              <p class="text-sm text-on-surface-variant line-clamp-2">{doc.description}</p>
+            </a>
+          ))}
+          {docsToShow.length === 0 ? (
+            <p class="text-sm text-on-surface-variant">No hay documentos disponibles.</p>
+          ) : null}
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

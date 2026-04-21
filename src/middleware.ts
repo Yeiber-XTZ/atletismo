@@ -14,6 +14,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isDashboardPage = pathname.startsWith('/dashboard');
   const isDashboardApi = pathname.startsWith('/api/dashboard');
   const isClubArea = pathname.startsWith('/dashboard/club') || pathname.startsWith('/api/dashboard/club');
+  const isAthleteArea = pathname.startsWith('/dashboard/atleta') || pathname.startsWith('/api/dashboard/atleta');
   const isAsambleaArea =
     pathname.startsWith('/dashboard/asamblea') ||
     pathname.startsWith('/api/dashboard/asamblea') ||
@@ -48,6 +49,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Role-specific dashboards: /dashboard/club, /dashboard/liga, /dashboard/asambleista
     if (isClubArea) {
       const res = deny(['CLUB']);
+      if (res) return res;
+    } else if (isAthleteArea) {
+      const res = deny(['ATLETA']);
       if (res) return res;
     } else if (pathname.startsWith('/dashboard/liga') || pathname.startsWith('/api/dashboard/liga')) {
       const res = deny(['LIGA', 'ORGANO_ADMIN', 'ADMIN', 'SUPERADMIN']);

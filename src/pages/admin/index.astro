@@ -59,6 +59,9 @@ const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
 if ((contentTab === 'roles' || contentTab === 'permisos') && !isSuperAdmin) {
   return Astro.redirect('/acceso-denegado');
 }
+if (contentTab === 'notificaciones' && !hasPermission(user, 'notificaciones:manage')) {
+  return Astro.redirect('/acceso-denegado');
+}
 const users = isAdminRoot ? await listUsers() : [];
 const pqrs = isAdminRoot ? await listPqrs(500) : [];
 const postulationsDb = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA' || user.role === 'CLUB') ? await listPostulaciones() : [];
@@ -218,8 +221,8 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
 const navItems = rawNavItems.filter((item) => {
   if (item.id === 'perfil') return true;
   const r = user?.role;
-  if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents', 'notificaciones', 'alertas'].includes(item.id)) return true;
-  if (r === 'ASAMBLEISTA' && ['asambleas', 'documents', 'notificaciones'].includes(item.id)) return true;
+  if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents', 'alertas'].includes(item.id)) return true;
+  if (r === 'ASAMBLEISTA' && ['asambleas', 'documents'].includes(item.id)) return true;
   const need = NAV_PERMS[item.id] ?? 'admin:all';
   if (need === 'admin:all') return hasPermission(user, 'admin:all');
   return hasPermission(user, need);
