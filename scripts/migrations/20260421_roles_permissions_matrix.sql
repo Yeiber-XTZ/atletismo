@@ -48,6 +48,8 @@ INSERT INTO permissions (name, description) VALUES
   ('users:manage', 'Administrar usuarios'),
   ('pqrs:manage', 'Administrar PQRS'),
   ('approvals:manage', 'Administrar flujos de aprobacion'),
+  ('asambleas:manage', 'Administrar asambleas'),
+  ('notificaciones:manage', 'Administrar notificaciones'),
   ('audit:read', 'Consultar auditoria'),
   ('security:manage', 'Administrar seguridad')
 ON CONFLICT (name) DO UPDATE
@@ -77,6 +79,8 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ADMIN','users:manage'
   UNION ALL SELECT 'ADMIN','pqrs:manage'
   UNION ALL SELECT 'ADMIN','approvals:manage'
+  UNION ALL SELECT 'ADMIN','asambleas:manage'
+  UNION ALL SELECT 'ADMIN','notificaciones:manage'
   UNION ALL SELECT 'ADMIN','audit:read'
 
   UNION ALL SELECT 'ORGANO_ADMIN','clubs:manage'
@@ -90,6 +94,8 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ORGANO_ADMIN','documents:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','postulations:approve'
   UNION ALL SELECT 'ORGANO_ADMIN','approvals:manage'
+  UNION ALL SELECT 'ORGANO_ADMIN','asambleas:manage'
+  UNION ALL SELECT 'ORGANO_ADMIN','notificaciones:manage'
 
   UNION ALL SELECT 'LIGA','clubs:manage'
   UNION ALL SELECT 'LIGA','clubs:approve'
@@ -102,6 +108,8 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'LIGA','documents:manage'
   UNION ALL SELECT 'LIGA','postulations:approve'
   UNION ALL SELECT 'LIGA','approvals:manage'
+  UNION ALL SELECT 'LIGA','asambleas:manage'
+  UNION ALL SELECT 'LIGA','notificaciones:manage'
 
   UNION ALL SELECT 'ATLETA','athlete:self_manage'
   UNION ALL SELECT 'ATLETA','athlete:self_read'
@@ -162,6 +170,8 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ADMIN','users:manage'
   UNION ALL SELECT 'ADMIN','pqrs:manage'
   UNION ALL SELECT 'ADMIN','approvals:manage'
+  UNION ALL SELECT 'ADMIN','asambleas:manage'
+  UNION ALL SELECT 'ADMIN','notificaciones:manage'
   UNION ALL SELECT 'ADMIN','audit:read'
 
   UNION ALL SELECT 'ORGANO_ADMIN','clubs:manage'
@@ -175,6 +185,8 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ORGANO_ADMIN','documents:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','postulations:approve'
   UNION ALL SELECT 'ORGANO_ADMIN','approvals:manage'
+  UNION ALL SELECT 'ORGANO_ADMIN','asambleas:manage'
+  UNION ALL SELECT 'ORGANO_ADMIN','notificaciones:manage'
 
   UNION ALL SELECT 'LIGA','clubs:manage'
   UNION ALL SELECT 'LIGA','clubs:approve'
@@ -187,6 +199,8 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'LIGA','documents:manage'
   UNION ALL SELECT 'LIGA','postulations:approve'
   UNION ALL SELECT 'LIGA','approvals:manage'
+  UNION ALL SELECT 'LIGA','asambleas:manage'
+  UNION ALL SELECT 'LIGA','notificaciones:manage'
 
   UNION ALL SELECT 'ATLETA','athlete:self_manage'
   UNION ALL SELECT 'ATLETA','athlete:self_read'

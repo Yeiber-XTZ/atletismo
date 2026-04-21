@@ -31,6 +31,8 @@ export const PERMISSIONS = [
   'users:manage',
   'pqrs:manage',
   'approvals:manage',
+  'asambleas:manage',
+  'notificaciones:manage',
   'audit:read',
   'security:manage'
 ] as const;
@@ -70,6 +72,8 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'users:manage',
     'pqrs:manage',
     'approvals:manage',
+    'asambleas:manage',
+    'notificaciones:manage',
     'audit:read'
   ]),
   ORGANO_ADMIN: new Set<Permission>([
@@ -83,7 +87,9 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'rankings:manage',
     'documents:manage',
     'postulations:approve',
-    'approvals:manage'
+    'approvals:manage',
+    'asambleas:manage',
+    'notificaciones:manage'
   ]),
   LIGA: new Set<Permission>([
     'clubs:manage',
@@ -96,7 +102,9 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'rankings:manage',
     'documents:manage',
     'postulations:approve',
-    'approvals:manage'
+    'approvals:manage',
+    'asambleas:manage',
+    'notificaciones:manage'
   ]),
   ATLETA: new Set<Permission>(['athlete:self_manage', 'athlete:self_read', 'postulations:self_read']),
   CLUB: new Set<Permission>(['club:self_manage']),

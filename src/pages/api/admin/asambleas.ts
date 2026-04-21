@@ -23,7 +23,7 @@ const Meeting = z.object({
 const schema = z.array(Meeting).max(200);
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'admin:all', { loginPath: '/admin/login' });
+  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'asambleas:manage', { loginPath: '/admin/login' });
   if ('response' in auth) return auth.response;
 
   const form = await request.formData();
