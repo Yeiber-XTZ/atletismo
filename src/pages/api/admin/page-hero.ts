@@ -5,14 +5,14 @@ import type { Permission } from '../../../lib/rbac';
 import { saveFileUpload } from '../../../lib/file-upload';
 
 const PAGE_PERMISSIONS: Record<string, Permission> = {
-  laLiga: 'admin:all',
+  laLiga: 'site:manage',
   convocatorias: 'convocatorias:manage',
   competencias: 'competencias:manage',
   resultados: 'results:manage',
   ranking: 'rankings:manage',
   clubes: 'clubs:manage',
-  noticias: 'admin:all',
-  blog: 'admin:all'
+  noticias: 'news:manage',
+  blog: 'blog:manage'
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {

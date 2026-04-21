@@ -21,7 +21,7 @@ const ROLE_BY_PROFILE: Record<string, Role> = {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'admin:all', { loginPath: '/admin/login' });
+  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'approvals:manage', { loginPath: '/admin/login' });
   if ('response' in auth) return auth.response;
 
   const form = await request.formData();

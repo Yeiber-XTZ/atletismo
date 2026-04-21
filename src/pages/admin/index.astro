@@ -56,6 +56,9 @@ const marks: Array<{ id: number; athlete: string; discipline: string; value: str
 const user = Astro.locals.user as AuthUser | null;
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
+if ((contentTab === 'roles' || contentTab === 'permisos') && !isSuperAdmin) {
+  return Astro.redirect('/acceso-denegado');
+}
 const users = isAdminRoot ? await listUsers() : [];
 const pqrs = isAdminRoot ? await listPqrs(500) : [];
 const postulationsDb = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA' || user.role === 'CLUB') ? await listPostulaciones() : [];
@@ -189,20 +192,20 @@ const rawNavItems = [
 ];
 
 const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all'> = {
-  settings: 'admin:all',
-  'liga-publica': 'admin:all',
+  settings: 'site:manage',
+  'liga-publica': 'site:manage',
   dashboard: 'records:manage',
-  users: 'admin:all',
+  users: 'users:manage',
   roles: 'super:all',
   permisos: 'super:all',
-  pqrs: 'admin:all',
+  pqrs: 'pqrs:manage',
   asambleas: 'admin:all',
   alertas: 'records:manage',
   notificaciones: 'admin:all',
-  aprobaciones: 'admin:all',
-  auditoria: 'admin:all',
-  noticias: 'admin:all',
-  blog: 'admin:all',
+  aprobaciones: 'approvals:manage',
+  auditoria: 'audit:read',
+  noticias: 'news:manage',
+  blog: 'blog:manage',
   stats: 'records:manage',
   clubs: 'clubs:manage',
   competencias: 'competencias:manage',
