@@ -1,0 +1,212 @@
+import { z } from 'zod';
+import { db } from './db';
+import { dataPath, generateRadicado, readJson, writeJson } from './persistence';
+import { getDatabaseUrl, requireDatabase } from './env';
+
+export const PostulationStatus = z.enum([
+  'Postulada',
+  'En revisión',
+  'Incompleta',
+  'Habilitada',
+  'Rechazada',
+  'Aprobado',
+  'Seleccionada'
+]);
+export type PostulationStatus = z.infer<typeof PostulationStatus>;
+
+export const PostulationSchema = z.object({
+  id: z.string().min(6),
+  clubId: z.number().int().positive(),
+  athleteName: z.string().min(2).max(120),
+  convocatoriaTitle: z.string().min(2).max(180),
+  convocatoriaSlug: z.string().min(1).max(220),
+  status: PostulationStatus,
+  notes: z.string().max(2000).optional().default(''),
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
+export type Postulation = z.infer<typeof PostulationSchema>;
+
+const FILE = dataPath('postulaciones.json');
+const hasDatabase = Boolean(getDatabaseUrl());
+
+function assertDbReady() {
+  if (requireDatabase() && !hasDatabase) {
+    throw new Error('REQUIRE_DB is enabled but DATABASE_URL is missing/invalid.');
+  }
+}
+
+type Filters = {
+  clubId?: number;
+  convocatoriaSlug?: string;
+};
+
+function normalizeText(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export async function listPostulaciones(filters?: Filters): Promise<Postulation[]> {
+  assertDbReady();
+
+  if (!hasDatabase) {
+    const list = await readJson<Postulation[]>(FILE, []);
+    return list
+      .filter((item) => (filters?.clubId ? item.clubId === filters.clubId : true))
+      .filter((item) => (filters?.convocatoriaSlug ? item.convocatoriaSlug === filters.convocatoriaSlug : true));
+  }
+
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+
+  if (filters?.clubId) {
+    params.push(filters.clubId);
+    clauses.push(`club_id = $${params.length}`);
+  }
+  if (filters?.convocatoriaSlug) {
+    params.push(filters.convocatoriaSlug);
+    clauses.push(`convocatoria_slug = $${params.length}`);
+  }
+
+  const whereSql = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  const res = await db.query(
+    `SELECT id,
+            club_id as "clubId",
+            athlete_name as "athleteName",
+            convocatoria_title as "convocatoriaTitle",
+            convocatoria_slug as "convocatoriaSlug",
+            status,
+            notes,
+            created_at as "createdAt",
+            updated_at as "updatedAt"
+     FROM postulations
+     ${whereSql}
+     ORDER BY created_at DESC`,
+    params
+  );
+  return res.rows as Postulation[];
+}
+
+export async function createPostulacion(input: Omit<Postulation, 'id' | 'createdAt' | 'updatedAt'>) {
+  assertDbReady();
+  const now = new Date().toISOString();
+  const item: Postulation = {
+    ...input,
+    id: generateRadicado('POST'),
+    createdAt: now,
+    updatedAt: now
+  };
+
+  if (!hasDatabase) {
+    const list = await listPostulaciones();
+    list.unshift(item);
+    await writeJson(FILE, list);
+    return item;
+  }
+
+  await db.query(
+    `INSERT INTO postulations (id, club_id, athlete_name, convocatoria_title, convocatoria_slug, status, notes, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    [
+      item.id,
+      item.clubId,
+      item.athleteName,
+      item.convocatoriaTitle,
+      item.convocatoriaSlug,
+      item.status,
+      item.notes ?? '',
+      item.createdAt,
+      item.updatedAt
+    ]
+  );
+
+  return item;
+}
+
+export async function existsPostulacionDuplicada(input: {
+  clubId: number;
+  convocatoriaSlug: string;
+  athleteName: string;
+}) {
+  assertDbReady();
+  const athlete = normalizeText(input.athleteName);
+  const slug = normalizeText(input.convocatoriaSlug);
+
+  if (!hasDatabase) {
+    const list = await listPostulaciones({
+      clubId: input.clubId,
+      convocatoriaSlug: input.convocatoriaSlug
+    });
+    return list.some((p) => normalizeText(p.athleteName) === athlete);
+  }
+
+  const res = await db.query(
+    `SELECT id
+     FROM postulations
+     WHERE club_id = $1
+       AND lower(convocatoria_slug) = $2
+       AND lower(athlete_name) = $3
+     LIMIT 1`,
+    [input.clubId, slug, athlete]
+  );
+  return Boolean(res.rows[0]);
+}
+
+export async function updatePostulacionStatus(id: string, status: PostulationStatus, notes?: string) {
+  assertDbReady();
+
+  if (!hasDatabase) {
+    const list = await listPostulaciones();
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx === -1) return null;
+    list[idx] = {
+      ...list[idx],
+      status,
+      notes: typeof notes === 'string' ? notes : list[idx].notes,
+      updatedAt: new Date().toISOString()
+    };
+    await writeJson(FILE, list);
+    return list[idx];
+  }
+
+  const res = await db.query(
+    `UPDATE postulations
+     SET status = $1,
+         notes = COALESCE($2, notes),
+         updated_at = NOW()
+     WHERE id = $3
+     RETURNING id,
+               club_id as "clubId",
+               athlete_name as "athleteName",
+               convocatoria_title as "convocatoriaTitle",
+               convocatoria_slug as "convocatoriaSlug",
+               status,
+               notes,
+               created_at as "createdAt",
+               updated_at as "updatedAt"`,
+    [status, notes ?? null, id]
+  );
+
+  return (res.rows[0] as Postulation | undefined) ?? null;
+}
+
+export async function summarizePostulaciones() {
+  const list = await listPostulaciones();
+  const byStatus = new Map<string, number>();
+  const byConvocatoria = new Map<string, number>();
+
+  for (const item of list) {
+    byStatus.set(item.status, (byStatus.get(item.status) ?? 0) + 1);
+    byConvocatoria.set(item.convocatoriaTitle, (byConvocatoria.get(item.convocatoriaTitle) ?? 0) + 1);
+  }
+
+  return {
+    total: list.length,
+    byStatus: Array.from(byStatus.entries())
+      .map(([status, count]) => ({ status, count }))
+      .sort((a, b) => b.count - a.count),
+    byConvocatoria: Array.from(byConvocatoria.entries())
+      .map(([title, count]) => ({ title, count }))
+      .sort((a, b) => b.count - a.count)
+  };
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "profile": "club",
+    "name": "Tom",
+    "email": "ANDRESROBLEDO171@GMAIL.COM",
+    "radicado": "REG-20260420-EF526E",
+    "createdAt": "2026-04-20T18:11:41.402Z",
+    "data": {
+      "phone": "+573206653005",
+      "municipality": "Quibdó",
+      "nit": "1132324243535",
+      "legalRepresentative": "Yeiber Andres Mena Robledo",
+      "recognitionDoc": "adadwdw",
+      "documents": ""
+    }
+  },
+  {
+    "profile": "club",
+    "name": "Tom",
+    "email": "yeimena53@gmail.com",
+    "radicado": "REG-20260420-668645",
+    "createdAt": "2026-04-20T16:59:53.770Z",
+    "data": {
+      "phone": "+573206653005",
+      "municipality": "Quibdó",
+      "nit": "1132324243535",
+      "legalRepresentative": "Yeiber Andres Mena Robledo",
+      "recognitionDoc": "adadwdw",
+      "documents": ""
+    }
+  },
+  {
+    "profile": "club",
+    "name": "Tom",
+    "email": "yeimena53@gmail.com",
+    "radicado": "REG-20260417-77F551",
+    "createdAt": "2026-04-17T16:26:27.272Z",
+    "data": {
+      "phone": "+573206653005",
+      "municipality": "Quibdó",
+      "nit": "1132324243535",
+      "legalRepresentative": "Yeiber Andres Mena Robledo",
+      "recognitionDoc": "adadwdw",
+      "documents": "dsds"
+    }
+  },
+  {
+    "profile": "atleta",
+    "name": "Yeiber Mena",
+    "email": "ANDRESROBLEDO171@GMAIL.COM",
+    "radicado": "REG-20260417-617CBB",
+    "createdAt": "2026-04-17T16:25:02.496Z",
+    "data": {
+      "document": "21121212121",
+      "birthdate": "2004-11-18",
+      "sex": "M",
+      "municipality": "Quibdó",
+      "club": "LOS PUTIQUI",
+      "coach": "MENA",
+      "disciplines": "100M",
+      "marks": "100M",
+      "eps": "todos-son-malos",
+      "emergency": "",
+      "consent": "yes"
+    }
+  },
+  {
+    "profile": "club",
+    "name": "LOS GALACTICOS",
+    "email": "ANDRESROBLEDO171@GMAIL.COM",
+    "radicado": "REG-20260417-12C707",
+    "createdAt": "2026-04-17T13:54:58.136Z",
+    "data": {
+      "phone": "+573206653005",
+      "municipality": "Quibdó",
+      "nit": "1132324243535",
+      "legalRepresentative": "Yeiber Andres Mena Robledo",
+      "recognitionDoc": "",
+      "documents": ""
+    }
+  }
+]

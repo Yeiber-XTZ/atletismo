@@ -1,0 +1,261 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings, hero, rankings, publicSite } = data;
+const pageHeroes = publicSite?.pageHeroes ?? {};
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const category = (Astro.url.searchParams.get('cat') ?? '').trim();
+const discipline = (Astro.url.searchParams.get('disc') ?? '').trim();
+const gender = (Astro.url.searchParams.get('gen') ?? '').trim();
+const season = (Astro.url.searchParams.get('season') ?? '').trim();
+
+const all = Array.isArray(rankings) ? rankings : [];
+
+const categoryOptions = Array.from(new Set(all.map((r) => r.category).filter(Boolean))).slice(0, 48);
+const disciplineOptions = Array.from(new Set(all.map((r) => r.discipline).filter(Boolean))).slice(0, 48);
+const genderOptions = Array.from(new Set(all.map((r) => r.gender).filter(Boolean))).slice(0, 12);
+const seasonOptions = Array.from(new Set(all.map((r) => r.season).filter(Boolean))).slice(0, 12);
+
+const filtered = all
+  .filter((r) => (category ? r.category === category : true))
+  .filter((r) => (discipline ? r.discipline === discipline : true))
+  .filter((r) => (gender ? r.gender === gender : true))
+  .filter((r) => (season ? r.season === season : true))
+  .filter((r) => {
+    if (!q) return true;
+    const hay = `${r.athlete} ${r.club} ${r.mark}`.toLowerCase();
+    return hay.includes(q.toLowerCase());
+  })
+  .sort((a, b) => Number(a.rank) - Number(b.rank));
+
+const top3 = filtered.slice(0, 3);
+const rest = filtered.slice(3);
+
+const heroImage =
+  pageHeroes.ranking ||
+  hero?.imageUrl ||
+  'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop';
+
+const csvUrl = `/ranking.csv?cat=${encodeURIComponent(category)}&disc=${encodeURIComponent(discipline)}&gen=${encodeURIComponent(gender)}&season=${encodeURIComponent(season)}&q=${encodeURIComponent(q)}`;
+---
+
+<BaseLayout title={`Ranking | ${settings.siteName}`} description="Ranking departamental de atletas por prueba y categoría.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <div class="pt-[80px]">
+    <!-- HERO (clon visual del repo de referencia, manteniendo navbar/footer) -->
+    <section class="relative h-[450px] overflow-hidden bg-[#001205]">
+      <div class="absolute inset-0 opacity-60">
+        <img class="w-full h-full object-cover" src={heroImage} alt="Sprinter" referrerpolicy="no-referrer" />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-r from-[#001205] via-[#001205]/40 to-transparent"></div>
+      <div class="relative max-w-[1440px] mx-auto px-8 h-full flex flex-col justify-center">
+        <div class="inline-block px-4 py-1 bg-[#fdd835] text-[#5b4b00] font-headline font-black text-xs uppercase tracking-widest mb-4 w-fit">
+          Estadísticas Oficiales
+        </div>
+        <h1 class="font-headline font-extrabold text-6xl md:text-8xl text-white uppercase -ml-1 tracking-tighter leading-none">
+          Ranking<br /><span class="text-[#fdd835]">Departamental</span>
+        </h1>
+        <p class="text-[#acecbb] max-w-xl mt-6 text-lg font-medium leading-relaxed">
+          Celebrando la excelencia atlética del Chocó. El podio donde la velocidad se encuentra con la selva.
+        </p>
+      </div>
+    </section>
+
+    <!-- FILTERS (funcionales por query params) -->
+    <section class="bg-[#cafdd4] py-8 border-b border-[#8bb795]/20">
+      <div class="max-w-[1440px] mx-auto px-8">
+        <form class="flex flex-col md:flex-row gap-6 items-end" method="GET" action="/ranking">
+          <div class="flex-1 w-full">
+            <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[#3b6447] mb-2 ml-1">Buscar</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#568061]">search</span>
+              <input class="w-full pl-12 pr-4 py-3 bg-[#acecbb] border-none rounded-lg font-body font-semibold text-[#0b361d] focus:ring-2 focus:ring-[#006b1b] outline-none" name="q" value={q} placeholder="Atleta o club..." />
+            </div>
+          </div>
+          <div class="flex-1 w-full">
+            <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[#3b6447] mb-2 ml-1">Categoría</label>
+            <div class="relative">
+              <select class="w-full appearance-none bg-[#acecbb] border-none rounded-lg font-body font-semibold text-[#0b361d] py-3 px-4 focus:ring-2 focus:ring-[#006b1b]" name="cat">
+                <option value="" selected={!category}>Todas</option>
+                {categoryOptions.map((c) => (
+                  <option value={c} selected={c === category}>{c}</option>
+                ))}
+              </select>
+              <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#3b6447] pointer-events-none">expand_more</span>
+            </div>
+          </div>
+          <div class="flex-1 w-full">
+            <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[#3b6447] mb-2 ml-1">Disciplina</label>
+            <div class="relative">
+              <select class="w-full appearance-none bg-[#acecbb] border-none rounded-lg font-body font-semibold text-[#0b361d] py-3 px-4 focus:ring-2 focus:ring-[#006b1b]" name="disc">
+                <option value="" selected={!discipline}>Todas</option>
+                {disciplineOptions.map((d) => (
+                  <option value={d} selected={d === discipline}>{d}</option>
+                ))}
+              </select>
+              <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#3b6447] pointer-events-none">expand_more</span>
+            </div>
+          </div>
+          <div class="flex-1 w-full">
+            <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[#3b6447] mb-2 ml-1">Género</label>
+            <div class="relative">
+              <select class="w-full appearance-none bg-[#acecbb] border-none rounded-lg font-body font-semibold text-[#0b361d] py-3 px-4 focus:ring-2 focus:ring-[#006b1b]" name="gen">
+                <option value="" selected={!gender}>Todos</option>
+                {genderOptions.map((g) => (
+                  <option value={g} selected={g === gender}>{g}</option>
+                ))}
+              </select>
+              <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#3b6447] pointer-events-none">expand_more</span>
+            </div>
+          </div>
+          <div class="md:w-auto w-full flex gap-3">
+            <div class="w-full md:w-[180px]">
+              <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[#3b6447] mb-2 ml-1">Temporada</label>
+              <div class="relative">
+                <select class="w-full appearance-none bg-[#acecbb] border-none rounded-lg font-body font-semibold text-[#0b361d] py-3 px-4 focus:ring-2 focus:ring-[#006b1b]" name="season">
+                  <option value="" selected={!season}>Todas</option>
+                  {seasonOptions.map((s) => (
+                    <option value={s} selected={s === season}>{s}</option>
+                  ))}
+                </select>
+                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#3b6447] pointer-events-none">expand_more</span>
+              </div>
+            </div>
+            <button class="w-full md:w-auto bg-[#001205] text-white px-8 py-3 rounded-lg font-headline font-black text-sm uppercase tracking-tight flex items-center justify-center gap-2 hover:bg-[#006b1b] transition-colors" type="submit">
+              <span class="material-symbols-outlined text-[18px]">tune</span>
+              Filtrar
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- PODIUM -->
+    <section class="py-16 bg-white">
+      <div class="max-w-[1440px] mx-auto px-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+          {top3[1] ? (
+            <div class="bg-[#cafdd4] rounded-2xl p-8 text-center shadow-sm ring-1 ring-slate-100">
+              <img class="mx-auto h-28 w-28 rounded-full object-cover ring-4 ring-white" src={top3[1].imageUrl || '/logo.png'} alt={top3[1].athlete} referrerpolicy="no-referrer" />
+              <h3 class="mt-6 font-headline font-black text-xl text-[#0b361d]">{top3[1].athlete}</h3>
+              <p class="text-[#4252b4] font-black text-xs uppercase tracking-widest">{top3[1].club}</p>
+              <div class="mt-4 px-4 py-2 bg-white rounded-full font-headline font-black text-[#006b1b]">{top3[1].mark}</div>
+            </div>
+          ) : null}
+
+          {top3[0] ? (
+            <div class="bg-[#b5f0c2] rounded-2xl p-10 text-center shadow-lg ring-1 ring-slate-100">
+              <img class="mx-auto h-32 w-32 rounded-full object-cover ring-4 ring-white" src={top3[0].imageUrl || '/logo.png'} alt={top3[0].athlete} referrerpolicy="no-referrer" />
+              <h3 class="mt-8 font-headline font-black text-3xl text-[#0b361d] uppercase tracking-tighter">{top3[0].athlete}</h3>
+              <p class="text-[#006b1b] font-black text-sm uppercase tracking-widest">{top3[0].club}</p>
+              <div class="mt-4 px-8 py-3 bg-[#006b1b] text-[#d1ffc8] font-headline font-black text-2xl shadow-xl slant-edge">{top3[0].mark}</div>
+            </div>
+          ) : null}
+
+          {top3[2] ? (
+            <div class="bg-[#cafdd4] rounded-2xl p-8 text-center shadow-sm ring-1 ring-slate-100">
+              <img class="mx-auto h-28 w-28 rounded-full object-cover ring-4 ring-white" src={top3[2].imageUrl || '/logo.png'} alt={top3[2].athlete} referrerpolicy="no-referrer" />
+              <h3 class="mt-6 font-headline font-black text-xl text-[#0b361d]">{top3[2].athlete}</h3>
+              <p class="text-[#4252b4] font-black text-xs uppercase tracking-widest">{top3[2].club}</p>
+              <div class="mt-4 px-4 py-2 bg-white rounded-full font-headline font-black text-[#006b1b]">{top3[2].mark}</div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="bg-white pb-16">
+      <div class="max-w-[1440px] mx-auto px-8">
+        <div class="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] ring-1 ring-slate-100 overflow-hidden">
+          <div class="px-8 py-6 flex justify-between items-center">
+            <div>
+              <div class="text-xs font-headline font-black uppercase tracking-widest text-[#568061]">Ranking</div>
+              <div class="font-headline font-black text-2xl text-[#0b361d] uppercase tracking-tight">{discipline || 'Tabla general'}</div>
+              <div class="text-sm text-slate-500">{category || 'Todas las categorías'} · {gender || 'Todos'} {season ? `· ${season}` : ''}</div>
+            </div>
+            <a class="inline-flex items-center gap-2 bg-[#006b1b] text-white px-5 py-3 rounded-lg font-headline font-black text-sm uppercase tracking-widest" href={csvUrl}>
+              <span class="material-symbols-outlined text-[18px]">download</span>
+              Descargar Ranking
+            </a>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-[#cafdd4]">
+                <tr class="text-left">
+                  <th class="px-8 py-4 text-xs font-headline font-black uppercase tracking-widest text-[#3b6447]">#</th>
+                  <th class="px-8 py-4 text-xs font-headline font-black uppercase tracking-widest text-[#3b6447]">Atleta</th>
+                  <th class="px-8 py-4 text-xs font-headline font-black uppercase tracking-widest text-[#3b6447]">Club</th>
+                  <th class="px-8 py-4 text-xs font-headline font-black uppercase tracking-widest text-[#3b6447] text-right">Marca</th>
+                  <th class="px-8 py-4 text-xs font-headline font-black uppercase tracking-widest text-[#3b6447] text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rest.map((athlete) => (
+                  <tr class="hover:bg-[#f6fff7] transition-colors">
+                    <td class="px-8 py-6 font-headline font-black text-2xl text-[#3b6447]">{athlete.rank}</td>
+                    <td class="px-8 py-6">
+                      <div class="flex items-center gap-4">
+                        {athlete.imageUrl ? (
+                          <img class="w-12 h-12 rounded-full object-cover" src={athlete.imageUrl} alt={athlete.athlete} referrerpolicy="no-referrer" />
+                        ) : (
+                          <div class="w-12 h-12 rounded-full bg-[#cafdd4] text-[#006b1b] flex items-center justify-center font-headline font-black">
+                            {athlete.athlete.slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div class="font-headline font-black text-[#0b361d]">{athlete.athlete}</div>
+                          <div class="text-xs text-slate-500 uppercase font-semibold">{athlete.discipline}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-8 py-6 font-semibold text-[#4252b4]">{athlete.club}</td>
+                    <td class="px-8 py-6 text-right font-headline font-black text-[#006b1b] text-xl">{athlete.mark}</td>
+                    <td class="px-8 py-6">
+                      <div class="flex justify-center">
+                        <span class="bg-[#006b1b]/10 text-[#006b1b] text-[10px] font-black uppercase px-2 py-1 rounded flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                          {athlete.status || 'Verificado'}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td class="px-8 py-10 text-slate-500" colspan="5">No hay registros para este filtro.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-12 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p class="text-[#3b6447] text-sm font-medium">
+            Mostrando {filtered.length} de {all.length} registros oficiales.
+          </p>
+          <a class="bg-[#006b1b] text-white px-10 py-4 rounded-lg font-headline font-black text-sm uppercase tracking-widest flex items-center gap-3 shadow-lg hover:shadow-2xl transition-all slant-edge active:scale-95" href={csvUrl}>
+            <span class="material-symbols-outlined text-[18px]">download</span>
+            Descargar Ranking Completo
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+
+<style is:global>
+  .slant-edge {
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
+  }
+</style>
+

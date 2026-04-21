@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings } = data;
+---
+<BaseLayout title="Registro Usuario | Liga de Atletismo del Chocó" description="Registro de usuario general para recibir comunicaciones y acceder a módulos públicos.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px]">
+    <section class="page-hero">
+      <div class="container mx-auto px-6">
+        <nav class="page-breadcrumb">
+          <a href="/" class="page-breadcrumb-link">
+            <span class="material-symbols-outlined text-sm">home</span>
+            Inicio
+          </a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <a href="/registro" class="page-breadcrumb-link">Registro</a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <span class="page-breadcrumb-current">Usuario</span>
+        </nav>
+        <h1 class="page-title">Registro de Usuario</h1>
+        <p class="page-subtitle">Deja tus datos para crear tu radicado de registro. El acceso con roles se activa en la siguiente fase.</p>
+      </div>
+    </section>
+
+    <section class="page-section">
+      <div class="container mx-auto px-6">
+        <form method="POST" action="/api/registro" class="rounded-2xl border border-[var(--border)] bg-white p-8">
+          <input type="hidden" name="profile" value="usuario" />
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="md:col-span-2">
+              <label class="form-label">Nombre completo *</label>
+              <input class="form-input" type="text" name="name" required placeholder="Tu nombre" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Correo electrónico *</label>
+              <input class="form-input" type="email" name="email" required placeholder="tu@correo.com" />
+            </div>
+          </div>
+          <div class="mt-8 flex items-center justify-end">
+            <button class="btn-primary" type="submit">
+              <span class="material-symbols-outlined">send</span>
+              Enviar registro
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

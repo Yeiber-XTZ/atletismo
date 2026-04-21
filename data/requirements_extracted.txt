@@ -1,0 +1,779 @@
+
+
+===== PAGE 1 =====
+ 
+ 
+Plataforma  web  integral  para  la  Liga  de  Atletismo  del  Chocó  
+1.  Objetivo  general  
+Desarrollar  una  plataforma  web  institucional,  administrativa  y  deportiva  para  la  Liga  de  
+Atletismo
+ 
+del
+ 
+Chocó
+ 
+que
+ 
+permita:
+ 
+●  fortalecer  la  presencia  digital  de  la  Liga,  ●  centralizar  la  relación  con  clubes,  atletas,  entrenadores,  jueces,  asambleístas  y  
+órganos
+ 
+administrativos,
+ ●  gestionar  convocatorias  y  postulaciones  para  la  Selección  Chocó,  ●  publicar  noticias,  blog,  calendario,  resultados  y  ranking,  ●  administrar  documentación  oficial  y  procesos  internos,  ●  mejorar  la  transparencia,  la  trazabilidad  y  la  eficiencia  administrativa,  ●  y  posicionar  a  la  Liga  como  una  organización  moderna,  técnica  y  competitiva.  
+2.  Referente  funcional  
+La  Federación  Colombiana  de  Atletismo  actualmente  estructura  su  ecosistema  digital  con  
+módulos
+ 
+visibles
+ 
+como:
+ 
+●  inicio  institucional,  ●  ligas  afiliadas,  ●  calendario,  ●  competencias,  ●  estadísticas,  ●  resultados,  ●  marcas  nacionales,  ●  ranking  nacional,  ●  documentos  oficiales,  ●  noticias,  ●  contacto.  (Fédération  Colombiana  De  Atletismo)  
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 2 =====
+ 
+ 
+ 
+ 
+Además,  en  distintas  competencias  pública  procesos  donde  las  inscripciones  se  hacen  por  
+plataforma
+ 
+o
+ 
+enlace
+ 
+especializado
+,
+ 
+usando
+ 
+accesos
+ 
+entregados
+ 
+a
+ 
+las
+ 
+ligas,
+ 
+con
+ 
+cierre
+ 
+por
+ fechas  y  reglas  definidas  en  manuales  técnicos.  (Fédération  Colombiana  De  Atletismo)  
+Con  base  en  eso,  la  Liga  de  Atletismo  del  Chocó  debe  tener  una  solución  similar,  pero  
+adaptada
+ 
+a
+ 
+su
+ 
+realidad
+ 
+territorial,
+ 
+operativa
+ 
+y
+ 
+de
+ 
+selección
+ 
+deportiva.
+ 
+3.  Alcance  de  la  plataforma  
+La  página  web  no  debe  ser  solo  informativa.  Debe  funcionar  como  un  sistema  de  gestión  
+deportiva
+ 
+e
+ 
+institucional
+ 
+con
+ 
+cuatro
+ 
+grandes
+ 
+frentes:
+ 
+A.  Frente  institucional  
+Para  mostrar  quién  es  la  Liga,  su  estructura,  normativa,  estatutos,  órganos  y  gestión  
+pública.
+ 
+B.  Frente  deportivo  
+Para  convocatorias,  registro  de  clubes  y  atletas,  resultados,  ranking,  calendario  y  
+seguimiento
+ 
+al
+ 
+rendimiento.
+ 
+C.  Frente  administrativo  
+Para  gestión  de  asambleístas,  órgano  administrativo,  actas,  circulares,  comunicaciones  
+internas,
+ 
+cargas
+ 
+documentales
+ 
+y
+ 
+control
+ 
+de
+ 
+roles.
+ 
+D.  Frente  de  comunidad  y  posicionamiento  
+Para  noticias,  blog,  contenidos  de  valor,  transparencia,  patrocinadores,  aliados  y  
+proyección
+ 
+regional/nacional.
+ 
+ Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 3 =====
+ 
+ 
+ 
+4.  Tipos  de  usuarios  del  sistema  
+La  plataforma  debe  contemplar  múltiples  perfiles  de  usuario:  
+4.1.  Visitante  público  
+Persona  que  entra  sin  registrarse.  
+Debe
+ 
+poder:
+ 
+●  ver  noticias,  ●  consultar  calendario,  ●  revisar  resultados,  ●  leer  ranking,  ●  ver  clubes  afiliados,  ●  conocer  convocatorias  abiertas,  ●  consultar  documentos  públicos,consultar  historial  deportivo  público  ●  registrarse.  
+4.2.  Club  afiliado  
+Perfil  institucional  del  club.  
+Debe
+ 
+poder:
+ 
+●  crear  cuenta,  registrarse  y  ser  aprobado  por  la  Liga,  ●  Cambiar  perfil,recibir  alertas,  ●  cargar  documentos  legales,  ●  inscribir  atletas  a  convocatorias  o  eventos,  ●  actualizar  nómina  técnica,  ●  postular  deportistas,  ●  consultar  estado  de  afiliación,  ●  descargar  circulares  y  manuales  técnicos,  ●  hacer  seguimiento  a  postulaciones.  
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 4 =====
+ 
+ 
+ 
+4.3.  Club  afiliado  con  modulo  especial  que  se  pueda  habilitar.  
+“asambleísta”
+ 
+Debe  tener  un  módulo  privado  especial.  
+Debe
+ 
+poder:
+ 
+●  iniciar  sesión,  ●  consultar  actas,  ●  ver  convocatorias  a  asamblea,  ●  descargar  documentos  oficiales,  ●  votar  digitalmente  si  en  algún  momento  el  marco  estatutario  y  jurídico  lo  permite,  ●  registrar  asistencia,  ●  hacer  observaciones,  ●  recibir  notificaciones  formales.  
+4.4.  Órgano  administrativo  
+Presidencia,  vicepresidencia,  secretaría,  tesorería,  vocalías  u  otros  cargos  definidos  por  
+estatutos.
+ 
+Debe
+ 
+poder:
+ 
+●  administrar  información  institucional,  ●  aprobar  clubes,  ●  validar  postulaciones,  ●  publicar  resoluciones,  ●  cargar  actas,  ●  administrar  convocatorias,  ●  revisar  reportes,  ●  gestionar  calendario,  ●  emitir  comunicados  oficiales.  
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 5 =====
+ 
+ 
+ 
+4.6.  Administrador  del  sistema  
+Debe  tener  control  total  técnico  y  operativo:  
+●  crear  y  editar  usuarios,  ●  asignar  roles,  ●  auditar  movimientos,  ●  configurar  formularios,  ●  administrar  seguridad,  ●  respaldos,  ●  integraciones,  
+●
+ 
+reportes
+ 
+generales.
+ 
+5.  Módulos  funcionales  obligatorios  
+5.1.  Módulo  de  inicio  institucional  
+Debe  incluir:  
+●  banner  principal  dinámico,  ●  acceso  rápido  a  convocatorias,  ●  calendario  próximo,  ●  últimas  noticias,  ●  resultados  recientes,  ●  ranking  destacado,  ●  clubes  afiliados,  ●  enlaces  a  documentos  clave,  ●  patrocinadores  y  aliados.  
+Objetivo:  que  al  entrar  se  entienda  que  la  Liga  está  activa,  organizada  y  produce  
+información
+ 
+útil.
+ 
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 6 =====
+ 
+   
+5.2.  Módulo  “Quiénes  somos”  
+Debe  incluir:  
+●  historia  de  la  Liga,  ●  misión,  ●  visión,  ●  principios  institucionales,  ●  estructura  organizacional,  ●  marco  normativo,  ●  estatutos  vigentes,  ●  órganos  de  gobierno,  ●  contacto  oficial,  ●  transparencia  y  buen  gobierno.  
+ 
+5.3.  Módulo  de  clubes  afiliados  
+Inspirado  en  la  lógica  de  “ligas  afiliadas”  de  la  federación.  (Fédération  Colombiana  De  Atletismo)  
+Debe  permitir:  
+●  listar  clubes  afiliados,  ●  mostrar  estado:  activo,  en  revisión,  suspendido,  vencido,  ●  ficha  pública  del  club,  ●  entrenador  responsable,  ●  municipio,  ●  datos  de  contacto,  ●  número  de  atletas  vinculados,  ●  historial  competitivo,  ●  documentos  cargados,  ●  vigencia  de  afiliación.  Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 7 =====
+ 
+ 
+ 
+Funciones  clave:  
+●  solicitud  de  afiliación,  ●  renovación  de  afiliación,  ●  validación  documental,  ●  aprobación  por  la  Liga,  ●  panel  de  control  para  el  club.  
+5.4.  Módulo  de  registro  de  usuarios  
+Debe  contemplar  registro  para:  
+●  clubes  -  asambleístas,  ●  administrativos  ●  usuarios  generales.  
+Datos  sugeridos  por  perfil  
+Atleta:  
+●  nombres  y  apellidos,  ●  documento,  ●  fecha  de  nacimiento,  ●  sexo,  ●  municipio,  ●  club,  ●  entrenador,  ●  pruebas,  ●  marcas,  ●  EPS/contacto  de  emergencia,  ●  autorización  de  tratamiento  de  datos.  
+ 
+ Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 8 =====
+ 
+ 
+ 
+Club:  
+●  nombre  legal,  ●  NIT  si  aplica,  ●  representante  legal,  ●  resolución  o  documento  de  reconocimiento  deportivo,  ●  correo  oficial,  ●  teléfono,  ●  municipio,  ●  logo,  ●  estatutos  o  documentos  de  afiliación.  
+ 
+5.5.  Módulo  de  convocatorias  y  postulaciones  para  Selección  
+Chocó
+ 
+Este  es  uno  de  los  módulos  más  estratégicos.  
+Debe  permitir  que  la  Liga  publique  convocatorias  para:  
+●  eventos  nacionales,  ●  interligas,  ●  interclubes,  ●  selectivos,  ●  concentraciones,  ●  procesos  de  talentos,  ●  capacitaciones,  ●  llamados  técnicos.  
+Funcionalidades  mínimas:  
+●  crear  convocatoria  con  fechas  de  apertura  y  cierre,  ●  definir  categorías  y  pruebas,  ●  requisitos  documentales,  Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 9 =====
+ 
+ 
+ 
+ 
+●  criterios  de  elegibilidad,  ●  cupos  disponibles,  ●  postulación  individual  o  por  club,  ●  carga  de  soportes,  ●  validación  automática  de  campos,  ●  semaforización  del  estado:  ○  postulada,  ○  en  revisión,  ○  incompleta,  ○  habilitada,  ○  rechazada,  ○  seleccionada.  
+Importante:  
+Debe  permitir  que  el  club  sea  quien  postule,  pero  que  la  Liga  conserve  control  de  
+aprobación
+ 
+final,
+ 
+tal
+ 
+como
+ 
+la
+ 
+federación
+ 
+organiza
+ 
+inscripciones
+ 
+con
+ 
+credenciales
+ 
+por
+ 
+liga
+ 
+y
+ bajo  reglas  publicadas  en  manuales  técnicos.  (Fédération  Colombiana  De  Atletismo)  
+Soluciones  de  poder:  
+●  cálculo  automático  de  edad/categoría,  ●  alertas  por  cierre  próximo,  ●  bloqueo  de  postulaciones  fuera  del  plazo,  ●  exportación  a  Excel/PDF,  ●  trazabilidad  de  quién  subió  cada  dato,  ●  observaciones  técnicas  del  comité  seleccionador.  
+     
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 10 =====
+ 
+  
+ 
+5.6.  Módulo  de  competencias  
+Tomando  como  referente  que  la  federación  publica  fichas  de  campeonatos  con  fecha,  lugar,  reglamentación  y  manual  técnico.  (Fédération  Colombiana  De  Atletismo)  
+La  Liga  debe  tener  un  módulo  de  competencias  que  permita:  
+●  crear  eventos  deportivos,  ●  ficha  de  competencia,  ●  sede,  ●  fecha,  ●  pruebas  convocadas,  ●  categorías,  ●  reglamento,  ●  manual  técnico  descargable,  ●  cronograma,  ●  circular  oficial,  ●  listado  de  inscritos,  ●  resultados,  ●  memorias  del  evento.  
+Debe  diferenciar:  
+●  competencias  oficiales  de  la  Liga,  ●  competencias  avaladas,  ●  competencias  aliadas,  ●  eventos  promocionales,  ●  selectivos.  
+ 
+ 
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 11 =====
+ 
+ 
+ 
+5.7.  Módulo  de  calendario  
+La  federación  maneja  calendario  como  una  pieza  central  y  lo  actualiza  progresivamente.  (Fédération  Colombiana  De  Atletismo)  
+La  Liga  debe  tener:  
+●  calendario  anual,  ●  calendario  por  mes,  ●  filtros  por  categoría,  ●  filtros  por  tipo  de  evento,  ●  filtros  por  municipio,  ●  filtros  por  pruebas,  ●  exportación  a  Google  Calendar  o  ICS,  ●  vista  pública  y  vista  interna.  
+Tipos  de  eventos:  
+●  competencias,  ●  capacitaciones,  ●  asambleas,  ●  reuniones  administrativas,  ●  cierres  de  convocatoria,  ●  concentraciones,  ●  viajes  oficiales,  ●  actos  protocolarios.  
+      
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 12 =====
+ 
+   
+ 
+5.8.  Módulo  de  resultados  
+Inspirado  en  el  bloque  de  estadísticas/resultados  de  la  federación.  (Fédération  Colombiana  De  Atletismo)  
+Debe  permitir:  
+●  cargar  resultados  por  evento,  ●  búsqueda  por  atleta,  ●  búsqueda  por  club,  ●  búsqueda  por  prueba,  ●  filtros  por  categoría,  ●  filtros  por  fecha,  ●  exportación,  ●  publicación  por  series/finales,  ●  marcas  legales/no  legales,  ●  viento,  juez,  sede  y  observaciones  técnicas.  
+Idealmente:  
+●  soporte  para  pista,  campo,  ruta  y  adaptado,  ●  resultados  históricos,  ●  comparativo  entre  eventos.  
+        Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 13 =====
+ 
+ 
+ 
+5.9.  Módulo  de  ranking  departamental  
+Inspirado  en  el  ranking  nacional  publicado  por  la  federación.  (Fédération  Colombiana  De  Atletismo)  
+La  Liga  debe  construir  su  ranking  departamental  con:  
+●  ranking  por  prueba,  ●  ranking  por  categoría,  ●  ranking  por  sexo,  ●  ranking  por  club,  ●  ranking  por  municipio,  ●  ranking  por  temporada,  ●  ranking  histórico.  
+Variables  recomendadas:  
+●  mejor  marca,  ●  promedio,  ●  regularidad  competitiva,  ●  puntos  por  puesto,  ●  número  de  competencias  disputadas,  ●  tendencia  de  mejora.  
+Valor  estratégico:  
+Este  módulo  no  solo  informa;  también  sirve  para:  
+●  selección  deportiva,  ●  estímulos,  ●  visibilización  de  talentos,  ●  evaluación  técnica  por  clubes,  ●  justificación  ante  Indeportes,  entes  públicos  y  patrocinadores.  
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 14 =====
+ 
+   
+5.10.  Módulo  de  noticias  y  blog  
+La  Liga  debe  ir  más  allá:  
+Noticias  
+Para:  
+●  comunicados  oficiales,  ●  logros  deportivos,  ●  convocatorias,  ●  informes  de  eventos,  ●  alianzas,  ●  reconocimientos.  
+Blog  
+Para:  
+●  formación  deportiva,  ●  reglamentación,  ●  historias  de  atletas,  ●  fortalecimiento  del  atletismo  en  Chocó,  ●  gestión  de  clubes  y  liderazgo  deportivo.  
+Debe  incluir:  
+●  editor  de  contenido,  ●  categorías,  ●  etiquetas,  ●  SEO,  ●  imágenes,  ●  videos,  ●  autor,  ●  fecha.  Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 15 =====
+ 
+ 
+ 
+5.11.  Módulo  documental  
+Dos  niveles:  
+Público  
+●  estatutos,  ●  reglamentos,  ●  resoluciones  públicas,  ●  circulares,  ●  manuales  técnicos,  ●  formatos  descargables,  ●  informes  de  gestión,  ●  políticas  de  privacidad.  
+Privado  
+●  actas  reservadas,  ●  documentación  interna,  ●  soportes  administrativos,  ●  anexos  de  asamblea,  ●  documentos  para  revisión  del  órgano  administrativo.  
+Requerimientos:  
+●  buscador  documental,  ●  filtros  por  tipo,  ●  control  de  versiones,  ●  fecha  de  publicación,  ●  responsable  de  carga,  ●  permisos  por  rol.  
+   Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 16 =====
+ 
+   
+5.12.  Módulo  privado  de  asambleístas  
+Esto  es  clave  y  bastante  diferencial.  
+Debe  permitir  que  cada  asambleísta  tenga:  
+●  usuario  y  contraseña,  ●  panel  personal,  ●  acceso  a  convocatorias  a  asamblea,  ●  actas  previas,  ●  orden  del  día,  ●  anexos,  ●  registro  de  asistencia,  ●  constancias,  ●  observaciones,  ●  descarga  de  documentos  oficiales,  ●  alertas  de  reuniones.  
+Recomendación  avanzada:  
+Si  jurídicamente  se  habilita,  incluir  después:  
+●  votaciones  electrónicas  auditables,  ●  quorum  digital,  ●  firma  electrónica  o  aceptación  digital,  ●  historial  de  participación.  
+       
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 17 =====
+ 
+   
+5.13.  Módulo  del  órgano  administrativo  
+Debe  servir  para  que  el  órgano  cumpla  sus  funciones  administrativas  con  trazabilidad.  
+Funciones:  
+●  gestionar  actas,  ●  aprobar  publicaciones,  ●  revisar  afiliaciones,  ●  validar  convocatorias,  ●  administrar  documentos,  ●  asignar  responsables,  ●  controlar  cronogramas,  ●  consultar  reportes,  ●  emitir  resoluciones  y  circulares.  
+Requerimiento  importante:  
+Cada  acción  debe  quedar  auditada:  
+●  usuario,  ●  fecha,  ●  acción  realizada,  ●  módulo  afectado.  
+5.14.  Módulo  de  contacto,  PQRS  y  atención  
+Debe  incluir:  
+●  formulario  de  contacto,  ●  radicación  de  solicitudes,  ●  quejas,  ●  peticiones,  ●  reclamos,  
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 18 =====
+ 
+ 
+ 
+ 
+●  sugerencias,  ●  canal  para  clubes,  ●  canal  para  atletas,  ●  canal  para  prensa,  ●  canal  para  patrocinadores.  ●  número  de  radicado,  ●  seguimiento  por  estado,  ●  responsable  asignado,  ●  tiempos  de  respuesta.  
+6.  Requerimientos  no  funcionales  
+6.1.  Seguridad  
+●  autenticación  segura,  ●  contraseñas  cifradas,  ●  recuperación  de  acceso,  ●  control  de  sesiones,  ●  permisos  por  rol,  ●  bitácora  de  auditoría,  ●  protección  contra  carga  de  archivos  maliciosos,  ●  backups  automáticos,  ●  cumplimiento  de  tratamiento  de  datos  personales.  
+6.2.  Rendimiento  
+●  carga  rápida,  ●  escalabilidad,  ●  soporte  para  alto  tráfico  en  convocatorias  o  eventos,  ●  optimización  móvil.  
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 19 =====
+ 
+ 
+ 
+6.3.  Usabilidad  
+●  interfaz  clara,  ●  navegación  sencilla,  ●  diseño  accesible,  ●  experiencia  móvil  prioritaria,  ●  formularios  fáciles  para  clubes  y  atletas.  
+6.4.  Accesibilidad  
+Muy  importante  para  una  liga  moderna:  
+●  contraste  adecuado,  ●  navegación  legible,  ●  botones  claros,  ●  soporte  para  lectores  de  pantalla  en  lo  posible,  ●  formularios  accesibles.  
+6.5.  Trazabilidad  
+Toda  acción  administrativa  relevante  debe  quedar  registrada.  
+6.6.  Interoperabilidad  
+Debe  poder  integrarse  más  adelante  con:  
+●  sistemas  de  resultados,  ●  bases  de  datos  en  Excel/CSV,  ●  formularios  externos,  ●  correo  institucional,  ●  WhatsApp,  ●  plataformas  de  inscripción,  Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 20 =====
+ 
+ 
+ 
+ 
+●  sistemas  contables  o  documentales  si  crece  la  Liga.  
+7.  Estructura  sugerida  del  menú  principal  
+Una  arquitectura  sólida  podría  ser:  
+●  Inicio  ●  La  Liga  ○  Historia  ○  Misión  y  visión  ○  Órganos  de  administración  ○  Estatutos  ○  Transparencia  ●  Clubes  afiliados  ●  Convocatorias  ●  Competencias  ●  Calendario  ●  Resultados  ●  Ranking  ●  Noticias  ●  Blog  ●  Documentos  oficiales  ●  Contacto  ●  Iniciar  sesión  
+Y  en  acceso  privado:  
+●  Panel  del  club  ●  Panel  del  atleta  ●  Panel  del  asambleísta  ●  Panel  administrativo  ●  Panel  del  órgano  administrativo  Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 21 =====
+ 
+   
+8.  Requerimientos  técnicos  sugeridos  
+Backend  
+●  sistema  robusto  con  base  de  datos  relacional,  ●  API  para  exponer  información  pública  y  privada  por  permisos,  ●  manejo  de  archivos,  ●  motor  de  roles  y  permisos.  
+Base  de  datos  
+Tablas  mínimas  sugeridas:  
+●  usuarios  ●  roles  ●  clubes  ●  atletas  ●  entrenadores  ●  jueces  ●  asambleístas  ●  órganos  administrativos  ●  convocatorias  ●  postulaciones  ●  competencias  ●  pruebas  ●  resultados  ●  rankings  ●  documentos  ●  noticias  ●  blog  ●  actas  ●  asistencia  Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 22 =====
+ 
+ 
+ 
+ 
+●  notificaciones  ●  auditoría  
+Panel  administrativo  
+Debe  existir  un  CMS  interno  para  que  la  Liga  no  dependa  del  desarrollador  para  todo.  
+9.  Priorización  por  fases  
+Fase  1  –  Lanzamiento  institucional  mínimo  viable  
+●  inicio,  ●  quiénes  somos,  ●  clubes  afiliados,  ●  noticias,  ●  calendario,  ●  documentos  oficiales,  ●  contacto,  ●  registro  de  usuarios,  ●  login.  
+Fase  2  –  Gestión  deportiva  
+●  convocatorias,  ●  postulaciones,  ●  competencias,  ●  resultados,  ●  ranking,  ●  perfil  de  atletas  y  clubes.  
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 23 =====
+ 
+ 
+ 
+Fase  3  –  Gestión  administrativa  avanzada  
+●  módulo  de  asambleístas,  ●  módulo  del  órgano  administrativo,  ●  actas,  ●  asistencia,  ●  flujos  de  aprobación,  ●  reportes,  ●  auditoría  avanzada.  
+Fase  4  –  Inteligencia  y  posicionamiento  
+●  estadísticas  avanzadas,  ●  dashboards,  ●  alertas  inteligentes,  ●  analítica  de  rendimiento,  ●  analítica  de  participación  por  clubes  y  municipios,  ●  integración  con  WhatsApp/correo,  ●  observatorio  del  atletismo  chocoano.  
+            
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 24 =====
+ 
+  
+ 
+Especificación  funcional  resumida  para  al  
+equipo
+ 
+de
+ 
+desarrollador
+ 
+ 
+La  Liga  de  Atletismo  del  Chocó  requiere  el  diseño,  desarrollo  e  implementación  de  una  
+plataforma
+ 
+web
+ 
+institucional,
+ 
+administrativa
+ 
+y
+ 
+deportiva,
+ 
+orientada
+ 
+a
+ 
+la
+ 
+gestión
+ 
+integral
+ 
+del
+ 
+ecosistema
+ 
+atlético
+ 
+departamental.
+ 
+La
+ 
+solución
+ 
+deberá
+ 
+permitir
+ 
+la
+ 
+administración
+ 
+de
+ 
+usuarios
+ 
+por
+ 
+roles,
+ 
+afiliación
+ 
+y
+ 
+gestión
+ 
+de
+ 
+clubes,
+ 
+publicación
+ 
+de
+ 
+convocatorias,
+ 
+postulación
+ 
+de
+ 
+atletas
+ 
+para
+ 
+procesos
+ 
+selectivos,
+ 
+consulta
+ 
+de
+ 
+calendario,
+ 
+competencias,
+ 
+resultados
+ 
+y
+ 
+ranking,
+ 
+publicación
+ 
+de
+ 
+noticias
+ 
+y
+ 
+blog,
+ 
+administración
+ 
+documental,
+ 
+acceso
+ 
+privado
+ 
+para
+ 
+asambleístas
+ 
+y
+ 
+órgano
+ 
+administrativo,
+ 
+y
+ 
+control
+ 
+de
+ 
+funciones
+ 
+internas
+ 
+con
+ 
+trazabilidad,
+ 
+seguridad,
+ 
+accesibilidad
+ 
+y
+ 
+escalabilidad.
+ 
+La
+ 
+plataforma
+ 
+deberá
+ 
+tomar
+ 
+como
+ 
+referencia
+ 
+funcional
+ 
+buenas
+ 
+prácticas
+ 
+visibles
+ 
+en
+ 
+la
+ 
+Federación
+ 
+Colombiana
+ 
+de
+ 
+Atletismo,
+ 
+especialmente
+ 
+en
+ 
+sus
+ 
+módulos
+ 
+de
+ 
+calendario,
+ 
+competencias,
+ 
+estadísticas,
+ 
+resultados,
+ 
+ranking,
+ 
+documentos
+ 
+oficiales
+ 
+y
+ 
+noticias,
+ 
+adaptándolos
+ 
+a
+ 
+la
+ 
+estructura,
+ 
+necesidades
+ 
+y
+ proyección  estratégica  de  la  Liga  de  Atletismo  del  Chocó.  (Fédération  Colombiana  De  Atletismo)  
+          
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  
+
+
+===== PAGE 25 =====
+ 
+   
+12.  Recomendación  estratégica  final  
+Mi  criterio  técnico  es  este:  
+La  página  de  la  Liga  no  debe  plantearse  como  una  “web  bonita”.  
+Debe
+ 
+plantearse
+ 
+como
+ 
+un
+ 
+sistema
+ 
+de
+ 
+gobernanza
+ 
+deportiva
+ 
++
+ 
+visibilidad
+ 
+institucional
+ 
++
+ 
+captación
+ 
+y
+ 
+gestión
+ 
+de
+ 
+talento
+.
+ 
+Si  la  construyen  bien,  les  sirve  para:  
+●  ordenar  la  administración,  ●  legitimar  decisiones,  ●  profesionalizar  convocatorias,  ●  mostrar  resultados,  ●  atraer  patrocinio,  ●  tener  base  de  datos  estructurada,  ●  y  fortalecer  la  posición  de  la  Liga  frente  a  clubes,  deportistas,  entes  públicos  y  
+federación.
+ ●   
+       
+Ébano  Company  S.A.S  -  Inspirando  Cambios,  Transformando  Vidas  Email:  ceo@ebanocompany.com Dirección:  calle  24/carrera  18                         Ébano  Company  S.A.S  ●  Ébano_Company  

@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings, newsPage, news, convocatorias, competencias, clubs, publicSite } = data;
+const pageHeroes = publicSite?.pageHeroes ?? {};
+
+const items = Array.isArray(news) ? news : [];
+const featured = items[0];
+const updates = items.slice(0, 3);
+const heroImage =
+  pageHeroes.noticias ||
+  featured?.imageUrl ||
+  'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=2070&auto=format&fit=crop';
+
+const fmtShort = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: '2-digit' });
+};
+
+const openConvocatorias = Array.isArray(convocatorias)
+  ? convocatorias.filter((c) => String(c.status ?? '').toLowerCase().includes('abiert')).length
+  : 0;
+
+const stats = [
+  { label: 'Noticias', value: String(items.length).padStart(2, '0'), color: 'border-[var(--primary)]' },
+  { label: 'Convocatorias', value: String(openConvocatorias).padStart(2, '0'), color: 'border-[var(--secondary)]' },
+  { label: 'Competencias', value: String(Array.isArray(competencias) ? competencias.length : 0).padStart(2, '0'), color: 'border-slate-700' },
+  { label: 'Clubes', value: String(Array.isArray(clubs) ? clubs.length : 0).padStart(2, '0'), color: 'border-emerald-700' }
+];
+---
+
+<BaseLayout title={`Noticias | ${settings.siteName}`} description="Noticias, comunicados oficiales y logros deportivos.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[80px] bg-gray-50 selection:bg-[var(--primary)] selection:text-white">
+    <!-- HERO (clon visual del repo de referencia, manteniendo navbar/footer) -->
+    <section class="relative pt-32 pb-20 overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row items-center gap-12">
+          <div class="w-full lg:w-3/5 relative">
+            <div class="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl bg-slate-100">
+              <img
+                src={heroImage}
+                alt={featured?.title || 'Noticia destacada'}
+                class="w-full h-full object-cover"
+                referrerpolicy="no-referrer"
+              />
+            </div>
+            <div class="absolute -bottom-6 -left-6 w-32 h-32 bg-[var(--primary)]/10 rounded-full blur-3xl -z-10" />
+          </div>
+
+          <div class="w-full lg:w-2/5">
+            <div class="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-gray-50 relative">
+              <span class="inline-block bg-[var(--primary)] text-white text-[10px] font-bold tracking-widest px-3 py-1 rounded mb-6 uppercase">
+                {newsPage?.badge || 'DESTACADO'}
+              </span>
+              <h1 class="text-4xl md:text-5xl lg:text-6xl font-headline font-black text-gray-900 leading-[0.95] mb-6 uppercase">
+                {newsPage?.heroTitle || featured?.title || 'Noticias de la Liga'}
+              </h1>
+              <p class="text-gray-600 text-lg leading-relaxed mb-8">
+                {newsPage?.heroSubtitle || featured?.excerpt || 'Actualizaciones institucionales y deportivas.'}
+              </p>
+              {featured ? (
+                <a class="flex items-center gap-3 bg-slate-700 text-white px-8 py-4 rounded-lg font-bold hover:bg-slate-800 transition-all group" href={`/noticias/${featured.slug}`}>
+                  LEER ARTÍCULO COMPLETO
+                  <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </a>
+              ) : (
+                <a class="flex items-center gap-3 bg-slate-700 text-white px-8 py-4 rounded-lg font-bold hover:bg-slate-800 transition-all group" href="/contacto">
+                  PRÓXIMAS PUBLICACIONES
+                  <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS BAR -->
+    <section class="py-10 bg-white border-y border-gray-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          {stats.map((stat) => (
+            <div class:list={['pl-6 border-l-4', stat.color]}>
+              <p class="text-[10px] font-bold text-gray-400 tracking-wider mb-1 uppercase">{stat.label}</p>
+              <p class="text-3xl font-headline font-black text-[var(--on-surface)]">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- LATEST UPDATES -->
+    <section class="py-24 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-end mb-12">
+          <div>
+            <h2 class="text-4xl font-headline font-black text-gray-900 uppercase tracking-tight">ÚLTIMAS ACTUALIZACIONES</h2>
+            <div class="h-1.5 w-20 bg-[var(--primary)] mt-4" />
+          </div>
+          <div class="flex gap-2">
+            <button class="p-3 rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors" aria-label="Anterior">
+              <span class="material-symbols-outlined text-slate-600">chevron_left</span>
+            </button>
+            <button class="p-3 rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors" aria-label="Siguiente">
+              <span class="material-symbols-outlined text-slate-600">chevron_right</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {updates.map((u) => (
+            <article class="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-50 group">
+              <div class="relative h-56 overflow-hidden">
+                <img src={u.imageUrl} alt={u.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" />
+                <div class="absolute top-6 left-6">
+                  <span class="bg-[var(--primary)] text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                    {u.category}
+                  </span>
+                </div>
+              </div>
+              <div class="p-8">
+                <div class="flex items-center gap-2 text-gray-500 text-xs font-semibold mb-4">
+                  <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                  <span>{fmtShort(u.date)}</span>
+                </div>
+                <h3 class="text-2xl font-headline font-black text-gray-900 mb-4 leading-tight">{u.title}</h3>
+                <p class="text-gray-600 leading-relaxed mb-8">{u.excerpt}</p>
+                <a class="inline-flex items-center gap-2 text-[var(--primary)] font-bold tracking-wide hover:underline" href={`/noticias/${u.slug}`}>
+                  VER DETALLES <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section class="py-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-[#1A3D2E] rounded-[2.5rem] p-12 md:p-20 relative overflow-hidden shadow-2xl">
+          <div class="absolute top-0 right-0 w-96 h-96 bg-[var(--primary)]/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+          <div class="absolute bottom-0 left-0 w-64 h-64 bg-[#90FF90]/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2" />
+
+          <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+            <div class="max-w-xl text-center lg:text-left">
+              <h2 class="text-4xl md:text-5xl font-headline font-black text-white uppercase leading-tight mb-6">
+                {newsPage?.newsletterTitle || 'MANTENTE EN EL CARRIL RÁPIDO'}
+              </h2>
+              <p class="text-[#90FF90]/70 text-lg">
+                {newsPage?.newsletterSubtitle || 'Suscríbete para recibir notificaciones sobre resultados, convocatorias y eventos.'}
+              </p>
+            </div>
+
+            <form class="w-full lg:w-auto flex flex-col sm:flex-row gap-4" method="GET" action="/contacto">
+              <input
+                type="email"
+                placeholder="Tu correo electrónico"
+                class="bg-white/10 border border-white/20 rounded-xl px-6 py-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#90FF90]/50 w-full sm:w-80"
+              />
+              <button class="bg-[#90FF90] text-[#1A3D2E] px-10 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-[#90FF90]/20" type="submit">
+                {newsPage?.newsletterCta || 'UNIRME'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

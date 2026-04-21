@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings } = data;
+---
+<BaseLayout title="Registro Club | Liga de Atletismo del Chocó" description="Solicitud de afiliación/registro de club ante la Liga.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px]">
+    <section class="page-hero">
+      <div class="container mx-auto px-6">
+        <nav class="page-breadcrumb">
+          <a href="/" class="page-breadcrumb-link">
+            <span class="material-symbols-outlined text-sm">home</span>
+            Inicio
+          </a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <a href="/registro" class="page-breadcrumb-link">Registro</a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <span class="page-breadcrumb-current">Club</span>
+        </nav>
+        <h1 class="page-title">Registro de Club</h1>
+        <p class="page-subtitle">Radica tu solicitud. La Liga revisará documentos y notificará el estado de aprobación.</p>
+      </div>
+    </section>
+
+    <section class="page-section">
+      <div class="container mx-auto px-6">
+        <form method="POST" action="/api/registro" encType="multipart/form-data" class="rounded-2xl border border-[var(--border)] bg-white p-8">
+          <input type="hidden" name="profile" value="club" />
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="md:col-span-2">
+              <label class="form-label">Nombre legal del club *</label>
+              <input class="form-input" type="text" name="name" required placeholder="Nombre del club" />
+            </div>
+            <div>
+              <label class="form-label">Correo oficial del club *</label>
+              <input class="form-input" type="email" name="email" required placeholder="club@correo.com" />
+            </div>
+            <div>
+              <label class="form-label">Teléfono *</label>
+              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" />
+            </div>
+            <div>
+              <label class="form-label">Municipio *</label>
+              <input class="form-input" type="text" name="municipality" required placeholder="Quibdó, Istmina, ..." />
+            </div>
+            <div>
+              <label class="form-label">NIT (si aplica)</label>
+              <input class="form-input" type="text" name="nit" placeholder="NIT" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Representante legal *</label>
+              <input class="form-input" type="text" name="legalRepresentative" required placeholder="Nombre completo" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Documento de reconocimiento deportivo (URL o referencia)</label>
+              <input class="form-input" type="text" name="recognitionDoc" placeholder="URL / número de resolución / referencia" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Logo (opcional)</label>
+              <input class="form-input" type="file" name="logoFile" accept="image/*" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Documentos anexos (lista/URLs)</label>
+              <textarea class="form-input form-textarea" name="documents" placeholder="Estatutos, acta, certificados, etc."></textarea>
+            </div>
+          </div>
+
+          <div class="mt-8 flex items-center justify-end">
+            <button class="btn-primary" type="submit">
+              <span class="material-symbols-outlined">send</span>
+              Radicar solicitud
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

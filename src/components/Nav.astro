@@ -1,0 +1,48 @@
+---
+const {
+  siteName = 'Liga Atletismo',
+  logoUrl = ''
+} = Astro.props;
+
+const links = [
+  { label: 'Inicio', href: '#inicio' },
+  { label: 'Federacion', href: '#federacion' },
+  { label: 'Calendario', href: '#calendario' },
+  { label: 'Records', href: '#records' }
+];
+---
+<nav class="container flex items-center justify-between gap-6 py-6">
+  <a href="#inicio" class="flex items-center gap-3 font-display text-lg font-semibold tracking-wide">
+    {logoUrl ? (
+      <img src={logoUrl} alt={siteName} class="h-10 w-10 rounded-full object-cover" />
+    ) : (
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-electric-500 text-white">LA</span>
+    )}
+    {siteName}
+  </a>
+
+  <div class="hidden items-center gap-6 md:flex">
+    {links.map((link) => (
+      <a class="text-sm font-medium text-slate-700 transition hover:text-electric-500" href={link.href}>
+        {link.label}
+      </a>
+    ))}
+    <a class="btn-secondary" href="/admin">Admin</a>
+  </div>
+
+  <details class="relative md:hidden">
+    <summary class="list-none cursor-pointer rounded-full border border-electric-500 px-4 py-2 text-sm font-semibold text-electric-500">
+      Menu
+    </summary>
+    <div class="absolute right-0 mt-3 w-52 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+      <div class="flex flex-col gap-3">
+        {links.map((link) => (
+          <a class="text-sm font-medium text-slate-700" href={link.href}>
+            {link.label}
+          </a>
+        ))}
+        <a class="btn-primary" href="/admin">Admin</a>
+      </div>
+    </div>
+  </details>
+</nav>

@@ -1,0 +1,67 @@
+---
+import { hasRole, type AuthUser } from '../lib/rbac';
+
+const {
+  badge = 'EL CORAZON DEL PACIFICO',
+  headlineHtml = 'La Fuerza del <br/> <span class="text-[#eab308]">Chocó</span> en Cada <br/> Zancada',
+  subtitle = 'Forjando los campeones que llevarán la bandera de Colombia a lo más alto. Velocidad pura, talento natural, excelencia tropical.',
+  imageUrl = 'https://images.unsplash.com/photo-1530549387074-d56a99e148c9?w=4000&auto=format&fit=crop',
+  nextEventName = 'Grand Prix Quibdó',
+  nextEventDateText = 'Agosto 24, 2024'
+} = Astro.props;
+const user = Astro.locals.user as AuthUser | null;
+const canSeeConvocatoria = hasRole(user, ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB']);
+---
+<section id="inicio" class="kinetic-slant relative min-h-[78vh] overflow-hidden bg-[#001205] pt-20">
+  <div
+    class="absolute inset-0 opacity-85"
+    style={`background-image: url(${imageUrl}); background-size: cover; background-position: center;`}
+  >
+    <img src={imageUrl} alt="" loading="eager" fetchpriority="high" decoding="async" class="sr-only" />
+  </div>
+  <div class="absolute inset-0 bg-gradient-to-tr from-[#5AAC32]/70 via-transparent to-[#eab308]/15"></div>
+  <div class="relative z-10 flex min-h-[78vh] flex-col justify-center px-5 py-20 md:px-10 lg:px-16">
+    <div class="max-w-4xl">
+      <span class="mb-6 inline-block -rotate-2 bg-[#eab308] px-4 py-1 font-headline text-sm font-black uppercase text-[#5b4b00]">
+        {badge}
+      </span>
+      <h1
+        class="font-headline text-5xl font-black uppercase leading-[0.96] tracking-tight text-[#d1ffc8] md:text-7xl"
+        set:html={headlineHtml}
+      />
+      <p class="mt-6 max-w-xl text-lg font-medium leading-relaxed text-[#ddffe2]/90 md:text-xl">{subtitle}</p>
+      <div class="mt-10 flex flex-wrap gap-4">
+        <a
+          class="flex items-center gap-3 rounded-[10px] bg-[#5AAC32] px-8 py-3 font-headline font-bold uppercase tracking-tight text-white transition-colors hover:bg-[#4a9528] active:scale-95"
+          style="clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);"
+          href="/resultados"
+        >
+          Ver resultados <span class="material-symbols-outlined">trending_up</span>
+        </a>
+        <a
+          class="rounded-[10px] bg-[#eab308] px-8 py-3 font-headline font-bold uppercase tracking-tight text-[#5b4b00] transition-colors hover:bg-[#ca8a04]"
+          style="clip-path: polygon(5% 0, 100% 0, 100% 100%, 0 100%);"
+          href="/registro"
+        >
+          Registrarme
+        </a>
+        {canSeeConvocatoria ? (
+          <a
+            class="rounded-[10px] bg-[#001205]/40 px-8 py-3 font-headline font-bold uppercase tracking-tight text-[#ddffe2] ring-1 ring-[#ddffe2]/40 transition-colors hover:bg-[#001205]/55"
+            style="clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);"
+            href="/convocatorias"
+          >
+            Convocatorias <span class="material-symbols-outlined">campaign</span>
+          </a>
+        ) : null}
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-16 right-2 hidden lg:block xl:right-6">
+    <div class="border-l-4 border-[#eab308] bg-[#acecbb]/10 p-6 backdrop-blur-md">
+      <p class="font-headline text-xs font-bold uppercase text-[#eab308]">Próximo Evento</p>
+      <h3 class="font-headline text-2xl font-black uppercase text-[#d1ffc8]">{nextEventName}</h3>
+      <p class="text-sm text-[#ddffe2]">{nextEventDateText}</p>
+    </div>
+  </div>
+</section>

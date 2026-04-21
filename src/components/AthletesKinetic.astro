@@ -1,0 +1,42 @@
+---
+type Star = {
+  name: string;
+  discipline: string;
+  badge: string;
+  stat: string;
+  imageUrl: string;
+};
+
+const { stars = [] as Star[] } = Astro.props;
+
+const icons = ['military_tech', 'star', 'emoji_events'] as const;
+---
+<section id="estadisticas" class="athletes-section">
+  <div class="mb-20 flex flex-col items-center text-center">
+    <h2 class="font-headline text-5xl font-black uppercase tracking-tight text-[#0b361d]">Nuestras Estrellas</h2>
+    <div class="mt-4 h-1.5 w-24 bg-[#eab308]"></div>
+  </div>
+  <div class="grid grid-cols-1 gap-12 md:grid-cols-3">
+    {stars.slice(0, 3).map((star, idx) => (
+      <div class:list={['group relative', idx > 0 ? 'mt-12 md:mt-0' : '']}>
+        <div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-[#e8f5e0]">
+          <img
+            class="h-full w-full object-cover grayscale-[0.5] transition-all duration-500 group-hover:scale-105 group-hover:grayscale-0"
+            src={star.imageUrl}
+            alt={star.name}
+            referrerpolicy="no-referrer"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#5AAC32]/90 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+        </div>
+        <div class="absolute -bottom-6 left-6 right-6 rounded-xl bg-white p-6 shadow-xl transition-transform group-hover:-translate-y-2">
+          <span class="text-[10px] font-bold uppercase tracking-widest text-[#5AAC32]">{star.badge}</span>
+          <h3 class="font-headline text-2xl font-black uppercase tracking-tighter text-[#0b361d]">{star.name}</h3>
+          <div class="mt-4 flex items-center justify-between">
+            <span class="font-bold text-[#5AAC32]">{star.stat}</span>
+            <span class="material-symbols-outlined text-[#eab308]">{icons[idx] ?? 'emoji_events'}</span>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>

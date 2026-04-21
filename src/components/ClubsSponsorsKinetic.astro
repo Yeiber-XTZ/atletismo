@@ -1,0 +1,137 @@
+---
+type ClubItem = {
+  name: string;
+  municipality: string;
+  athletes: number;
+  status: string;
+  coach: string;
+  imageUrl?: string;
+  category?: string;
+};
+
+type SponsorItem = {
+  name: string;
+  href: string;
+  logoUrl?: string;
+};
+
+const { clubs = [] as ClubItem[], sponsors = [] as SponsorItem[] } = Astro.props;
+
+const visibleClubs = clubs.slice(0, 10);
+const visibleSponsors = sponsors.slice(0, 10);
+
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
+}
+---
+
+<section id="clubes-home" class="section-shell bg-[#eff8ee]">
+  <div class="mb-14 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h2 class="speed-line font-headline text-4xl font-black uppercase tracking-tight text-[#0b361d]">
+        Clubes y Patrocinadores
+      </h2>
+      <p class="mt-2 text-[#3b6447]">Aliados que impulsan el atletismo en el Chocó.</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <a class="btn-primary btn-slant" href="/clubes">Ver clubes</a>
+      <a class="btn-secondary btn-slant" href="/contacto">Afiliar club</a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+    <div class="rounded-2xl border border-[var(--border)] bg-white p-8 shadow-[0_16px_34px_rgba(11,54,29,0.06)] lg:col-span-8">
+      <div class="mb-6 flex items-center justify-between">
+        <h3 class="font-headline text-2xl font-black uppercase tracking-tight text-[#006b1b]">Clubes afiliados</h3>
+        <a class="text-sm font-black uppercase tracking-tight text-[#006b1b] hover:underline" href="/clubes">
+          Ver todo
+        </a>
+      </div>
+
+      {visibleClubs.length ? (
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {visibleClubs.map((c) => (
+            <div class="rounded-xl bg-[#cafdd4] p-4 text-center transition-all hover:-translate-y-0.5 hover:bg-[#ddffe2]">
+              {c.imageUrl ? (
+                <img
+                  class="mx-auto h-12 w-12 rounded-xl bg-white object-cover"
+                  src={c.imageUrl}
+                  alt={c.name}
+                  referrerpolicy="no-referrer"
+                  loading="lazy"
+                />
+              ) : (
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#006b1b] font-headline text-sm font-black uppercase text-[#d1ffc8]">
+                  {initials(c.name)}
+                </div>
+              )}
+              <div class="mt-3 text-xs font-black uppercase tracking-tight text-[#0b361d] line-clamp-2">{c.name}</div>
+              <div class="mt-1 text-[10px] font-bold uppercase tracking-widest text-[#3b6447]">{c.municipality}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="rounded-xl bg-[#cafdd4] p-10 text-center text-[#3b6447]">
+          <span class="material-symbols-outlined text-4xl text-[#006b1b]">groups</span>
+          <p class="mt-3 font-bold">Aún no hay clubes cargados.</p>
+          <p class="mt-1 text-sm">Pronto aparecerán aquí los clubes afiliados.</p>
+        </div>
+      )}
+    </div>
+
+    <div class="rounded-2xl border border-[var(--border)] bg-[#e6f4e3] p-8 shadow-[0_16px_34px_rgba(11,54,29,0.06)] lg:col-span-4">
+      <div class="mb-6 flex items-center justify-between">
+        <h3 class="font-headline text-2xl font-black uppercase tracking-tight text-[#006b1b]">Patrocinadores</h3>
+        <a class="text-sm font-black uppercase tracking-tight text-[#006b1b] hover:underline" href="/contacto">
+          Ser aliado
+        </a>
+      </div>
+
+      {visibleSponsors.length ? (
+        <div class="space-y-3">
+          {visibleSponsors.map((s) => (
+            <a
+              href={s.href || '#'}
+              class="flex items-center justify-between gap-4 rounded-xl bg-white p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+              target={s.href?.startsWith('http') ? '_blank' : undefined}
+              rel={s.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+            >
+              <div class="flex items-center gap-4">
+                {s.logoUrl ? (
+                  <img
+                    class="h-10 w-10 rounded-xl bg-[#ddffe2] object-cover"
+                    src={s.logoUrl}
+                    alt={s.name}
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ddffe2] text-[#006b1b]">
+                    <span class="material-symbols-outlined">handshake</span>
+                  </div>
+                )}
+                <div>
+                  <div class="font-headline text-sm font-black uppercase tracking-tight text-[#0b361d]">{s.name}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-[#3b6447]">Aliado</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-[#006b1b]">arrow_forward</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div class="rounded-xl bg-white p-10 text-center text-[#3b6447]">
+          <span class="material-symbols-outlined text-4xl text-[#006b1b]">handshake</span>
+          <p class="mt-3 font-bold">Aún no hay patrocinadores.</p>
+          <p class="mt-1 text-sm">Pronto publicaremos nuestros aliados aquí.</p>
+        </div>
+      )}
+    </div>
+  </div>
+</section>

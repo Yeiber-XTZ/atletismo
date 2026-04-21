@@ -1,0 +1,263 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+import { slugify } from '../../lib/slug';
+
+const data = await getHomeData();
+const { settings, hero, competencias: allCompetencias, publicSite } = data;
+const pageHeroes = publicSite?.pageHeroes ?? {};
+
+const competencias = (allCompetencias ?? []).map((comp) => ({
+  ...comp,
+  imageUrl:
+    comp.imageUrl ||
+    hero?.imageUrl ||
+    'https://images.unsplash.com/photo-1530549387074-d56a99e148c9?q=80&w=2070&auto=format&fit=crop',
+  downloads: Array.isArray(comp.downloads) ? comp.downloads : []
+}));
+
+const featured = competencias[0];
+const upcoming = competencias.slice(0, 6);
+
+const heroImage =
+  pageHeroes.competencias ||
+  featured?.imageUrl ||
+  hero?.imageUrl ||
+  'https://images.unsplash.com/photo-1530549387074-d56a99e148c9?q=80&w=2070&auto=format&fit=crop';
+
+const nextEvents = competencias.slice(0, 3).map((comp) => ({
+  name: comp.title,
+  date: comp.date,
+  location: comp.location,
+  resultsUrl:
+    comp.downloads?.find((item) => String(item.label ?? '').trim().toLowerCase() === 'resultados')?.href
+}));
+const resultsEvents = nextEvents.filter((event) => Boolean(event.resultsUrl)).slice(0, 3);
+
+const fmtDate = (iso: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+---
+
+<BaseLayout title={`Competencias | ${settings.siteName}`} description="Calendario de competencias, fichas técnicas y descargables oficiales.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[80px] selection:bg-[#eab308] selection:text-[#5b4b00]">
+    <!-- HERO (clon de referencia) -->
+    <section class="relative h-[780px] w-full overflow-hidden kinetic-slant bg-slate-950">
+      <div class="absolute inset-0">
+        <img class="h-full w-full object-cover opacity-60 mix-blend-overlay" src={heroImage} alt="Competencias" referrerpolicy="no-referrer" />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-90"></div>
+
+      <div class="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-6 lg:px-8">
+        <div class="inline-block bg-[#eab308] px-4 py-1 mb-6 font-headline text-xs font-black uppercase tracking-[0.3em] text-[#5b4b00] w-fit [clip-path:polygon(0_0,92%_0,100%_100%,8%_100%)]">
+          Temporada 2026
+        </div>
+        <h1 class="text-white text-5xl sm:text-7xl lg:text-8xl font-black italic uppercase leading-tight tracking-tighter mb-4">
+          Calendario de<br />
+          <span class="text-[#e8f5e0]">competencias</span>
+        </h1>
+        <p class="text-slate-200 max-w-xl font-body text-base sm:text-lg mb-8 leading-relaxed">
+          Fichas de eventos con sede, fecha, circular, manual técnico y trazabilidad de publicaciones oficiales.
+        </p>
+        <div class="flex items-center gap-4">
+          <a class="bg-[#5AAC32] text-white px-9 py-4 font-headline font-black italic uppercase tracking-widest inline-flex items-center transition hover:bg-[#4a9528]" href="#programadas">
+            Explorar eventos
+            <span class="material-symbols-outlined ml-2 transition-transform group-hover:translate-x-1">arrow_forward</span>
+          </a>
+          <a class="bg-white/10 text-white px-9 py-4 font-headline font-black italic uppercase tracking-widest inline-flex items-center ring-1 ring-white/20 backdrop-blur transition hover:bg-white/15" href="/documentos">
+            Documentos
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED (clon de referencia, con nuestros datos) -->
+    <section class="px-6 lg:px-8 -mt-28 relative z-20 mb-20">
+      <div class="mx-auto max-w-7xl">
+        {featured ? (
+          <div class="rounded-3xl overflow-hidden bg-[#f6fff7] ring-1 ring-slate-200 shadow-xl">
+            <div class="grid gap-0 md:grid-cols-2">
+              <div class="p-8 sm:p-10">
+                <div class="flex flex-wrap items-center gap-3">
+                  {featured.type ? (
+                    <span class="bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-700 ring-1 ring-slate-200">
+                      {featured.type}
+                    </span>
+                  ) : null}
+                  <span class="bg-[#5AAC32] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                    {featured.status}
+                  </span>
+                  <span class="bg-[#eab308] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#5b4b00]">
+                    {fmtDate(featured.date)}
+                  </span>
+                </div>
+
+                <h2 class="mt-6 font-headline text-3xl sm:text-5xl font-black italic uppercase tracking-tighter text-slate-900">
+                  {featured.title}
+                </h2>
+                <p class="mt-4 text-slate-600 leading-relaxed">{featured.description}</p>
+
+                <div class="mt-8 flex flex-wrap gap-3">
+                  {featured.downloads.slice(0, 3).map((d) => (
+                    <a
+                      class="inline-flex items-center gap-2 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+                      href={d.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span class="material-symbols-outlined text-[18px] text-[#5AAC32]">download</span>
+                      {d.label}
+                    </a>
+                  ))}
+                </div>
+
+                <div class="mt-10">
+                  <a
+                    class="inline-flex items-center gap-2 bg-[#0b361d] px-8 py-4 font-headline text-sm font-black italic uppercase tracking-widest text-white transition hover:bg-black"
+                    href={`/competencias/${slugify(featured.title)}`}
+                  >
+                    Ver ficha <span class="material-symbols-outlined">arrow_forward</span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="relative">
+                <img class="h-full w-full object-cover" src={featured.imageUrl} alt={featured.title} referrerpolicy="no-referrer" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                <div class="absolute bottom-6 left-6 right-6 rounded-2xl bg-white/10 p-5 ring-1 ring-white/20 backdrop-blur">
+                  <div class="text-[10px] font-black uppercase tracking-widest text-white/70">Sede</div>
+                  <div class="mt-1 font-headline text-base font-black italic uppercase text-white">{featured.location}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div class="rounded-3xl bg-white p-10 ring-1 ring-slate-200">
+            <p class="text-slate-600">Aún no hay competencias publicadas.</p>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- LIVE RESULTS (atajo a resultados/eventos) -->
+    <section class="mx-auto max-w-7xl px-6 lg:px-8 py-12">
+      <div class="flex items-end justify-between gap-6 border-b border-slate-200 pb-6">
+        <div>
+          <div class="text-[#5AAC32] font-headline text-[10px] font-black uppercase tracking-[0.35em]">Actualización</div>
+          <h3 class="mt-2 font-headline text-3xl font-black italic uppercase tracking-tighter text-slate-900">Resultados y seguimiento</h3>
+        </div>
+        <a class="text-sm font-black uppercase tracking-widest text-slate-600 hover:text-[#5AAC32]" href="/resultados">
+          Ver resultados <span class="material-symbols-outlined align-middle">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="mt-8 grid gap-5 md:grid-cols-3">
+        {(resultsEvents.length ? resultsEvents : nextEvents).map((e) => (
+          <a class="rounded-2xl bg-white p-6 ring-1 ring-slate-200 transition hover:shadow-md" href={e.resultsUrl || '/resultados'}>
+            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Evento</div>
+            <div class="mt-2 font-headline text-lg font-black italic uppercase text-slate-900">{e.name}</div>
+            <div class="mt-2 text-sm text-slate-600">{fmtDate(e.date)} · {e.location}</div>
+            <div class="mt-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#5AAC32]">
+              {e.resultsUrl ? 'Ver resultados' : 'Ver módulo'} <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- UPCOMING EVENTS (lista) -->
+    <section id="programadas" class="bg-slate-50 py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="flex items-end justify-between gap-6">
+          <div>
+            <div class="text-[#5AAC32] font-headline text-[10px] font-black uppercase tracking-[0.35em]">Calendario</div>
+            <h3 class="mt-2 font-headline text-3xl font-black italic uppercase tracking-tighter text-slate-900">Competencias programadas</h3>
+          </div>
+          <a class="text-sm font-black uppercase tracking-widest text-slate-600 hover:text-[#5AAC32]" href="/calendario">
+            Ver calendario <span class="material-symbols-outlined align-middle">arrow_forward</span>
+          </a>
+        </div>
+
+        <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {upcoming.map((c) => (
+            <a class="group rounded-2xl bg-white p-6 ring-1 ring-slate-200 transition hover:shadow-lg" href={`/competencias/${slugify(c.title)}`}>
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">{c.type || 'Competencia'}</div>
+                  <div class="mt-2 font-headline text-lg font-black italic uppercase text-slate-900">{c.title}</div>
+                </div>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-700">{c.status}</span>
+              </div>
+              <div class="mt-3 text-sm text-slate-600">{fmtDate(c.date)} · {c.location}</div>
+              <p class="mt-4 line-clamp-3 text-sm text-slate-500">{c.description}</p>
+              <div class="mt-6 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#5AAC32]">
+                Ver ficha <span class="material-symbols-outlined text-[18px] transition group-hover:translate-x-1">arrow_forward</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- TECHNICAL STANDARDS (CTA a Documentos) -->
+    <section class="bg-[#0b361d] py-16 text-white">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
+          <div>
+            <div class="text-[#eab308] font-headline text-[10px] font-black uppercase tracking-[0.35em]">Estándares técnicos</div>
+            <h3 class="mt-3 font-headline text-4xl font-black italic uppercase tracking-tighter">Reglamentación y soporte</h3>
+            <p class="mt-4 text-slate-200/80 leading-relaxed">
+              Accede a reglamentos, circulares y manuales técnicos para entrenadores, atletas y delegados.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a class="bg-[#eab308] px-8 py-3 font-headline text-sm font-black italic uppercase tracking-widest text-[#5b4b00] transition hover:brightness-95" href="/documentos">
+                Ver documentos
+              </a>
+              <a class="bg-white/10 px-8 py-3 font-headline text-sm font-black italic uppercase tracking-widest text-white ring-1 ring-white/20 transition hover:bg-white/15" href="/contacto">
+                Contacto
+              </a>
+            </div>
+          </div>
+
+          <div class="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10">
+            <div class="space-y-3">
+              {(featured?.downloads?.slice(0, 2) ?? []).map((d, idx) => (
+                <a
+                  class:list={[
+                    'flex items-center gap-4 border-l-4 p-4 transition-colors',
+                    idx === 0 ? 'border-[#eab308] bg-white/10 hover:bg-white/15' : 'border-white/20 bg-white/5 hover:bg-white/10'
+                  ]}
+                  href={d.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="material-symbols-outlined text-[22px] text-[#eab308]">menu_book</span>
+                  <div class="flex-1">
+                    <div class="font-headline text-sm font-black italic uppercase">{d.label}</div>
+                    <div class="text-[10px] uppercase tracking-widest text-white/40">Descarga</div>
+                  </div>
+                  <span class="material-symbols-outlined text-[18px] text-white/70">download</span>
+                </a>
+              ))}
+
+              {(!featured?.downloads?.length) ? (
+                <div class="text-sm text-white/70">
+            Los descargables aparecerán cuando el evento tenga enlace de resultados.
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

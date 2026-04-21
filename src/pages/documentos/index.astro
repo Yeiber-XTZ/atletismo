@@ -1,0 +1,363 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings } = data;
+
+const docs = Array.isArray(data.documents)
+  ? data.documents
+      .map((d) => ({
+        title: String(d?.title ?? ''),
+        description: String(d?.description ?? ''),
+        href: String(d?.href ?? ''),
+        category: String(d?.category ?? ''),
+        date: String(d?.date ?? '')
+      }))
+      .filter((d) => d.title.trim() && d.href.trim())
+  : [];
+
+function fileType(href: string) {
+  const clean = href.split('?')[0] ?? href;
+  const ext = clean.includes('.') ? clean.split('.').pop() ?? '' : '';
+  const upper = ext.toUpperCase();
+  if (!upper || upper.length > 5) return 'DOC';
+  return upper;
+}
+
+function formatDocDate(raw: string) {
+  if (!raw) return '';
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  const parts = new Intl.DateTimeFormat('es-CO', { month: 'short', day: '2-digit', year: 'numeric' }).formatToParts(
+    date
+  );
+  const month = (parts.find((p) => p.type === 'month')?.value ?? '').replace('.', '').toUpperCase();
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
+  const year = parts.find((p) => p.type === 'year')?.value ?? '';
+  return `${month} ${day}, ${year}`.trim();
+}
+
+const categories = Array.from(new Set(docs.map((d) => d.category).filter(Boolean)));
+const featuredCategories = categories.slice(0, 4).map((cat, idx) => ({
+  title: cat,
+  count: docs.filter((d) => d.category === cat).length,
+  icon: idx === 0 ? 'history_edu' : idx === 1 ? 'gavel' : idx === 2 ? 'inventory_2' : 'folder_open',
+  bg:
+    idx === 0
+      ? 'bg-surface-container-high'
+      : idx === 1
+        ? 'bg-secondary-container'
+        : idx === 2
+          ? 'bg-tertiary-container'
+          : 'bg-surface-container-highest'
+}));
+---
+
+<BaseLayout
+  title="Documentos Oficiales | Liga de Atletismo del Chocó"
+  description="Documentos oficiales, estatutos, reglamentos y formatos de la Liga de Atletismo del Chocó."
+>
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px]">
+    <section class="bg-surface">
+      <div class="container mx-auto px-6 py-14 md:py-16">
+        <div class="relative py-10 md:py-12 px-7 md:px-10 rounded-xl bg-surface-container-low overflow-hidden">
+          <div class="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none">
+            <span
+              class="material-symbols-outlined text-[12rem] md:text-[15rem] translate-x-20 -translate-y-10"
+              style="font-variation-settings: 'FILL' 1"
+              >folder_open</span
+            >
+          </div>
+          <h1 class="font-headline text-4xl md:text-5xl font-black text-primary uppercase mb-4 tracking-tighter">
+            Repositorio Público de Documentos
+          </h1>
+          <p class="text-lg text-on-surface-variant max-w-2xl mb-8 leading-relaxed">
+            Accede a estatutos, reglamentos, circulares y documentos oficiales. Transparencia institucional para una liga
+            más rápida y moderna.
+          </p>
+
+          <div class="flex flex-col md:flex-row gap-4 max-w-5xl">
+            <div class="flex-grow relative">
+              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">search</span>
+              <input
+                id="doc-search"
+                class="w-full pl-12 pr-6 py-4 bg-white border-none rounded-lg shadow-sm focus:ring-2 focus:ring-primary text-on-surface font-medium"
+                placeholder="Busca por nombre, año o tipo de documento..."
+                type="text"
+                autocomplete="off"
+              />
+            </div>
+            <div class="flex gap-4">
+              <select
+                id="doc-category"
+                class="bg-white border-none px-6 py-4 rounded-lg shadow-sm text-sm font-black uppercase tracking-wider text-on-surface-variant"
+              >
+                <option value="">Todas las categorías</option>
+                {categories.map((c) => (
+                  <option value={c}>{c}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                id="doc-clear"
+                class="bg-secondary text-on-secondary-container px-8 py-4 font-headline font-bold uppercase tracking-widest slanted-edge hover:brightness-110 transition-all"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="h-10 bg-inverse-surface kinetic-slant"></div>
+    </section>
+
+    <section class="bg-white">
+      <div class="container mx-auto px-6 py-16 md:py-20">
+        {docs.length === 0 ? (
+          <div class="rounded-2xl border border-[var(--border)] bg-white p-10 text-center">
+            <span class="material-symbols-outlined text-5xl text-on-surface-variant">folder_off</span>
+            <h2 class="mt-3 font-headline font-black text-2xl tracking-tight text-on-surface">Sin documentos publicados</h2>
+            <p class="mt-2 text-on-surface-variant">
+              Aún no hay documentos publicados. Pronto estarán disponibles aquí.
+            </p>
+            <div class="mt-6 flex items-center justify-center gap-3">
+              <a class="btn-primary btn-slant" href="/contacto">Solicitar documento</a>
+              <a class="btn-secondary btn-slant" href="/contacto">Solicitar</a>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              <div class="lg:col-span-8">
+                <div class="flex justify-between items-end mb-8 border-b-4 border-[var(--border-light)] pb-4">
+                  <div>
+                    <h2 class="font-headline text-2xl font-extrabold uppercase text-primary italic">
+                      Publicaciones recientes
+                    </h2>
+                    <p id="doc-count" class="text-sm text-on-surface-variant mt-1">{docs.length} documentos</p>
+                  </div>
+                  <span class="text-sm font-black uppercase tracking-tight text-primary">Actualizado</span>
+                </div>
+
+                <div id="doc-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {docs.map((doc, i) => (
+                    <button
+                      type="button"
+                      data-doc={JSON.stringify({
+                        title: doc.title,
+                        description: doc.description,
+                        href: doc.href,
+                        category: doc.category,
+                        dateText: formatDocDate(doc.date),
+                        type: fileType(doc.href)
+                      })}
+                      class={`text-left bg-white border border-[var(--border)] p-7 hover:shadow-[0_24px_60px_rgba(11,54,29,0.08)] transition-all group ${i === 0 ? 'ring-2 ring-[var(--primary)]' : ''}`}
+                    >
+                      <div class="flex items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-2">
+                          <span class="material-symbols-outlined text-primary">{doc.category ? 'description' : 'folder_open'}</span>
+                          <span class="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+                            {doc.category || 'Documento'}
+                          </span>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest text-outline-variant">
+                          {formatDocDate(doc.date)}
+                        </span>
+                      </div>
+                      <h3 class="font-headline font-black text-xl text-primary uppercase tracking-tight leading-snug break-words [overflow-wrap:anywhere]">
+                        {doc.title}
+                      </h3>
+                      <p class="text-sm text-on-surface-variant mt-2 leading-relaxed line-clamp-3 break-words [overflow-wrap:anywhere]">
+                        {doc.description || 'Documento oficial disponible para descarga.'}
+                      </p>
+                      <div class="mt-6 flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-outline bg-surface-container-low px-3 py-2 slanted-edge">
+                          {fileType(doc.href)}
+                        </span>
+                        <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+                          Ver <span class="material-symbols-outlined text-sm">arrow_right_alt</span>
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <aside class="lg:col-span-4">
+                <div class="sticky top-28">
+                  <div class="bg-white border border-[var(--border)] p-7 shadow-[0_30px_80px_rgba(11,54,29,0.08)]">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">verified</span>
+                        <span id="preview-category" class="text-xs font-black uppercase tracking-widest text-on-surface-variant"></span>
+                      </div>
+                      <span id="preview-date" class="text-xs font-black uppercase tracking-widest text-outline-variant"></span>
+                    </div>
+
+                    <h3 id="preview-title" class="font-headline font-black text-2xl uppercase tracking-tight text-primary"></h3>
+                    <p id="preview-desc" class="mt-3 text-sm text-on-surface-variant leading-relaxed"></p>
+
+                    <div class="mt-6 flex items-center gap-3">
+                      <a
+                        id="preview-open"
+                        class="bg-primary text-on-primary px-6 py-3 font-headline font-black uppercase tracking-widest btn-slant inline-flex items-center gap-2 hover:brightness-110 transition-all"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href={docs[0].href}
+                      >
+                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                        Abrir
+                      </a>
+                      <a
+                        id="preview-download"
+                        class="bg-secondary text-on-secondary-container px-6 py-3 font-headline font-black uppercase tracking-widest btn-slant inline-flex items-center gap-2 hover:brightness-110 transition-all"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href={docs[0].href}
+                      >
+                        <span class="material-symbols-outlined text-sm">download</span>
+                        Descargar
+                      </a>
+                    </div>
+
+                    <div class="mt-6 border-t border-[var(--border-light)] pt-5 space-y-3 text-xs">
+                      <div class="flex items-center justify-between gap-3">
+                        <span class="font-black uppercase tracking-widest text-on-surface-variant">Tipo</span>
+                        <span id="preview-type" class="font-black uppercase tracking-widest text-on-surface"></span>
+                      </div>
+                      <div class="flex items-center justify-between gap-3">
+                        <span class="font-black uppercase tracking-widest text-on-surface-variant">Estado</span>
+                        <span class="font-black uppercase tracking-widest text-primary">Oficial</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+
+            {featuredCategories.length > 0 ? (
+              <section class="mt-24">
+                <h2 class="font-headline text-3xl font-black text-primary uppercase mb-10 tracking-tighter slanted-edge bg-surface-container-low inline-block pr-12 pl-4 py-2">
+                  Explorador de archivo
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {featuredCategories.map((cat) => (
+                    <div class={`${cat.bg} p-8 flex flex-col gap-4 kinetic-slant`}>
+                      <span class="material-symbols-outlined text-primary text-4xl">{cat.icon}</span>
+                      <h3 class="font-headline font-black text-xl uppercase tracking-tight">{cat.title}</h3>
+                      <p class="text-xs text-on-surface-variant font-medium">{cat.count} documentos</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <section class="mt-20">
+              <div class="rounded-2xl border border-[var(--border)] bg-surface-container-low p-10 md:p-12">
+                <h3 class="font-headline font-black text-2xl text-primary uppercase tracking-tight">
+                  ¿Necesitas un documento específico?
+                </h3>
+                <p class="mt-2 text-on-surface-variant">
+                  Si necesitas un documento que no se encuentre en la lista, puedes solicitarlo a través del canal de contacto oficial.
+                </p>
+                <div class="mt-6">
+                  <a class="btn-primary btn-slant" href="/contacto">Solicitar documento</a>
+                </div>
+              </div>
+            </section>
+
+            <script is:inline>
+              {String.raw`(() => {
+  const search = document.getElementById('doc-search');
+  const category = document.getElementById('doc-category');
+  const clear = document.getElementById('doc-clear');
+  const count = document.getElementById('doc-count');
+  const cards = Array.from(document.querySelectorAll('#doc-grid [data-doc]'));
+
+  const previewTitle = document.getElementById('preview-title');
+  const previewDesc = document.getElementById('preview-desc');
+  const previewCategory = document.getElementById('preview-category');
+  const previewDate = document.getElementById('preview-date');
+  const previewType = document.getElementById('preview-type');
+  const previewOpen = document.getElementById('preview-open');
+  const previewDownload = document.getElementById('preview-download');
+
+  function parseCard(card) {
+    try { return JSON.parse(card.getAttribute('data-doc') || '{}'); } catch { return {}; }
+  }
+
+  function setActive(card) {
+    for (const c of cards) c.classList.remove('ring-2','ring-[var(--primary)]');
+    card.classList.add('ring-2','ring-[var(--primary)]');
+  }
+
+  function renderPreview(doc) {
+    if (!doc) return;
+    previewTitle.textContent = doc.title || '';
+    previewDesc.textContent = doc.description || 'Documento oficial disponible para descarga.';
+    previewCategory.textContent = doc.category || 'Documento';
+    previewDate.textContent = doc.dateText || '';
+    previewType.textContent = doc.type || 'DOC';
+    if (doc.href) {
+      previewOpen.setAttribute('href', doc.href);
+      previewDownload.setAttribute('href', doc.href);
+    }
+  }
+
+  function applyFilters() {
+    const q = (search?.value || '').toLowerCase().trim();
+    const cat = (category?.value || '').toLowerCase().trim();
+    let visible = 0;
+
+    for (const card of cards) {
+      const doc = parseCard(card);
+      const blob = [
+        doc.title, doc.description, doc.category, doc.dateText, doc.type
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      const okQuery = !q || blob.includes(q);
+      const okCat = !cat || String(doc.category || '').toLowerCase() === cat;
+      const show = okQuery && okCat;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    }
+
+    if (count) count.textContent = visible + ' documentos';
+  }
+
+  for (const card of cards) {
+    card.addEventListener('click', () => {
+      const doc = parseCard(card);
+      setActive(card);
+      renderPreview(doc);
+    });
+  }
+
+  search?.addEventListener('input', applyFilters);
+  category?.addEventListener('change', applyFilters);
+  clear?.addEventListener('click', () => {
+    if (search) search.value = '';
+    if (category) category.value = '';
+    applyFilters();
+  });
+
+  const first = cards[0];
+  if (first) {
+    setActive(first);
+    renderPreview(parseCard(first));
+  }
+})();`}
+            </script>
+          </>
+        )}
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

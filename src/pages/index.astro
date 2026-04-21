@@ -1,22 +1,76 @@
----
-import Layout from '../layouts/Layout.astro';
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getHomeData } from '../lib/content';
 import Navbar from '../components/Navbar.astro';
-import Hero from '../components/Hero.astro';
-import News from '../components/News.astro';
-import Events from '../components/Events.astro';
-import Athletes from '../components/Athletes.astro';
-import CTA from '../components/CTA.astro';
-import Footer from '../components/Footer.astro';
----
+import HeroKinetic from '../components/HeroKinetic.astro';
+import NewsKinetic from '../components/NewsKinetic.astro';
+import EventsKinetic from '../components/EventsKinetic.astro';
+import CompetenciasKinetic from '../components/CompetenciasKinetic.astro';
+import ResultsRankingKinetic from '../components/ResultsRankingKinetic.astro';
+import AthletesKinetic from '../components/AthletesKinetic.astro';
+import DocumentsKinetic from '../components/DocumentsKinetic.astro';
+import ClubsSponsorsKinetic from '../components/ClubsSponsorsKinetic.astro';
+import CTAKinetic from '../components/CTAKinetic.astro';
+import FooterKinetic from '../components/FooterKinetic.astro';
 
-<Layout title="Liga de Atletismo del Chocó | Kinetic Tropics">
-	<Navbar />
-	<main class="pt-20">
-		<Hero />
-		<News />
-		<Events />
-		<Athletes />
-		<CTA />
-	</main>
-	<Footer />
-</Layout>
+const data = await getHomeData();
+const { settings, hero, documents, home, rankings, clubs, competencias } = data;
+
+const featuredCompetenciaTitle = String(home?.eventHighlight?.sourceCompetenciaTitle ?? '');
+const nextCompetencia =
+  (featuredCompetenciaTitle ? competencias?.find((comp) => comp.title === featuredCompetenciaTitle) : undefined) ??
+  competencias?.[0];
+const highlightedDateTime = String(home?.eventHighlight?.eventDateTime ?? '').trim();
+const nextEventDateTime = highlightedDateTime || `${nextCompetencia?.date ?? ''}T00:00`;
+
+const nextEvent = nextCompetencia
+  ? {
+      name: nextCompetencia.title,
+      date: nextCompetencia.date,
+      dateTime: nextEventDateTime,
+      location: nextCompetencia.location,
+      status: nextCompetencia.status,
+      type: nextCompetencia.type ?? '',
+      downloadsCount: Array.isArray(nextCompetencia.downloads) ? nextCompetencia.downloads.length : 0,
+      resultsUrl:
+        nextCompetencia.downloads?.find((item) => String(item.label ?? '').trim().toLowerCase() === 'resultados')?.href ?? ''
+    }
+  : undefined;
+
+const nextEventName = nextCompetencia?.title ?? 'Grand Prix Quibdo';
+const nextEventDateText = nextEventDateTime
+  ? (() => {
+      const parsed = new Date(`${nextEventDateTime}:00-05:00`);
+      if (Number.isNaN(parsed.getTime())) return 'Agosto 24, 2024';
+      return (
+        parsed.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) +
+        ' - ' +
+        parsed.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })
+      );
+    })()
+  : 'Agosto 24, 2024';
+
+const competenciasAsEvents = (competencias ?? []).map((comp) => ({
+  name: comp.title,
+  date: comp.date,
+  location: comp.location,
+  status: comp.status,
+  resultsUrl: comp.downloads?.find((item) => String(item.label ?? '').trim().toLowerCase() === 'resultados')?.href,
+  imageUrl: comp.imageUrl
+}));
+---
+<BaseLayout title={`${settings.siteName}`} description={`${settings.siteName}`}>
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
+  <main>
+    <HeroKinetic badge={hero?.badge} headlineHtml={hero?.title} subtitle={hero?.subtitle} imageUrl={hero?.imageUrl || undefined} nextEventName={nextEventName} nextEventDateText={nextEventDateText} />
+    <NewsKinetic items={home.news} />
+    <EventsKinetic nextEvent={nextEvent} highlight={home.eventHighlight} />
+    <CompetenciasKinetic events={competenciasAsEvents} />
+    <ResultsRankingKinetic competencias={competencias} rankings={rankings} />
+    <AthletesKinetic stars={home.stars} />
+    <DocumentsKinetic items={documents} />
+    <ClubsSponsorsKinetic clubs={clubs} sponsors={home.sponsors} />
+    <CTAKinetic {...home.cta} />
+  </main>
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

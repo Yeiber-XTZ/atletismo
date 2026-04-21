@@ -1,0 +1,107 @@
+﻿---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+import { slugify } from '../../lib/slug';
+
+const data = await getHomeData();
+const { settings, clubs: allClubs } = data;
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const status = (Astro.url.searchParams.get('status') ?? 'all').toLowerCase();
+
+const normalizedClubs = (allClubs ?? []).map((c) => ({
+  ...c,
+  imageUrl:
+    c.imageUrl ||
+    'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=1200&auto=format&fit=crop'
+}));
+
+const clubs = normalizedClubs.filter((c) => {
+  if (q && !c.name.toLowerCase().includes(q.toLowerCase())) return false;
+  if (status === 'all') return true;
+  const normalizedStatus = c.status
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  return normalizedStatus === status;
+});
+---
+
+<BaseLayout title={`Clubes | ${settings.siteName}`} description="Directorio de clubes afiliados a la Liga de Atletismo del Choco.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[92px] bg-[#f7faf7] min-h-screen">
+    <section class="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <h1 class="font-headline text-3xl font-black italic uppercase tracking-tight text-slate-900">Clubes afiliados</h1>
+
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <form class="flex items-center gap-2" method="GET" action="/clubes">
+              <input type="hidden" name="status" value={status} />
+              <input
+                class="w-[240px] rounded-full border border-slate-200 bg-white py-2 pl-4 pr-4 text-sm outline-none focus:ring-2 focus:ring-[#5AAC32]"
+                placeholder="Buscar club..."
+                name="q"
+                value={q}
+              />
+              <button class="rounded-full bg-[#5AAC32] px-5 py-2 text-sm font-black uppercase tracking-widest text-white transition hover:bg-[#4a9528]">
+                Buscar
+              </button>
+            </form>
+
+            <div class="flex gap-2">
+              {[
+                { label: 'Todos', value: 'all' },
+                { label: 'Activo', value: 'activo' },
+                { label: 'En revision', value: 'en revision' }
+              ].map((f) => (
+                <a
+                  class:list={[
+                    'px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest transition border',
+                    status === f.value
+                      ? 'bg-[#5AAC32] border-[#5AAC32] text-white'
+                      : 'bg-white border-slate-200 text-slate-600 hover:text-[#5AAC32]'
+                  ]}
+                  href={`/clubes?status=${encodeURIComponent(f.value)}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+                >
+                  {f.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="mt-8">
+        {clubs.length ? (
+          <div class="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {clubs.map((club) => (
+              <a
+                href={`/clubes/${slugify(club.name)}`}
+                class="group flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div class="h-28 w-28 overflow-hidden rounded-full border-4 border-[#e8f5e0] bg-[#f5fbf2]">
+                  <img class="h-full w-full object-cover" src={club.imageUrl} alt={club.name} referrerpolicy="no-referrer" />
+                </div>
+                <h3 class="mt-4 line-clamp-2 font-headline text-base font-black uppercase italic text-slate-900">{club.name}</h3>
+                <p class="mt-2 text-xs font-bold uppercase tracking-wider text-slate-500">{club.municipality}</p>
+                <p class="mt-3 rounded-full bg-[#eaf6e5] px-3 py-1 text-xs font-black uppercase tracking-widest text-[#0b361d]">
+                  {club.athletes} atletas
+                </p>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-600">
+            No encontramos clubes con ese filtro o busqueda.
+          </div>
+        )}
+      </section>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

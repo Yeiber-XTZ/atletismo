@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings } = data;
+
+const radicado = Astro.url.searchParams.get('radicado');
+const perfil = Astro.url.searchParams.get('perfil');
+---
+<BaseLayout title="Registro recibido | Liga de Atletismo del Chocó" description="Confirmación de registro.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px]">
+    <section class="page-hero">
+      <div class="container mx-auto px-6">
+        <nav class="page-breadcrumb">
+          <a href="/" class="page-breadcrumb-link">
+            <span class="material-symbols-outlined text-sm">home</span>
+            Inicio
+          </a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <a href="/registro" class="page-breadcrumb-link">Registro</a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <span class="page-breadcrumb-current">Confirmación</span>
+        </nav>
+        <h1 class="page-title">Registro recibido</h1>
+        <p class="page-subtitle">Tu solicitud fue radicada correctamente.</p>
+      </div>
+    </section>
+
+    <section class="page-section">
+      <div class="container mx-auto px-6">
+        <div class="rounded-2xl border border-[var(--border)] bg-white p-8">
+          <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8f5e0] text-[#006b1b]">
+              <span class="material-symbols-outlined">check_circle</span>
+            </div>
+            <div>
+              <h2 class="section-heading !mb-2">Radicado</h2>
+              <p class="text-[var(--text-secondary)]">
+                {radicado ? (
+                  <span class="font-bold text-[#0f172a]">{radicado}</span>
+                ) : (
+                  'No se recibió radicado (vuelve a enviar el formulario).'
+                )}
+              </p>
+              {perfil ? (
+                <p class="mt-2 text-sm text-[var(--text-secondary)]">Perfil: <strong class="text-[#0f172a]">{perfil}</strong></p>
+              ) : null}
+              <p class="mt-4 text-sm text-[var(--text-secondary)]">
+                La Liga revisará la información y se comunicará por correo si requiere soportes adicionales.
+              </p>
+              <div class="mt-6 flex flex-wrap gap-3">
+                <a href="/convocatorias" class="btn-primary">Ver convocatorias</a>
+                <a href="/contacto" class="btn-secondary">Contacto</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+

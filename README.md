@@ -1,20 +1,15 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Atlestismo
 
-# Run and deploy your AI Studio app
+## Local (Postgres en Docker)
 
-This contains everything you need to run your app locally.
+1. Configura tu `.env` (puedes copiar de `.env.example`)
+2. Levanta la base de datos y aplica el esquema:
+   - `npm run db:init`
+3. Inicia la web:
+   - `npm run dev`
 
-View your app in AI Studio: https://ai.studio/apps/a2ea41b3-5026-459b-888e-9b198ce597f0
+Adminer (UI de la base de datos):
+- `http://localhost:8080`
+- Server: `db`
+- User/Password/DB: los de tu `.env`
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`

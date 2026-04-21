@@ -1,0 +1,539 @@
+{
+  "settings": {
+    "siteName": "Liga de Atletismo del Chocó",
+    "logoUrl": "/logo.png",
+    "primaryColor": "#5AAC32",
+    "secondaryColor": "#eab308",
+    "contactEmail": "contacto@liga-atletismo.com",
+    "contactPhone": "+57 000 000 000",
+    "social": {
+      "instagram": "https://instagram.com",
+      "facebook": "https://facebook.com",
+      "x": "https://x.com"
+    }
+  },
+  "hero": {
+    "title": "La Fuerza del <br/><span class=\"text-[#eab308]\">Chocó</span> en Cada Zancada",
+    "subtitle": "Forjando los campeones que llevarán la bandera de Colombia a lo más alto. Velocidad pura, talento natural, excelencia tropical.",
+    "imageUrl": "https://images.unsplash.com/photo-1530549387074-d56a99e148c9?w=4000&auto=format&fit=crop",
+    "badge": "EL CORAZÓN DEL PACÍFICO"
+  },
+  "home": {
+    "news": [
+      {
+        "title": "Todos son malos",
+        "excerpt": "dvdnvdvsvjadvjdsavjkdbsvksabjvdsjkaabvkdsbvkdbaskvbwkjdvksdbvjkbdsvbakjsbvjkdsbvkdsjkvbdskvbkdsbvksdkvbsadkjvdsjbvkdsbvkdsabvdbskjvdskjvbdsjkvbkdbvkdsbvs",
+        "category": "nada",
+        "dateText": "21 de abril de 2026",
+        "href": "/noticias/todos-son-malos"
+      }
+    ],
+    "eventHighlight": {
+      "title": "CAMPEONATO DEPARTAMENTAL DE VELOCIDAD",
+      "subtitle": "La competencia más esperada del año llega a Quibdó",
+      "venueText": "Estadio La Normal",
+      "participantsText": "8 clubes",
+      "audienceText": "120+ atletas",
+      "primaryCtaLabel": "Ver Inscripciones",
+      "primaryCtaHref": "/convocatorias",
+      "sourceEventId": 11
+    },
+    "stars": [
+      {
+        "name": "Mericiano",
+        "discipline": "atle",
+        "badge": "nada",
+        "stat": "10.8",
+        "imageUrl": "https://www.istockphoto.com/photo/happy-sportswoman-with-earbuds-running-in-the-park-gm1441759606-481372971?utm_source=pixabay&utm_medium=affiliate&utm_campaign=sponsored_image&utm_content=srp_topbanner_media&utm_term=deportes"
+      }
+    ],
+    "cta": {
+      "titleHtml": "¿Listo para ser parte del <span class=\"text-[#eab308]\">cambio</span>?",
+      "subtitle": "Únete a la Liga de Atletismo del Chocó y sé parte de la revolución deportiva del Pacífico colombiano.",
+      "primaryLabel": "Regístrate Ahora",
+      "primaryHref": "/registro",
+      "secondaryLabel": "Contactar",
+      "secondaryHref": "/contacto"
+    },
+    "sponsors": []
+  },
+  "federation": {
+    "about": "Somos la entidad que coordina el atletismo competitivo, con una vision de excelencia deportiva y formacion integral.",
+    "mission": "x",
+    "vision": "Ser la federacion referente en Latinoamerica por su innovacion y transparencia."
+  },
+  "publicSite": {
+    "pageHeroes": {
+      "laLiga": "",
+      "convocatorias": "",
+      "competencias": "",
+      "calendario": "",
+      "resultados": "",
+      "ranking": "",
+      "clubes": "",
+      "noticias": "",
+      "blog": ""
+    },
+    "laLiga": {
+      "heroTitle": "La Liga",
+      "heroSubtitle": "Forjando campeones con pasión tropical desde el corazón del Pacífico colombiano.",
+      "historyImageUrl": "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2070&auto=format&fit=crop",
+      "principles": [
+        {
+          "icon": "diversity_3",
+          "title": "Inclusión",
+          "desc": "Puertas abiertas para cada talento del Pacífico sin distinción alguna."
+        },
+        {
+          "icon": "verified_user",
+          "title": "Transparencia",
+          "desc": "Claridad absoluta en el manejo de recursos y procesos selectivos."
+        },
+        {
+          "icon": "military_tech",
+          "title": "Excelencia",
+          "desc": "Búsqueda incansable de la calidad técnica y el alto rendimiento."
+        },
+        {
+          "icon": "groups",
+          "title": "Comunidad",
+          "desc": "Fortalecimiento del tejido social a través del deporte regional."
+        },
+        {
+          "icon": "schedule",
+          "title": "Disciplina",
+          "desc": "El rigor como base fundamental para alcanzar el éxito deportivo."
+        },
+        {
+          "icon": "flag",
+          "title": "Identidad",
+          "desc": "Orgullo por nuestras raíces chocoanas y espíritu resiliente."
+        }
+      ],
+      "governanceItems": [
+        {
+          "label": "Liderazgo Principal",
+          "title": "Presidencia"
+        },
+        {
+          "label": "Soporte Ejecutivo",
+          "title": "Vicepresidencia"
+        },
+        {
+          "label": "Gestión Administrativa",
+          "title": "Secretaría General"
+        },
+        {
+          "label": "Control Financiero",
+          "title": "Tesorería"
+        },
+        {
+          "label": "Planeación Estratégica",
+          "title": "Junta Directiva"
+        },
+        {
+          "label": "Ética y Normativa",
+          "title": "Comité Disciplinario"
+        }
+      ],
+      "normativeDocs": [
+        {
+          "icon": "menu_book",
+          "title": "Estatutos Institucionales",
+          "href": "/documentos"
+        },
+        {
+          "icon": "gavel",
+          "title": "Reglamento Interno",
+          "href": "/documentos"
+        },
+        {
+          "icon": "policy",
+          "title": "Código de Ética",
+          "href": "/documentos"
+        }
+      ]
+    }
+  },
+  "newsPage": {
+    "badge": "DESTACADO",
+    "heroTitle": "VELOCIDAD PURA EN EL CORAZÓN DEL CHOCÓ",
+    "heroSubtitle": "La delegación regional rompe récords históricos y consolida al Chocó como potencia atlética. Lee comunicados, logros y actualizaciones oficiales.",
+    "newsletterTitle": "MANTENTE EN EL CARRIL RÁPIDO",
+    "newsletterSubtitle": "Suscríbete para recibir notificaciones sobre resultados, convocatorias y eventos.",
+    "newsletterCta": "UNIRME"
+  },
+  "news": [
+    {
+      "slug": "resultados-del-grand-prix-quibdo-2026",
+      "title": "Resultados del Grand Prix Quibdó 2026",
+      "excerpt": "Consulta los resultados completos del evento celebrado el pasado fin de semana.",
+      "date": "2026-04-10",
+      "category": "RESULTADOS",
+      "imageUrl": "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=4000&auto=format&fit=crop",
+      "body": [
+        "La Liga de Atletismo del Chocó comparte los resultados oficiales del Grand Prix Quibdó 2026.",
+        "En los próximos días se publicarán los rankings actualizados por prueba y categoría."
+      ]
+    },
+    {
+      "slug": "convocatoria-abierta-selectivo-nacional",
+      "title": "Convocatoria abierta para Selectivo Nacional",
+      "excerpt": "La Liga convoca a clubes y atletas para el proceso de selección departamental.",
+      "date": "2026-04-05",
+      "category": "CONVOCATORIAS",
+      "imageUrl": "https://images.unsplash.com/photo-1526676037777-05a232554f77?w=4000&auto=format&fit=crop",
+      "body": [
+        "Se encuentra abierta la convocatoria para el proceso selectivo nacional.",
+        "Los clubes podrán postular atletas cumpliendo requisitos y fechas de cierre."
+      ]
+    },
+    {
+      "slug": "nuevo-record-departamental-100m",
+      "title": "Nuevo récord departamental en 100m",
+      "excerpt": "Valentina Rojas establece nueva marca con 11.22 segundos.",
+      "date": "2026-03-28",
+      "category": "LOGROS",
+      "imageUrl": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=4000&auto=format&fit=crop",
+      "body": [
+        "Con una marca destacada, se actualiza el registro departamental de los 100m.",
+        "La comisión técnica verificará el acta oficial y condiciones de viento."
+      ]
+    }
+  ],
+  "blogPage": {
+    "title": "Blog de la Liga",
+    "subtitle": "Contenidos técnicos, entrevistas y crónicas para atletas, clubes y entrenadores.",
+    "featuredTag": "Video",
+    "featuredTitle": "Ruta al Oro: Preparación técnica en el corazón del Chocó",
+    "featuredImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdUj1sgLgV0TyPjridxo-iRPgiJelXSqsGjbz9xPLhUg5z4qRRNEEeTrXHvRzz1mzz-zvw1GkS_laXY__uuRh-X2vISSJvNjpeiXLKhGRQ-tJ7JIKv_Td_uN6LGvjeVO36j49CPbaEcYloxJNr-oMUNgRiIbZWm8LGeu3Tz_TsMMQMkQJtAFkkg5UnaOSwas9jxCouWWL-Tc7It88s3ZQYvn8IAsJ58EK1yE30pYLpyV4Z0u_tLJgbS-6SvwLdJ9tA8TVQouQ1oV4q",
+    "featuredCtaLabel": "Ver video",
+    "calloutTitle": "Únete a la nueva generación de campeones",
+    "calloutCtaLabel": "Inscripciones abiertas",
+    "calloutCtaHref": "/registro"
+  },
+  "blogPosts": [
+    {
+      "slug": "como-preparar-tu-temporada-base-aerobica-y-tecnica",
+      "type": "Técnico",
+      "title": "Cómo preparar tu temporada: base aeróbica y técnica",
+      "excerpt": "Una guía práctica para atletas y entrenadores sobre planificación de temporada.",
+      "date": "2026-04-08",
+      "tags": [
+        "Formación",
+        "Entrenamiento"
+      ],
+      "imageUrl": "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=4000&auto=format&fit=crop",
+      "body": [
+        "La planificación por bloques permite controlar carga, intensidad y recuperación.",
+        "Prioriza técnica de carrera, movilidad y fuerza general en etapas iniciales."
+      ]
+    },
+    {
+      "slug": "reglamentos-clave-viento-y-marcas-legales",
+      "type": "Competición",
+      "title": "Reglamentos clave: lo que debes saber sobre viento y marcas legales",
+      "excerpt": "Entiende cuándo una marca es legal y cómo se registra en resultados oficiales.",
+      "date": "2026-03-22",
+      "tags": [
+        "Reglamentación"
+      ],
+      "imageUrl": "https://images.unsplash.com/photo-1530549387074-d5629d75b734?w=4000&auto=format&fit=crop",
+      "body": [
+        "Para pruebas de velocidad y saltos, el viento puede afectar la validez de la marca.",
+        "Los jueces registran condiciones y observaciones técnicas en el acta."
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "Grand Prix Quibdó",
+      "date": "2026-05-04",
+      "location": "Estadio La Normal - Quibdó",
+      "status": "Confirmado",
+      "resultsUrl": "",
+      "category": ""
+    },
+    {
+      "name": "Copa Velocidad",
+      "date": "2026-06-12",
+      "location": "Pista Norte",
+      "status": "Inscripciones abiertas",
+      "resultsUrl": "",
+      "category": ""
+    },
+    {
+      "name": "Maratón Metropolitano",
+      "date": "2026-08-30",
+      "location": "Circuito Urbano",
+      "status": "Próximamente",
+      "resultsUrl": "",
+      "category": ""
+    }
+  ],
+  "records": [
+    {
+      "athlete": "Valentina Rojas",
+      "mark": "11.22s",
+      "category": "100m",
+      "date": "2025-11-12"
+    },
+    {
+      "athlete": "Carlos Mejia",
+      "mark": "2:09:43",
+      "category": "Maratón",
+      "date": "2025-10-02"
+    },
+    {
+      "athlete": "Andrea Ruiz",
+      "mark": "6.45m",
+      "category": "Salto largo",
+      "date": "2025-09-18"
+    }
+  ],
+  "rankings": [
+    {
+      "rank": "01",
+      "athlete": "Carlos Palacios",
+      "club": "Atletas de Oro Condoto",
+      "mark": "10.15s",
+      "status": "Verificado",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDkV2cWTE-uyFe4M7kWry8P8hpguB1DtRI1qy7TCXkJegF81J8VKsyeLjZkeSrm9stErigrSDkqrvzRXlbE5Itkr-Jwh9sPh-9_7GTTLtAyovk4hyMGu5QvrJBX0rV67Ujx6g9gvYxzS7drpjDHU8eaMtgmOHvhRDHl59vzWhRZ54cxE68sZsDvUOiZPX6cMQwHof0RDAC10W9yQ4LDaBiNq2xf_Mqa5Wn-aUECp15WI26U-dp6GN3Vlhbk7tg0e1Ka2jmkBDWipnoe",
+      "category": "Mayores (Elite)",
+      "discipline": "100 Metros Planos",
+      "gender": "Masculino",
+      "season": "2026"
+    },
+    {
+      "rank": "02",
+      "athlete": "Elena Quinto",
+      "club": "Club Guepardos de Quibdó",
+      "mark": "10.42s",
+      "status": "Verificado",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCOnf31JjWOcN_3zyLYWsPAurMUNOJ7TqUH1mQSN-_hGwjKeqvo4SllRtLpthAI2hapExjNcoYWegnG918f_Rkx8cAr0heSaxXYkwvJO0lkxviDwesB2CzcPv7NsHTGIbGLhAzx1mgi97vQYMlj00scuClzBOMIdrr_hOzit2C36cnX4-oKvuRCGs1Bljg67sb5og9zD8Pa5LBzQDYnD5gTFE8qKy1aAeHNFlM62w36xtnaL1rG1C9E3ESYccEMhUOrbj-oUTW24ijC",
+      "category": "Mayores (Elite)",
+      "discipline": "100 Metros Planos",
+      "gender": "Masculino",
+      "season": "2026"
+    },
+    {
+      "rank": "03",
+      "athlete": "Mateo Mena",
+      "club": "Liceo de Istmina",
+      "mark": "10.58s",
+      "status": "Verificado",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCRqNZaRAt3uIAXeSYGxRpARJqID62NoZ4KAPR7LKaP0OmUe6j5tBEchO-ejQEgRBsQvHkgyE-6x08fP8c__8gAcRGOVPoViEFjYemQ8kdsLYmlU2eOZ2JRetdOOg4xc1886GDW2lqLgxei_fSYX9ZyConOlW7hou25qoTaYyK8n5JhYTFd7jl0FLDii1AwviyUefo6SjMQU809D95zdJQ2rf8UiX7uA5dyDVrXOiy7FkiwOG_wMJ18VG7d976YxBUmOCVkxrcznroA",
+      "category": "Mayores (Elite)",
+      "discipline": "100 Metros Planos",
+      "gender": "Masculino",
+      "season": "2026"
+    },
+    {
+      "rank": "04",
+      "athlete": "Samuel Valencia",
+      "club": "Bahía Solano Athl.",
+      "mark": "10.72s",
+      "status": "Verificado",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuC3XR-h88QSaHhmog_BVsLuYjSxgqpnMz1m4xfiXBvoh1eRLd4VKWNPqFmWuwI4QhrpE0RgLzhY21ZinDtMuj4QT98AZPllrd2zNP4Tgqvdp5Q36mOSChAdW1Hwhr0OlEgjH01XTsJAe-AGIpCHHu0-xVW7xTRLTp0E0YDYW5OV0C3OzNfrkde-dfd2MikDyJtPp4G5WnP1DBSTHb-YZKTbE_gsRlczEBF12tMSbJXWK1M0zkC_iWEBzs3wpoqyOiXw-fpjXHuZvZZD",
+      "category": "Mayores (Elite)",
+      "discipline": "100 Metros Planos",
+      "gender": "Masculino",
+      "season": "2026"
+    },
+    {
+      "rank": "05",
+      "athlete": "Lucía Moreno",
+      "club": "Club Tadó Runners",
+      "mark": "10.85s",
+      "status": "Verificado",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuC3aybzYQM50UIHqwLOsLN3MxOypAA-bZG7CYDnOo7Wa0YyyXFLNHZwrHQLpfArfoFkfYWGujmPDeM-TDvxgjIk5usHD0i0wD_XftXLsLnvcKjoJgrrFsAY08-G8ZPlJNtHmogHqu4ZntX7l3nyZLi6ytcap1Algg-6bhuyDzGTts4pfj2Irp886qBch_4SLZIDYjAaVUTCk_yJ8y9M1r2SZUIbt5DPskjLBCSuL-2JDBa7pTaiDH1yfJgXAKmsaWGFvkz8wZeoR4n7",
+      "category": "Mayores (Elite)",
+      "discipline": "100 Metros Planos",
+      "gender": "Masculino",
+      "season": "2026"
+    }
+  ],
+  "results": [
+    {
+      "pos": "01",
+      "athlete": "Andrés Caicedo",
+      "category": "Juvenil A",
+      "club": "Club Velocidad Chocó",
+      "mark": "10.12s",
+      "event": "Grand Prix Quibdó",
+      "date": "2026-04-12",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCx900aqjILNGxfTzZIl9C1EpOIf45CsGaQEqbC4csgVCGT4ny7XhNdH8hICbdvNlMaLUivRUK0XlA7CbW92QtCjcYLcjW52Dkmhr9cixuVToyWJr1fHEvt6NrALVAy-3MTRUgAYoz_FIWcMmO6Q918NtgLVi9AG3soO-OmTfsnmN5mQpcOb5U6VV2Rf2LV6R1QigySLzU5QRfqvuJiixmGdsrvnzMHSH3WNZRdt5M4BN0wmE8vPq4KOxAe5m4QZHovPB8PGFR8Ndfs",
+      "isGold": true
+    },
+    {
+      "pos": "02",
+      "athlete": "Mariana Murillo",
+      "category": "Élite",
+      "club": "Istmina Track Club",
+      "mark": "10.28s",
+      "event": "Interclubes Istmina",
+      "date": "2026-04-05",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAFKDb8E-dNE8nsZeoqRulPcRkewjWh96c2ARqaLYjkFNnZqduqSK7pNkl-7o2FPSpRpTYRyU2sBNPQe7_f2qRZCo3kZKCnX1-AHh6fMIvmR1i1mr1pVOD4jAl7qrumC5PVrD9PqNv9ID185mL986Af-G7hcwRIoS5lRzzF2H2PACKOGdla8sEKK2fpZa7S6sZc8VS52fR2yt_Y-gyyzDX8X9_3PH9MeVbUV99OKghKbYX45dxvOvp1YMyrkxbYYB3pYfKLD0RiiS1q",
+      "isGold": false
+    },
+    {
+      "pos": "03",
+      "athlete": "Kevin Moreno",
+      "category": "Juvenil B",
+      "club": "Titanes del Atrato",
+      "mark": "10.45s",
+      "event": "Grand Prix Quibdó",
+      "date": "2026-04-12",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCaHYDPf8aKxFat62IeOBFERcY3C4rj36O8wpqfvELWV_q1qK83JbyWiQdbVbfM3oNwvjoZzCu0Wrtln52_v1zVIBF_HErpkC9aeB7zRCukFRfvKzJMATUe-syRg3hAmatCHtnBIKZYHiCRnwkKJK3EfbYitncQrYKKZiQEYvcgHBXlkmIzokACLrwG7FikCy9OiAlnt-z2wV2aJrq8nLWjCcFf-v9p7r9g7iOZrizUE2Jd5ROWZRFElSERDyzsz90RlIUb1SatxAdA",
+      "isGold": false
+    }
+  ],
+  "documents": [
+    {
+      "title": "Reglamento General",
+      "description": "Normativa oficial de la liga (PDF).",
+      "href": "#"
+    },
+    {
+      "title": "Calendario Oficial 2026",
+      "description": "Fechas, sedes y categorías (PDF).",
+      "href": "#"
+    },
+    {
+      "title": "Formato de Inscripción",
+      "description": "Formulario para clubes y atletas (PDF).",
+      "href": "#"
+    }
+  ],
+  "convocatorias": [
+    {
+      "title": "Selectivo Nacional 2026",
+      "category": "Selección",
+      "status": "Abierta",
+      "openDate": "2026-04-01",
+      "closeDate": "2026-04-25",
+      "location": "Quibdó",
+      "audience": "Clubes y atletas",
+      "description": "Convocatoria para postulaciones al proceso selectivo nacional.",
+      "requirements": [
+        "Carta del club",
+        "Documento de identidad",
+        "Soporte de marca",
+        "Autorización tratamiento de datos"
+      ],
+      "categories": [
+        "U18",
+        "U20",
+        "Mayores"
+      ],
+      "imageUrl": "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=4000&auto=format&fit=crop"
+    },
+    {
+      "title": "Concentración Departamental de Talentos",
+      "category": "Talentos",
+      "status": "Próximamente",
+      "openDate": "2026-05-10",
+      "closeDate": "2026-05-25",
+      "location": "Istmina",
+      "audience": "Atletas",
+      "description": "Proceso de identificación y seguimiento de talentos para semilleros.",
+      "requirements": [
+        "Formulario de salud",
+        "Autorización acudiente (si aplica)"
+      ],
+      "categories": [
+        "U14",
+        "U16"
+      ]
+    }
+  ],
+  "competencias": [
+    {
+      "title": "Campeonato Departamental de Velocidad",
+      "status": "Confirmado",
+      "date": "2026-05-04",
+      "location": "Quibdó",
+      "type": "Oficial",
+      "description": "Evento oficial de pista enfocado en pruebas de velocidad y relevos.",
+      "imageUrl": "https://images.unsplash.com/photo-1530549387074-d56a99e148c9?w=4000&auto=format&fit=crop",
+      "downloads": [
+        {
+          "label": "Circular oficial",
+          "href": "#"
+        },
+        {
+          "label": "Manual técnico",
+          "href": "#"
+        }
+      ]
+    },
+    {
+      "title": "Copa de Saltos y Lanzamientos",
+      "status": "Confirmado",
+      "date": "2026-06-12",
+      "location": "Istmina",
+      "type": "Avalada",
+      "description": "Competencia para pruebas de campo con participación de clubes afiliados.",
+      "imageUrl": "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=4000&auto=format&fit=crop",
+      "downloads": [
+        {
+          "label": "Circular oficial",
+          "href": "#"
+        }
+      ]
+    }
+  ],
+  "clubs": [
+    {
+      "name": "Club Atlético Quibdó",
+      "municipality": "Quibdó",
+      "athletes": 24,
+      "status": "Activo",
+      "coach": "Carlos Palacios",
+      "category": "Velocidad y relevos",
+      "imageUrl": "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=4000&auto=format&fit=crop"
+    },
+    {
+      "name": "Club San Juan Racing",
+      "municipality": "San Juan",
+      "athletes": 18,
+      "status": "Activo",
+      "coach": "María López",
+      "category": "Resistencia",
+      "imageUrl": "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=4000&auto=format&fit=crop"
+    },
+    {
+      "name": "Club Atrato Veloz",
+      "municipality": "Quibdó",
+      "athletes": 15,
+      "status": "Activo",
+      "coach": "José Rivas",
+      "category": "Velocidad pura",
+      "imageUrl": "https://images.unsplash.com/photo-1532444458054-01a7dd3e9fca?w=4000&auto=format&fit=crop"
+    },
+    {
+      "name": "Club Istmina Corre",
+      "municipality": "Istmina",
+      "athletes": 12,
+      "status": "En revisión",
+      "coach": "Ana Mosquera",
+      "category": "Saltos y campo"
+    },
+    {
+      "name": "Club Condoto Sport",
+      "municipality": "Condoto",
+      "athletes": 10,
+      "status": "Activo",
+      "coach": "Pedro Valencia",
+      "category": "Fondo / medio fondo"
+    },
+    {
+      "name": "Club Tadó Atlético",
+      "municipality": "Tadó",
+      "athletes": 8,
+      "status": "Activo",
+      "coach": "Luis Murillo",
+      "category": "Formación juvenil"
+    }
+  ]
+}

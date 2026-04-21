@@ -1,15 +1,9 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@astrojs/react';
 import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
+import tailwind from '@astrojs/tailwind';
 
-// https://astro.build/config
 export default defineConfig({
-  integrations: [react()],
-  vite: {
-    plugins: [tailwindcss()],
-  },
-  server: {
-    port: 3000,
-    host: true,
-  },
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
+  integrations: [tailwind({ applyBaseStyles: false })]
 });

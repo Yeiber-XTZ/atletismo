@@ -1,0 +1,391 @@
+---
+const { siteName = 'Liga Chocó', logoUrl = '/logo.png' } = Astro.props;
+
+const currentPath = Astro.url.pathname;
+const isActive = (href: string) => currentPath === href || (href !== '/' && currentPath.startsWith(href));
+
+const menu = [
+  { label: 'La Liga', href: '/la-liga' },
+  {
+    label: 'Deportivo',
+    items: [
+      { label: 'Convocatorias', href: '/convocatorias' },
+      { label: 'Competencias', href: '/competencias' },
+      { label: 'Calendario', href: '/calendario' },
+      { label: 'Resultados', href: '/resultados' },
+      { label: 'Ranking', href: '/ranking' }
+    ]
+  },
+  {
+    label: 'Comunidad',
+    items: [
+      { label: 'Noticias', href: '/noticias' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Documentos', href: '/documentos' }
+    ]
+  },
+  { label: 'Clubes', href: '/clubes' },
+  { label: 'Contacto', href: '/contacto' }
+] as const;
+---
+<nav class="nav-root" aria-label="Navegación principal">
+  <div class="nav-wrap">
+    <a href="/" class="nav-logo" aria-label={siteName}>
+      <img src={logoUrl} alt={siteName} class="nav-logo-img" />
+    </a>
+
+    <div class="nav-desktop" aria-label="Menú">
+      {menu.map((item) => {
+        if ('href' in item) {
+          const active = isActive(item.href);
+          return (
+            <a class:list={['nav-link', active ? 'is-active' : '']} href={item.href}>
+              {item.label}
+            </a>
+          );
+        }
+
+        const groupActive = item.items.some((x) => isActive(x.href));
+        return (
+          <details class:list={['nav-dd', groupActive ? 'is-active' : '']}>
+            <summary class="nav-dd-summary" aria-label={item.label}>
+              <span>{item.label}</span>
+              <span class="material-symbols-outlined nav-dd-caret" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="nav-dd-menu" role="menu">
+              {item.items.map((x) => (
+                <a class:list={['nav-dd-item', isActive(x.href) ? 'is-active' : '']} href={x.href} role="menuitem">
+                  {x.label}
+                </a>
+              ))}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+
+    <div class="nav-actions">
+      <a class="nav-login" href="/admin/login" aria-label="Iniciar sesión">
+        <span>Iniciar sesión</span>
+      </a>
+
+      <details class="nav-mobile">
+        <summary aria-label="Abrir menú" class="nav-mobile-toggle">
+          <span class="material-symbols-outlined">menu</span>
+        </summary>
+        <div class="nav-mobile-menu">
+          {menu.map((item) => {
+            if ('href' in item) {
+              return (
+                <a class:list={['nav-mobile-link', isActive(item.href) ? 'is-active' : '']} href={item.href}>
+                  {item.label}
+                </a>
+              );
+            }
+            return (
+              <div class="nav-mobile-group">
+                <div class="nav-mobile-group-title">{item.label}</div>
+                {item.items.map((x) => (
+                  <a class:list={['nav-mobile-link', isActive(x.href) ? 'is-active' : '']} href={x.href}>
+                    {x.label}
+                  </a>
+                ))}
+              </div>
+            );
+          })}
+          <a class="nav-mobile-cta" href="/admin/login">
+            Iniciar sesión
+          </a>
+        </div>
+      </details>
+    </div>
+  </div>
+</nav>
+
+<style>
+  .nav-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .nav-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 72px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .nav-logo-img {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .nav-desktop {
+    display: none;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-desktop {
+      display: flex;
+    }
+  }
+
+  .nav-link {
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 150ms ease;
+    white-space: nowrap;
+  }
+
+  .nav-link:hover {
+    color: #0f172a;
+    background: #f8fafc;
+  }
+
+  .nav-link.is-active {
+    color: #0f172a;
+    background: #f1f5f9;
+  }
+
+  .nav-dd {
+    position: relative;
+  }
+
+  .nav-dd-summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    padding: 10px 14px;
+    border-radius: 10px;
+    transition: all 150ms ease;
+    white-space: nowrap;
+  }
+
+  .nav-dd-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .nav-dd:hover > .nav-dd-summary,
+  .nav-dd[open] > .nav-dd-summary {
+    color: #0f172a;
+    background: #f8fafc;
+  }
+
+  .nav-dd.is-active > .nav-dd-summary {
+    color: #0f172a;
+    background: #f1f5f9;
+  }
+
+  .nav-dd-caret {
+    font-size: 16px;
+    opacity: 0.8;
+  }
+
+  .nav-dd-menu {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(100% + 10px);
+    min-width: 220px;
+    padding: 10px;
+    border-radius: 14px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    display: grid;
+    gap: 6px;
+  }
+
+  .nav-dd-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+    text-decoration: none;
+    transition: all 150ms ease;
+  }
+
+  .nav-dd-item:hover {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+
+  .nav-dd-item.is-active {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .nav-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 16px;
+    background: white;
+    color: #0b361d;
+    border: 1px solid rgba(90, 172, 50, 0.5);
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    transition: all 150ms ease;
+    white-space: nowrap;
+  }
+
+  .nav-login:hover {
+    background: #f0fdf4;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(90, 172, 50, 0.18);
+  }
+
+  .nav-mobile {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-mobile {
+      display: none;
+    }
+  }
+
+  .nav-mobile-toggle {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    color: #5AAC32;
+    background: #f8fafc;
+    transition: all 150ms ease;
+  }
+
+  .nav-mobile-toggle:hover {
+    background: #f1f5f9;
+  }
+
+  .nav-mobile-menu {
+    position: absolute;
+    right: 16px;
+    top: calc(100% + 10px);
+    width: min(320px, 90vw);
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .nav-mobile-link {
+    font-family: 'Lexend', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    text-decoration: none;
+    padding: 8px 10px;
+    border-radius: 10px;
+    transition: all 150ms ease;
+  }
+
+  .nav-mobile-link:hover {
+    color: #0f172a;
+    background: #f8fafc;
+  }
+
+  .nav-mobile-link.is-active {
+    color: #0f172a;
+    background: #f1f5f9;
+  }
+
+  .nav-mobile-group {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 10px;
+    margin-top: 4px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .nav-mobile-group-title {
+    font-family: 'Lexend', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    padding: 0 10px;
+  }
+
+  .nav-mobile-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: white;
+    border: 1px solid rgba(90, 172, 50, 0.5);
+    color: #0b361d;
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    margin-top: 4px;
+  }
+
+</style>

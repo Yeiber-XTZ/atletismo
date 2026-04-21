@@ -1,0 +1,738 @@
+/* Admin Panel - Diseño profesional blanco con acentos amarillo/verde (#5AAC32) */
+
+.admin-root {
+  --color-primary: #5AAC32;        /* Verde oficial Liga de Atletismo del Chocó */
+  --color-primary-dark: #4a9528;    /* Verde oscuro para hover */
+  --color-primary-light: #e8f5e0;   /* Verde claro para fondos */
+  --color-accent: #eab308;          /* Amarillo/Ámbar para acentos */
+  --color-accent-light: #fef9c3;    /* Amarillo claro para fondos */
+  
+  --color-surface: #ffffff;         /* Blanco puro */
+  --color-surface-hover: #f9fafb;   /* Gris muy claro para hover */
+  --color-surface-alt: #f8fafc;     /* Gris azulado muy claro */
+  
+  --color-border: #e2e8f0;          /* Bordes sutiles */
+  --color-border-light: #f1f5f9;    /* Bordes más claros */
+  
+  --color-text-primary: #0f172a;    /* Texto principal - casi negro */
+  --color-text-secondary: #64748b;  /* Texto secundario - gris medio */
+  --color-text-muted: #94a3b8;      /* Texto atenuado - gris claro */
+  
+  --color-success: #16a34a;
+  --color-success-bg: #dcfce7;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fef2f2;
+  --color-warning: #eab308;
+  --color-warning-bg: #fef9c3;
+
+  background: var(--color-surface-alt);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.admin-root ::selection {
+  background: rgba(22, 163, 74, 0.15);
+}
+
+/* === SIDEBAR === */
+.admin-root .sidebar {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+
+.admin-root .sidebar-logo-image {
+  filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.12));
+}
+
+.admin-root .sidebar-nav {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin-root .sidebar-nav::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.admin-root .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all 150ms ease;
+  text-decoration: none;
+}
+
+.admin-root .nav-item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.admin-root .nav-item.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.admin-root .nav-item .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* === HEADER === */
+.admin-root .admin-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(8px);
+}
+
+.admin-root .admin-header-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.admin-root .admin-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* === CONTENT AREA === */
+.admin-root .admin-content {
+  padding: 32px;
+}
+
+/* === CARDS === */
+.admin-root .admin-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 150ms ease;
+}
+
+.admin-root .admin-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.admin-root .admin-card-header {
+  padding: 24px 24px 0 24px;
+  margin-bottom: 20px;
+}
+
+.admin-root .admin-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.admin-root .admin-card-body {
+  padding: 0 24px 24px 24px;
+}
+
+/* === FORM ELEMENTS === */
+.admin-root .admin-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.admin-root .admin-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: all 150ms ease;
+  font-family: inherit;
+}
+
+.admin-root .admin-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.admin-root .admin-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.admin-root .admin-input:read-only {
+  background: var(--color-surface-alt);
+}
+
+.admin-root textarea.admin-input {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* === BUTTONS === */
+.admin-root .admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 150ms ease;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.admin-root .admin-btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.admin-root .admin-btn-primary:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+}
+
+.admin-root .admin-btn-primary:active {
+  transform: translateY(0);
+}
+
+.admin-root .admin-btn-secondary {
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.admin-root .admin-btn-secondary:hover {
+  background: var(--color-border-light);
+  color: var(--color-text-primary);
+}
+
+.admin-root .admin-btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.admin-root .admin-btn-danger:hover {
+  background: #b91c1c;
+}
+
+.admin-root .admin-btn-icon {
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+}
+
+.admin-root .admin-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* === ALERTS === */
+.admin-root .admin-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.admin-root .admin-alert-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+.admin-root .admin-alert-error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.admin-root .admin-alert .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* === TABLES === */
+.admin-root .admin-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.admin-root .admin-table {
+  width: 100%;
+  min-width: 700px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.admin-root .admin-table thead {
+  background: var(--color-surface-alt);
+}
+
+.admin-root .admin-table th {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-root .admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text-primary);
+}
+
+.admin-root .admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-root .admin-table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.admin-root .admin-table .athlete-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* === EVENT/DOCUMENT CARDS === */
+.admin-root .admin-form-row {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-surface-alt);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.admin-root .admin-list-item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  transition: border-color 150ms ease;
+}
+
+.admin-root .admin-list-item:hover {
+  border-color: var(--color-primary);
+}
+
+/* === FAB (Floating Action Button) === */
+.admin-root .admin-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: white;
+  box-shadow: 0 4px 16px rgba(234, 179, 8, 0.35);
+  transition: all 150ms ease;
+  text-decoration: none;
+}
+
+.admin-root .admin-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(234, 179, 8, 0.45);
+}
+
+.admin-root .admin-fab:active {
+  transform: scale(0.95);
+}
+
+.admin-root .admin-fab .material-symbols-outlined {
+  font-size: 24px;
+}
+
+/* === LOGIN PAGE - SPLIT DESIGN === */
+.login-split {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Lado izquierdo - Visual */
+.login-visual {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #5AAC32 0%, #4a9528 50%, #3d7a22 100%);
+}
+
+.login-visual-bg {
+  position: absolute;
+  inset: 0;
+  background: url('https://images.unsplash.com/photo-1532444458054-01a7dd3e9fca?w=1200&q=80') center/cover no-repeat;
+  opacity: 0.15;
+}
+
+.login-visual-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(90, 172, 50, 0.95) 0%, rgba(74, 149, 40, 0.9) 50%, rgba(61, 122, 34, 0.95) 100%);
+}
+
+.login-visual-content {
+  position: relative;
+  z-index: 10;
+  padding: 60px;
+  max-width: 560px;
+  color: white;
+}
+
+.login-visual-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.login-visual-badge .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.login-visual-title {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+
+.login-visual-text {
+  font-size: 16px;
+  line-height: 1.7;
+  opacity: 0.85;
+  margin-bottom: 48px;
+  max-width: 440px;
+}
+
+.login-visual-stats {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.login-visual-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.login-visual-stat-number {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.login-visual-stat-label {
+  font-size: 12px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.login-visual-stat-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Decoraciones */
+.login-visual-decoration {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.login-visual-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-visual-circle-1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+}
+
+.login-visual-circle-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -50px;
+  left: -50px;
+}
+
+.login-visual-circle-3 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 30%;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Lado derecho - Formulario */
+.login-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 40px;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 440px;
+}
+
+.login-form-header {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.login-logo-wrapper {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.login-logo-main {
+  width: 140px;
+  height: auto;
+  object-fit: contain;
+}
+
+.login-form-header-text {
+  text-align: center;
+}
+
+.login-form-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.login-form-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.login-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.login-form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-form-input-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 20px;
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color 150ms ease;
+}
+
+.login-form-input {
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  transition: all 150ms ease;
+}
+
+.login-form-input::placeholder {
+  color: #94a3b8;
+}
+
+.login-form-input:focus {
+  border-color: #5AAC32;
+  box-shadow: 0 0 0 4px rgba(90, 172, 50, 0.1);
+}
+
+.login-form-input:focus + .login-form-input-icon,
+.login-form-input:focus ~ .login-form-input-icon {
+  color: #5AAC32;
+}
+
+.login-form-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #5AAC32 0%, #4a9528 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: 0 4px 16px rgba(90, 172, 50, 0.25);
+  margin-top: 8px;
+}
+
+.login-form-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(90, 172, 50, 0.35);
+}
+
+.login-form-button:active {
+  transform: translateY(0);
+}
+
+.login-form-button .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.login-form-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 20px;
+}
+
+.login-form-error .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.login-form-footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.login-form-footer-text {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Responsive para login */
+@media (max-width: 1024px) {
+  .login-visual {
+    display: none;
+  }
+
+  .login-form-side {
+    flex: 1;
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-form-side {
+    padding: 24px 20px;
+  }
+
+  .login-form-title {
+    font-size: 28px;
+  }
+
+  .login-logo-main {
+    width: 100px;
+  }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .admin-root .admin-content {
+    padding: 20px 16px;
+  }
+  
+  .admin-root .admin-card-body {
+    padding: 0 16px 16px 16px;
+  }
+  
+  .admin-root .admin-header {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

@@ -1,0 +1,152 @@
+﻿---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings, hero, competencias, publicSite } = data;
+const pageHeroes = publicSite?.pageHeroes ?? {};
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim().toLowerCase();
+const statusParam = (Astro.url.searchParams.get('status') ?? '').trim();
+
+const allEvents = Array.isArray(competencias)
+  ? competencias.map((comp) => ({
+      name: comp.title,
+      location: comp.location,
+      category: comp.type ?? '',
+      status: comp.status,
+      date: comp.date,
+      imageUrl: comp.imageUrl || hero?.imageUrl || '/logo.png',
+      resultsUrl:
+        comp.downloads?.find((item) => String(item.label ?? '').trim().toLowerCase() === 'resultados')?.href ?? ''
+    }))
+  : [];
+
+const statusOptions = Array.from(new Set(allEvents.map((event) => event.status).filter(Boolean))).slice(0, 20);
+
+const filtered = allEvents
+  .filter((event) => (statusParam ? event.status === statusParam : true))
+  .filter((event) => {
+    if (!q) return true;
+    const haystack = `${event.name} ${event.location} ${event.category ?? ''}`.toLowerCase();
+    return haystack.includes(q);
+  })
+  .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+const heroImage =
+  pageHeroes.resultados ||
+  hero?.imageUrl ||
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAz-NN2FIFIIpBP5SpxqI-R6YdtCHDBdnCJYUxJbPT8dD0QBgyqfMy4kh3KchaxwnQpWSM5DYDMXHFCUT1do5p96hPV5SHQptIn7S_94nJVqMOzwNWeCWQp-M3geGGjSkxBbvrvPsdzgUzs1ttiSgw6nUMNBkUCpvwvtmYdvb69FZ9uZ3hwfw9gw99dZAS_U2_MZzQ5BAtAjXxKGZW3wNZC1bikHRATOGmCRM3m7Ria2mAwPDYXLbA6rFU7YNMxUJ78GoKvgCpRqgg7';
+---
+
+<BaseLayout title={`Resultados | ${settings.siteName}`} description="Consulta los resultados oficiales por evento de la Liga de Atletismo del Choco.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <div class="pt-[80px]">
+    <header class="relative w-full h-[420px] overflow-hidden kinetic-slant bg-[#001205]">
+      <img class="absolute inset-0 w-full h-full object-cover opacity-60" src={heroImage} alt="Resultados por evento" referrerpolicy="no-referrer" />
+      <div class="absolute inset-0 bg-gradient-to-t from-[#001205] via-transparent to-transparent"></div>
+      <div class="relative max-w-7xl mx-auto px-6 h-full flex flex-col justify-center">
+        <span class="text-[#fdd835] font-headline font-black uppercase tracking-[0.3em] mb-4">Resultados Oficiales</span>
+        <h1 class="text-white font-headline text-5xl md:text-7xl font-black italic tracking-tighter leading-tight">
+          RESULTADOS <span class="text-[#9bfc96]">POR EVENTO</span>
+        </h1>
+        <p class="mt-4 text-[#acecbb] max-w-2xl">Los resultados se publican por enlace en cada evento oficial.</p>
+      </div>
+    </header>
+
+    <section class="max-w-7xl mx-auto px-6 -mt-12 relative z-10">
+      <div class="bg-white p-6 rounded-xl shadow-[0_20px_40px_rgba(11,54,29,0.08)] ring-1 ring-slate-100">
+        <form class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" method="GET" action="/resultados">
+          <div class="md:col-span-2 relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">search</span>
+            <input
+              class="w-full pl-12 pr-4 py-3 bg-[#cafdd4] border-none rounded-lg font-body font-semibold text-[#0b361d] focus:ring-2 focus:ring-[#006b1b] outline-none"
+              placeholder="Buscar evento, sede o categoria..."
+              type="text"
+              name="q"
+              value={Astro.url.searchParams.get('q') ?? ''}
+            />
+          </div>
+          <div>
+            <label class="block text-[0.6875rem] font-headline font-black text-[#4252b4] uppercase mb-2 tracking-widest">Estado</label>
+            <div class="relative">
+              <select class="w-full px-4 py-3 bg-[#cafdd4] border-none rounded-lg font-body font-semibold appearance-none cursor-pointer outline-none" name="status">
+                <option value="" selected={!statusParam}>Todos</option>
+                {statusOptions.map((status) => (
+                  <option value={status} selected={status === statusParam}>{status}</option>
+                ))}
+              </select>
+              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">expand_more</span>
+            </div>
+          </div>
+          <button class="bg-[#fdd835] text-[#5b4b00] py-3 rounded-lg font-headline font-black flex items-center justify-center gap-2 hover:bg-[#6c5a00] hover:text-white transition-colors" type="submit">
+            <span class="material-symbols-outlined">tune</span>
+            FILTRAR
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-6 py-16">
+      <div class="flex justify-between items-end mb-8">
+        <h2 class="font-headline text-3xl font-black italic text-[#006b1b] uppercase leading-none">Eventos con resultados</h2>
+        <span class="text-sm font-semibold text-slate-500">{filtered.length} evento(s)</span>
+      </div>
+
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((event) => (
+          <article class="overflow-hidden rounded-2xl border border-[#d8e7dd] bg-white shadow-[0_12px_30px_rgba(11,54,29,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(11,54,29,0.14)]">
+            <img
+              src={event.imageUrl}
+              alt={event.name}
+              class="h-44 w-full object-cover"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+            <div class="p-5">
+              {event.resultsUrl ? (
+                <a
+                  class="font-headline text-xl font-black italic text-[#0b361d] hover:text-[#006b1b] underline decoration-transparent hover:decoration-[#006b1b] leading-tight"
+                  href={event.resultsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {event.name}
+                </a>
+              ) : (
+                <h3 class="font-headline text-xl font-black italic text-[#0b361d] leading-tight">{event.name}</h3>
+              )}
+              <p class="text-sm text-slate-500 mt-2">{event.location} · {event.date}</p>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full bg-[#ecf8ef] px-3 py-1 text-xs font-semibold text-[#006b1b]">{event.status}</span>
+                <span class="inline-flex items-center rounded-full bg-[#eef2ff] px-3 py-1 text-xs font-semibold text-[#4252b4]">{event.category || 'General'}</span>
+              </div>
+              <div class="mt-5">
+              {event.resultsUrl ? (
+                <a class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#006b1b] px-4 py-2 text-sm font-headline font-black uppercase text-white hover:bg-[#0b361d]" href={event.resultsUrl} target="_blank" rel="noopener noreferrer">
+                  Ver resultados
+                </a>
+              ) : (
+                <span class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">
+                  Pendiente
+                </span>
+              )}
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+      {filtered.length === 0 ? (
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-8 text-sm text-gray-500 mt-4">
+            No hay eventos que coincidan con el filtro.
+          </div>
+        ) : null}
+    </section>
+  </div>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+

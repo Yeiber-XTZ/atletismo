@@ -1,0 +1,51 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+@theme {
+  --font-headline: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: #ddffe2;
+  --color-surface-container-low: #cafdd4;
+  --color-surface-container-highest: #acecbb;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-bright: #f0fff4;
+  
+  --color-primary: #006b1b;
+  --color-primary-fixed: #9bfc96;
+  --color-on-primary: #d1ffc8;
+  --color-on-primary-fixed: #004d11;
+  
+  --color-secondary: #6c5a00;
+  --color-secondary-container: #fdd835;
+  --color-on-secondary: #fff2cd;
+  --color-on-secondary-container: #5b4b00;
+  --color-secondary-fixed: #fdd835;
+  
+  --color-tertiary: #4252b4;
+  --color-tertiary-container: #9fabff;
+  
+  --color-on-background: #0b361d;
+  --color-on-surface-variant: #3b6447;
+  --color-outline: #568061;
+  --color-outline-variant: #8bb795;
+  --color-inverse-surface: #001205;
+}
+
+@layer base {
+  body {
+    @apply font-body bg-surface text-on-background antialiased;
+  }
+}
+
+@layer utilities {
+  .kinetic-slant {
+    clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 92%);
+  }
+  .kinetic-slant-reverse {
+    clip-path: polygon(0 8%, 100% 0%, 100% 100%, 0 100%);
+  }
+  .slant-right {
+    clip-path: polygon(0 0, 95% 0, 100% 100%, 0% 100%);
+  }
+}

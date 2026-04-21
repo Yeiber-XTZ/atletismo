@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import FooterKinetic from '../components/FooterKinetic.astro';
+import { getHomeData } from '../lib/content';
+
+const data = await getHomeData();
+const { settings } = data;
+
+const error = Astro.url.searchParams.get('error');
+const next = Astro.url.searchParams.get('next') ?? '';
+---
+
+<BaseLayout title="Iniciar sesión | Liga de Atletismo del Chocó" description="Acceso a paneles privados por rol.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px] bg-surface">
+    <section class="container mx-auto px-6 py-16 md:py-20">
+      <div class="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+        <div class="lg:col-span-6 rounded-2xl bg-inverse-surface kinetic-slant p-10 text-on-primary relative overflow-hidden">
+          <div class="absolute inset-0 opacity-25">
+            <div class="flex -mt-40 rotate-12 gap-4">
+              <div class="h-[900px] w-16 bg-secondary-container"></div>
+              <div class="h-[900px] w-16 bg-secondary-container"></div>
+              <div class="h-[900px] w-16 bg-secondary-container"></div>
+            </div>
+          </div>
+          <div class="relative z-10">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-widest">
+              <span class="material-symbols-outlined text-sm">shield</span>
+              Acceso por roles
+            </div>
+            <h1 class="mt-6 font-headline text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-[0.95]">
+              Paneles privados<br />
+              <span class="text-primary-container">para la Liga</span>
+            </h1>
+            <p class="mt-5 text-on-primary/80 text-lg leading-relaxed max-w-md">
+              Inicia sesión con tu cuenta para gestionar clubes, resultados, calendario, o consultar documentación privada según tu rol.
+            </p>
+            <div class="mt-10 grid grid-cols-2 gap-4 text-xs">
+              <div class="rounded-xl bg-white/10 p-4">
+                <div class="font-black uppercase tracking-widest text-secondary-container">CLUB</div>
+                <div class="mt-1 text-on-primary/80">Perfil e inscripciones</div>
+              </div>
+              <div class="rounded-xl bg-white/10 p-4">
+                <div class="font-black uppercase tracking-widest text-secondary-container">LIGA</div>
+                <div class="mt-1 text-on-primary/80">Validación y gestión</div>
+              </div>
+              <div class="rounded-xl bg-white/10 p-4">
+                <div class="font-black uppercase tracking-widest text-secondary-container">ASAMBLEÍSTA</div>
+                <div class="mt-1 text-on-primary/80">Lectura privada</div>
+              </div>
+              <div class="rounded-xl bg-white/10 p-4">
+                <div class="font-black uppercase tracking-widest text-secondary-container">ADMIN</div>
+                <div class="mt-1 text-on-primary/80">Control total</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 rounded-2xl border border-[var(--border)] bg-white p-10 shadow-[0_24px_60px_rgba(11,54,29,0.08)]">
+          <div class="flex items-center gap-4">
+            <div class="h-14 w-14 rounded-2xl bg-surface-container-low flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">login</span>
+            </div>
+            <div>
+              <h2 class="font-headline text-2xl font-black uppercase tracking-tight text-on-surface">Iniciar sesión</h2>
+              <p class="text-on-surface-variant">Accede con tu correo y contraseña.</p>
+            </div>
+          </div>
+
+          <form method="POST" action="/api/login" class="mt-10 space-y-6">
+            <input type="hidden" name="next" value={next} />
+            <div class="space-y-2">
+              <label class="form-label" for="email">Correo</label>
+              <input id="email" class="form-input" name="email" type="email" autocomplete="email" required placeholder="tu@correo.com" />
+            </div>
+            <div class="space-y-2">
+              <label class="form-label" for="password">Contraseña</label>
+              <input id="password" class="form-input" name="password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+            </div>
+
+            {error === 'invalid' ? (
+              <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                Credenciales inválidas. Verifica e intenta de nuevo.
+              </div>
+            ) : null}
+            {error === 'db' ? (
+              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                La base de datos no está disponible. Inicia PostgreSQL/Docker y vuelve a intentar.
+              </div>
+            ) : null}
+
+            <button type="submit" class="btn-primary btn-slant w-full justify-center">
+              <span class="material-symbols-outlined">arrow_forward</span>
+              Entrar
+            </button>
+
+            <p class="text-xs text-on-surface-variant">
+              Si no tienes cuenta, usa <a class="text-primary font-bold hover:underline" href="/registro">Registro</a>.
+            </p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

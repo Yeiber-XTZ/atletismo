@@ -1,0 +1,55 @@
+---
+import { hasRole, type AuthUser } from '../lib/rbac';
+
+const {
+  titleHtml = 'Tu Legado Empieza <br /> <span class="text-[#fdd835]">En La Pista</span>',
+  subtitle = '',
+  primaryLabel = 'Afíliate Hoy',
+  primaryHref = '/registro',
+  secondaryLabel = 'Ver Convocatorias',
+  secondaryHref = '/convocatorias',
+  footnote = ''
+} = Astro.props;
+const user = Astro.locals.user as AuthUser | null;
+const canSeeConvocatoria = hasRole(user, ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB']);
+const shouldRenderSecondary = !secondaryHref.startsWith('/convocatorias') || canSeeConvocatoria;
+---
+<section class="kinetic-slant-reverse relative mt-16 overflow-hidden py-24">
+  <div class="absolute inset-0 bg-[#006b1b]">
+    <div class="absolute inset-0 overflow-hidden opacity-20">
+      <div class="flex -mt-40 rotate-12 gap-4">
+        <div class="h-[1000px] w-20 bg-[#fdd835]"></div>
+        <div class="h-[1000px] w-20 bg-[#fdd835]"></div>
+        <div class="h-[1000px] w-20 bg-[#fdd835]"></div>
+      </div>
+    </div>
+  </div>
+  <div class="relative z-10 flex flex-col items-center justify-between gap-10 px-5 md:flex-row md:px-10 lg:px-16">
+    <div class="max-w-2xl">
+      <h2
+        class="font-headline text-4xl font-black uppercase tracking-tight leading-[0.98] text-[#d1ffc8] md:text-6xl"
+        set:html={titleHtml}
+      />
+      <p class="mt-6 text-xl font-medium text-[#9bfc96]">{subtitle}</p>
+    </div>
+    <div class="flex w-full flex-col gap-4 md:w-auto">
+      <a
+        class="rounded-[10px] bg-white px-10 py-4 font-headline text-lg font-black uppercase tracking-tight text-[#006b1b] transition-colors hover:bg-[#fdd835] hover:text-[#5b4b00]"
+        style="clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);"
+        href={primaryHref}
+      >
+        {primaryLabel}
+      </a>
+      {shouldRenderSecondary ? (
+        <a
+          class="rounded-[10px] bg-[#001205]/20 px-10 py-4 text-center font-headline text-lg font-black uppercase tracking-tight text-[#d1ffc8] ring-1 ring-[#d1ffc8]/40 transition-colors hover:bg-[#001205]/30"
+          style="clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);"
+          href={secondaryHref}
+        >
+          {secondaryLabel}
+        </a>
+      ) : null}
+      <p class="text-center text-sm italic text-[#d1ffc8] opacity-80 md:text-left">{footnote}</p>
+    </div>
+  </div>
+</section>

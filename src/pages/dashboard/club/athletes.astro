@@ -1,0 +1,120 @@
+﻿---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Navbar from "../../../components/Navbar.astro";
+import FooterKinetic from "../../../components/FooterKinetic.astro";
+import { getHomeData } from "../../../lib/content";
+import { getClubById, getClubByOwnerUserId } from "../../../lib/clubs";
+import { getDb } from "../../../lib/db";
+
+const data = await getHomeData();
+const { settings } = data;
+const user = Astro.locals.user;
+
+let club = null;
+if (user?.clubId) {
+  club = await getClubById(Number(user.clubId));
+}
+if (!club && user?.id) {
+  club = await getClubByOwnerUserId(Number(user.id));
+}
+
+const clubId = club?.id ?? (user?.clubId ? Number(user.clubId) : 0);
+
+// Get club athletes
+let clubAthletes = [];
+if (clubId && club) {
+  try {
+    const db = await getDb();
+    if (db) {
+      const result = await db.query(
+        `SELECT a.id, a.first_name || ' ' || a.last_name as name, a.document, a.gender, a.birthdate, a.municipality, a.email, a.coach, a.status, a.created_at, COUNT(DISTINCT ad.id) as disciplines_count
+         FROM athletes a
+         LEFT JOIN athlete_disciplines ad ON a.id = ad.athlete_id
+         LEFT JOIN club_athletes ca ON a.id = ca.athlete_id
+         WHERE a.club = $1 OR ca.club_id = $2
+         GROUP BY a.id ORDER BY a.created_at DESC`,
+        [club.name, clubId]
+      );
+      clubAthletes = result.rows;
+    }
+  } catch (err) {
+    console.error("Error fetching club athletes:", err);
+  }
+}
+
+function calculateAge(birthdate) {
+  if (!birthdate) return "-";
+  const birth = new Date(birthdate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+---
+
+<BaseLayout title="Atletas del Club" description="Visualiza los atletas registrados en tu club.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || "/logo.png"} />
+  <main class="pt-[74px] bg-surface">
+    <section class="container mx-auto px-6 py-12">
+      <header class="rounded-2xl border border-[var(--border)] bg-white p-6 md:p-8 mb-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 class="font-headline text-3xl md:text-4xl font-black text-on-surface">
+              Atletas Registrados
+            </h1>
+            <p class="mt-2 text-on-surface-variant">
+              {club?.name ? `Club: ${club.name}` : "Visualiza todos los atletas de tu club"}
+            </p>
+          </div>
+          <a href="/dashboard/club" class="btn-secondary">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Volver
+          </a>
+        </div>
+      </header>
+
+      {clubAthletes.length === 0 ? (
+        <article class="rounded-2xl border border-[var(--border)] bg-white p-8 text-center">
+          <h2 class="font-semibold text-on-surface mb-2">No hay atletas registrados aún</h2>
+          <p class="text-on-surface-variant">Los atletas que se registren aparecerán aquí.</p>
+        </article>
+      ) : (
+        <div class="rounded-2xl border border-[var(--border)] bg-white overflow-hidden">
+          <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-surface-container-low border-b border-[var(--border)]">
+                <tr>
+                  <th class="px-4 py-3 text-left font-semibold">Atleta</th>
+                  <th class="px-4 py-3 text-left font-semibold">Documento</th>
+                  <th class="px-4 py-3 text-left font-semibold">Sexo</th>
+                  <th class="px-4 py-3 text-left font-semibold">Edad</th>
+                  <th class="px-4 py-3 text-left font-semibold">Pruebas</th>
+                  <th class="px-4 py-3 text-left font-semibold">Municipio</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)]">
+                {clubAthletes.map((athlete) => (
+                  <tr class="hover:bg-surface-container-low">
+                    <td class="px-4 py-3 font-medium text-on-surface">{athlete.name}</td>
+                    <td class="px-4 py-3"><code class="bg-surface-container-low px-2 py-1 rounded">{athlete.document}</code></td>
+                    <td class="px-4 py-3">{athlete.gender === "M" ? "Masculino" : athlete.gender === "F" ? "Femenino" : "Otro"}</td>
+                    <td class="px-4 py-3">{calculateAge(athlete.birthdate)}</td>
+                    <td class="px-4 py-3"><span class="bg-primary-container text-primary px-2 py-1 rounded text-sm font-semibold">{athlete.disciplines_count}</span></td>
+                    <td class="px-4 py-3 text-on-surface-variant">{athlete.municipality}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div class="border-t border-[var(--border)] bg-surface-container-low px-6 py-3">
+            <p class="text-sm text-on-surface-variant">Total: {clubAthletes.length} atletas</p>
+          </div>
+        </div>
+      )}
+    </section>
+  </main>
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

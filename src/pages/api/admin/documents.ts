@@ -1,0 +1,93 @@
+import type { APIRoute } from 'astro';
+import { createDocument, deleteDocument, updateDocument } from '../../../lib/admin';
+import { requirePermissionOrRedirect } from '../../../lib/access';
+import { createApprovalRequest } from '../../../lib/approvals';
+import { logAudit } from '../../../lib/audit';
+import { saveFileUpload } from '../../../lib/file-upload';
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'documents:manage', { loginPath: '/admin/login' });
+  if ('response' in auth) return auth.response;
+
+  const form = await request.formData();
+  const intentValues = form.getAll('intent').map((value) => String(value));
+  const intent = String(intentValues[intentValues.length - 1] ?? '');
+  const id = Number(form.get('id') ?? 0);
+
+  const title = String(form.get('title') ?? '');
+  const description = String(form.get('description') ?? '');
+  const category = String(form.get('category') ?? '');
+  const date = String(form.get('date') ?? '');
+  const existingHref = String(form.get('existingHref') ?? '').trim();
+  const docFile = form.get('file');
+  const isPrivate = String(form.get('isPrivate') ?? '') === '1';
+
+  const uploadedHref =
+    docFile instanceof File && docFile.size > 0
+      ? await saveFileUpload(docFile, Number(auth.user.id) || null, { isPrivate })
+      : undefined;
+  const href = uploadedHref ?? existingHref;
+  const isSensitive = String(form.get('isSensitive') ?? '') === '1';
+
+  if (intent === 'delete') {
+    await deleteDocument(id);
+    await logAudit({
+      userId: Number(auth.user.id) || null,
+      action: 'document_delete',
+      entityType: 'documents',
+      entityId: String(id),
+      request
+    });
+    return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+  }
+
+  const needsApproval = auth.user.role === 'LIGA' && isSensitive;
+
+  if (needsApproval) {
+    await createApprovalRequest({
+      module: 'documents',
+      action: intent || 'create',
+      entityId: id ? String(id) : '',
+      requestedBy: Number(auth.user.id) || null,
+      payload: { id, title, description, category, date, href, intent }
+    });
+    await logAudit({
+      userId: Number(auth.user.id) || null,
+      action: 'approval_requested',
+      entityType: 'documents',
+      entityId: id ? String(id) : '',
+      meta: { intent, category, sensitive: true },
+      request
+    });
+    return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+  }
+
+  if (intent === 'update') {
+    if (!href) {
+      return Response.redirect(new URL('/admin?tab=documents&error=missing_file', request.url), 302);
+    }
+    await updateDocument(id, { title, description, category, date, href });
+    await logAudit({
+      userId: Number(auth.user.id) || null,
+      action: 'document_update',
+      entityType: 'documents',
+      entityId: String(id),
+      request
+    });
+    return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+  }
+
+  if (!href) {
+    return Response.redirect(new URL('/admin?tab=documents&error=missing_file', request.url), 302);
+  }
+
+  await createDocument({ title, description, category, date, href });
+  await logAudit({
+    userId: Number(auth.user.id) || null,
+    action: 'document_create',
+    entityType: 'documents',
+    meta: { title, category },
+    request
+  });
+  return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+};

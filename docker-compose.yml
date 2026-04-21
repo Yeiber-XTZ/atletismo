@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: atlestismo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlestismo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlestismo}
+      POSTGRES_DB: ${POSTGRES_DB:-atlestismo}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - atlestismo_pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/schema.sql:ro
+
+  adminer:
+    image: adminer:4
+    container_name: atlestismo-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    depends_on:
+      - db
+
+volumes:
+  atlestismo_pgdata:
+

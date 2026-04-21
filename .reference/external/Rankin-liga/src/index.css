@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-on-tertiary-container: #0e2288;
+  --color-surface-dim: #a0e4b1;
+  --color-primary-fixed-dim: #8ded89;
+  --color-outline: #568061;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface: #0b361d;
+  --color-on-primary-fixed: #004d11;
+  --color-on-tertiary-fixed: #000c54;
+  --color-on-primary-fixed-variant: #006d1c;
+  --color-surface: #ddffe2;
+  --color-on-surface-variant: #3b6447;
+  --color-on-secondary: #fff2cd;
+  --color-inverse-on-surface: #7ca785;
+  --color-background: #ddffe2;
+  --color-error-dim: #b92902;
+  --color-tertiary-container: #9fabff;
+  --color-inverse-surface: #001205;
+  --color-surface-container: #bef5ca;
+  --color-error: #b02500;
+  --color-on-secondary-fixed-variant: #665500;
+  --color-primary: #006b1b;
+  --color-on-secondary-fixed: #453900;
+  --color-surface-container-low: #cafdd4;
+  --color-error-container: #f95630;
+  --color-outline-variant: #8bb795;
+  --color-on-primary: #d1ffc8;
+  --color-secondary-fixed: #fdd835;
+  --color-tertiary: #4252b4;
+  --color-on-background: #0b361d;
+  --color-surface-variant: #acecbb;
+  --color-on-tertiary: #f3f1ff;
+  --color-surface-container-highest: #acecbb;
+  --color-primary-fixed: #9bfc96;
+  --color-surface-container-high: #b5f0c2;
+  --color-on-tertiary-fixed-variant: #1b2d90;
+  --color-on-error: #ffefec;
+  --color-on-error-container: #520c00;
+  --color-secondary: #6c5a00;
+  --color-on-secondary-container: #5b4b00;
+  --color-surface-bright: #ddffe2;
+  --color-secondary-dim: #5f4e00;
+  --color-tertiary-dim: #3646a8;
+  --color-secondary-container: #fdd835;
+  --color-inverse-primary: #9bfc96;
+  --color-primary-dim: #005d16;
+  --color-secondary-fixed-dim: #eeca24;
+  --color-tertiary-fixed-dim: #8d9cff;
+  --color-on-primary-container: #006218;
+  --color-tertiary-fixed: #9fabff;
+  --color-primary-container: #9bfc96;
+  --color-surface-tint: #006b1b;
+}
+
+@layer base {
+  body {
+    @apply bg-surface-container-lowest text-on-surface font-body;
+  }
+}
+
+.slant-edge {
+  clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
+}
+
+.kinetic-bg {
+  background-image: linear-gradient(15deg, #006b1b 0%, #9bfc96 100%);
+}
+
+.glass-nav {
+  background-color: rgba(221, 255, 226, 0.8);
+  backdrop-filter: blur(24px);
+}

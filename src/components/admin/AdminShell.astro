@@ -1,0 +1,44 @@
+---
+import '../../styles/admin.css';
+
+const { title = 'Admin', logoUrl = '/logo.png', siteName = 'Liga de Atletismo' } = Astro.props;
+---
+<div class="admin-root flex min-h-screen">
+  <!-- Sidebar -->
+  <aside class="sidebar fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col py-6 md:flex">
+    <div class="mb-6 px-5">
+      <div class="flex items-center justify-center">
+        <img src={logoUrl} alt={siteName} class="sidebar-logo-image h-20 w-20 object-contain" />
+      </div>
+    </div>
+
+    <nav class="sidebar-nav flex-1 space-y-1 overflow-y-auto px-3">
+      <slot name="nav" />
+    </nav>
+
+    <div class="mt-auto border-t border-gray-100 pt-4 px-5">
+      <a href="/" target="_blank" class="flex items-center gap-3 py-2 text-sm text-gray-400 transition-colors hover:text-green-600">
+        <span class="material-symbols-outlined text-lg">open_in_new</span>
+        <span class="font-medium">Ver sitio</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 md:ml-64">
+    <slot name="header" />
+    <div class="admin-content">
+      <slot />
+    </div>
+    <slot name="footer" />
+  </main>
+
+  <!-- Contextual FAB -->
+  <a
+    href="/admin"
+    class="admin-fab"
+    aria-label="Acciones rápidas"
+  >
+    <span class="material-symbols-outlined">bolt</span>
+  </a>
+</div>

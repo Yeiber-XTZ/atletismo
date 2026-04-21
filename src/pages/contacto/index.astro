@@ -1,0 +1,281 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+import { getDatabaseUrl } from '../../lib/env';
+import { getPqrsByRadicado } from '../../lib/pqrs';
+
+const data = await getHomeData();
+const { settings } = data;
+
+const radicado = Astro.url.searchParams.get('radicado');
+const error = Astro.url.searchParams.get('error');
+const hasDatabase = Boolean(getDatabaseUrl());
+const pqrs = radicado && hasDatabase ? await getPqrsByRadicado(radicado).catch(() => null) : null;
+const statusLabel: Record<string, string> = {
+  PENDIENTE: 'Pendiente',
+  'EN TRAMITE': 'En tramite',
+  RESUELTO: 'Resuelto'
+};
+---
+
+<BaseLayout
+  title="Contacto | Liga de Atletismo del Chocó"
+  description="Contacta a la Liga de Atletismo del Chocó. Canales de atención, PQRS y formulario de contacto."
+>
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px]">
+    <section class="bg-surface">
+      <div class="container mx-auto px-6 py-16 md:py-20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+          <div class="lg:col-span-8">
+            <span class="text-secondary font-black tracking-widest text-xs md:text-sm mb-4 block uppercase">
+              Contacto Directo
+            </span>
+            <h1
+              class="font-headline font-black text-5xl md:text-7xl lg:text-8xl leading-[0.9] text-primary italic uppercase -ml-1"
+            >
+              Conecta con el<br />
+              <span class="text-on-surface-variant">Movimiento</span>
+            </h1>
+          </div>
+          <div class="lg:col-span-4 pb-4">
+            <p class="text-lg text-on-surface-variant max-w-sm border-l-4 border-secondary-container pl-6">
+              Llevamos el atletismo del Chocó al siguiente nivel. Escríbenos para patrocinios, inscripciones o prensa.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="h-8 md:h-10 bg-inverse-surface kinetic-slant"></div>
+    </section>
+
+    <section class="bg-white">
+      <div class="container mx-auto px-6 py-16 md:py-20">
+        {radicado ? (
+          <div class="mb-10 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
+            <div class="flex items-start gap-4">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8f5e0] text-[#006b1b]">
+                <span class="material-symbols-outlined">check_circle</span>
+              </div>
+              <div>
+                <h2 class="font-headline font-extrabold text-xl tracking-tight text-on-surface">PQRS registrada</h2>
+                <p class="text-on-surface-variant">
+                  Radicado: <strong class="text-on-surface">{radicado}</strong>
+                </p>
+                {pqrs ? (
+                  <p class="mt-1 text-sm text-on-surface-variant">
+                    Estado actual: <strong class="text-on-surface">{statusLabel[pqrs.status] || pqrs.status}</strong>
+                  </p>
+                ) : null}
+                <p class="mt-2 text-sm text-on-surface-variant">Guárdalo para seguimiento.</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {error ? (
+          <div class="mb-10 rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+            No se pudo enviar tu solicitud. Verifica los campos e intenta de nuevo.
+          </div>
+        ) : null}
+
+        <div class="mb-10 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
+          <h2 class="font-headline font-extrabold text-xl tracking-tight text-on-surface mb-3">Consultar estado de radicado</h2>
+          <form method="GET" action="/contacto" class="flex flex-wrap items-center gap-3">
+            <input
+              class="min-w-[280px] flex-1 bg-surface-container-low border-none p-4 text-on-surface focus:ring-2 focus:ring-primary transition-all outline-none"
+              type="text"
+              name="radicado"
+              placeholder="Ej: PQRS-20260415-ABC123"
+              value={radicado ?? ''}
+              required
+            />
+            <button class="bg-primary text-on-primary px-6 py-4 font-headline font-black uppercase tracking-tight" type="submit">
+              Consultar
+            </button>
+          </form>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div class="lg:col-span-5 grid grid-cols-1 md:grid-cols-2 gap-6 content-start">
+            <a
+              class="bg-surface-container-low p-8 flex flex-col gap-4 group hover:bg-surface transition-colors duration-300"
+              href={`mailto:${settings.contactEmail || 'contacto@liga-atletismo.com'}`}
+            >
+              <div class="w-12 h-12 bg-primary flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined text-[22px]">mail</span>
+              </div>
+              <div>
+                <h3 class="font-headline font-bold text-primary uppercase text-xs tracking-widest mb-1">Escríbenos</h3>
+                <p class="text-xl font-medium font-headline lowercase text-on-surface">
+                  {settings.contactEmail || 'contacto@liga-atletismo.com'}
+                </p>
+              </div>
+            </a>
+
+            <a
+              class="bg-surface-container-low p-8 flex flex-col gap-4 group hover:bg-surface transition-colors duration-300"
+              href={
+                settings.contactPhone
+                  ? `tel:${String(settings.contactPhone).replace(/\\s+/g, '')}`
+                  : 'tel:+573000000000'
+              }
+            >
+              <div class="w-12 h-12 bg-secondary-container flex items-center justify-center text-on-secondary-container">
+                <span class="material-symbols-outlined text-[22px]">call</span>
+              </div>
+              <div>
+                <h3 class="font-headline font-bold text-secondary uppercase text-xs tracking-widest mb-1">Llámanos</h3>
+                <p class="text-xl font-medium font-headline text-on-surface">
+                  {settings.contactPhone || '+57 300 000 0000'}
+                </p>
+              </div>
+            </a>
+
+            <div
+              class="md:col-span-2 bg-surface-container-lowest p-8 flex flex-col gap-4 border-t-8 border-primary-container shadow-[0_20px_40px_rgba(11,54,29,0.04)]"
+            >
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="font-headline font-bold text-primary uppercase text-xs tracking-widest mb-1">Nuestra Sede</h3>
+                  <p class="text-2xl font-headline font-bold leading-tight text-on-surface">Quibdó, Chocó<br />Colombia</p>
+                </div>
+                <span class="material-symbols-outlined text-[36px] text-on-surface-variant">location_on</span>
+              </div>
+            </div>
+
+            <div class="md:col-span-2 h-64 relative overflow-hidden bg-surface-container-highest group">
+              <div class="absolute inset-0 grayscale group-hover:grayscale-0 transition-all duration-700">
+                <img
+                  class="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAuSpzQmbMhhg7f_21CJ9ahXoY0P2f-5yXrEiBJeBs7UdUPDlnhIoUAoRQiC0hAb0OZxjmMHVRVIDhx_huu0TMfsNNBt1qtoN8eQUQkjPpGbaY5HSFDSSKtKXEt96gYPPlKHPXZA-dsnA5yIB9WXDtdxvJRe-Q6ONMNZNSAXpI_mvB2-permT65VUIk0NErK3cIxVvgvbqBGONen__h2DA0zeMTWXVZLgHtD3hPYpR2kYbGudPXbcY9-UlRFuP6yIYZIa6nyiACa_8"
+                  alt="Centro de entrenamiento"
+                  referrerpolicy="no-referrer"
+                  loading="lazy"
+                />
+              </div>
+              <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 text-[10px] font-black uppercase tracking-tighter text-primary">
+                Centro de entrenamiento
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 bg-white p-1 md:p-12 relative border border-[var(--border)]">
+            <div class="absolute -top-6 -right-6 w-32 h-32 bg-secondary-container/20 -z-10"></div>
+
+            <form class="space-y-10" action="/api/contacto" method="POST">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="relative group">
+                  <label
+                    class="absolute -top-3 left-4 bg-white px-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-focus-within:text-primary transition-colors"
+                    for="contact-name"
+                  >
+                    Nombre Completo
+                  </label>
+                  <input
+                    id="contact-name"
+                    name="name"
+                    class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none"
+                    placeholder="Tu nombre aquí"
+                    type="text"
+                    required
+                  />
+                </div>
+
+                <div class="relative group">
+                  <label
+                    class="absolute -top-3 left-4 bg-white px-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-focus-within:text-primary transition-colors"
+                    for="contact-email"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="contact-email"
+                    name="email"
+                    class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none"
+                    placeholder="email@ejemplo.com"
+                    type="email"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="relative group">
+                <label
+                  class="absolute -top-3 left-4 bg-white px-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-focus-within:text-primary transition-colors"
+                  for="contact-type"
+                >
+                  Tipo de solicitud
+                </label>
+                <select
+                  id="contact-type"
+                  name="type"
+                  class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none appearance-none font-black tracking-tight"
+                  required
+                >
+                  <option value="">Selecciona una opción</option>
+                  <option value="peticion">Petición</option>
+                  <option value="queja">Queja</option>
+                  <option value="reclamo">Reclamo</option>
+                  <option value="sugerencia">Sugerencia</option>
+                  <option value="info">Solicitud de información</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              <div class="relative group">
+                <label
+                  class="absolute -top-3 left-4 bg-white px-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-focus-within:text-primary transition-colors"
+                  for="contact-subject"
+                >
+                  Asunto
+                </label>
+                <input
+                  id="contact-subject"
+                  name="subject"
+                  class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none"
+                  placeholder="Asunto de tu mensaje"
+                  type="text"
+                  required
+                />
+              </div>
+
+              <div class="relative group">
+                <label
+                  class="absolute -top-3 left-4 bg-white px-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-focus-within:text-primary transition-colors"
+                  for="contact-message"
+                >
+                  Mensaje
+                </label>
+                <textarea
+                  id="contact-message"
+                  name="message"
+                  class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none resize-none"
+                  placeholder="Cuéntanos cómo podemos ayudarte..."
+                  rows="6"
+                  required
+                ></textarea>
+              </div>
+
+              <div class="flex items-center justify-end">
+                <button
+                  class="bg-primary text-on-primary px-12 py-5 btn-slant-right flex items-center gap-4 group hover:bg-[#005d16] transition-all shadow-xl shadow-[rgba(0,107,27,0.20)]"
+                  type="submit"
+                >
+                  <span class="font-headline font-black uppercase tracking-tighter text-lg">Enviar Mensaje</span>
+                  <span class="material-symbols-outlined group-hover:translate-x-2 transition-transform">arrow_forward</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+
+

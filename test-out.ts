@@ -1,0 +1,2663 @@
+import {
+  Fragment,
+  render as $$render,
+  createAstro as $$createAstro,
+  createComponent as $$createComponent,
+  renderComponent as $$renderComponent,
+  renderHead as $$renderHead,
+  maybeRenderHead as $$maybeRenderHead,
+  unescapeHTML as $$unescapeHTML,
+  renderSlot as $$renderSlot,
+  mergeSlots as $$mergeSlots,
+  addAttribute as $$addAttribute,
+  spreadAttributes as $$spreadAttributes,
+  defineStyleVars as $$defineStyleVars,
+  defineScriptVars as $$defineScriptVars,
+  renderTransition as $$renderTransition,
+  createTransitionScope as $$createTransitionScope,
+  renderScript as $$renderScript,
+  createMetadata as $$createMetadata
+} from "astro/internal";
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminShell from '../../components/admin/AdminShell.astro';
+import { getAdminData, listDocuments } from '../../lib/admin';
+import { hasPermission, PERMISSIONS, ROLES, type AuthUser } from '../../lib/rbac';
+import { listUsers } from '../../lib/users';
+import { listPqrs } from '../../lib/pqrs';
+import { listPostulaciones, PostulationStatus, summarizePostulaciones } from '../../lib/postulaciones';
+import { listAssemblyMeetings, summarizeAssemblyAttendance, summarizeAssemblyMeetings } from '../../lib/asambleas';
+import { getAdminAnalytics } from '../../lib/analytics';
+import { getAdminAlerts } from '../../lib/alerts';
+import { listNotifications } from '../../lib/notificaciones';
+import { listApprovalRequests } from '../../lib/approvals';
+import { listAuditLogs } from '../../lib/audit';
+import { listRadicados } from '../../lib/radicados';
+
+
+import * as $$module1 from '../../layouts/BaseLayout.astro';
+import * as $$module2 from '../../components/admin/AdminShell.astro';
+import * as $$module3 from '../../lib/admin';
+import * as $$module4 from '../../lib/users';
+import * as $$module5 from '../../lib/pqrs';
+import * as $$module6 from '../../lib/postulaciones';
+import * as $$module7 from '../../lib/asambleas';
+import * as $$module8 from '../../lib/analytics';
+import * as $$module9 from '../../lib/alerts';
+import * as $$module10 from '../../lib/notificaciones';
+import * as $$module11 from '../../lib/approvals';
+import * as $$module12 from '../../lib/audit';
+import * as $$module13 from '../../lib/radicados';
+
+export const $$metadata = $$createMetadata("<stdin>", { modules: [{ module: $$module1, specifier: '../../layouts/BaseLayout.astro', assert: {} }, { module: $$module2, specifier: '../../components/admin/AdminShell.astro', assert: {} }, { module: $$module3, specifier: '../../lib/admin', assert: {} }, { module: $$module4, specifier: '../../lib/users', assert: {} }, { module: $$module5, specifier: '../../lib/pqrs', assert: {} }, { module: $$module6, specifier: '../../lib/postulaciones', assert: {} }, { module: $$module7, specifier: '../../lib/asambleas', assert: {} }, { module: $$module8, specifier: '../../lib/analytics', assert: {} }, { module: $$module9, specifier: '../../lib/alerts', assert: {} }, { module: $$module10, specifier: '../../lib/notificaciones', assert: {} }, { module: $$module11, specifier: '../../lib/approvals', assert: {} }, { module: $$module12, specifier: '../../lib/audit', assert: {} }, { module: $$module13, specifier: '../../lib/radicados', assert: {} }], hydratedComponents: [], clientOnlyComponents: [], hydrationDirectives: new Set([]), hoisted: [] });
+
+const $$Astro = $$createAstro();
+const Astro = $$Astro;
+const $$stdin = $$createComponent(async ($$result, $$props, $$slots) => {
+const Astro = $$result.createAstro($$Astro, $$props, $$slots);
+Astro.self = $$stdin;
+
+
+const requestedTab = Astro.url.searchParams.get('tab') ?? 'settings';
+const tabAliases: Record<string, string> = {
+  home: 'settings',
+  hero: 'settings',
+  content: 'settings',
+  institucional: 'liga-publica',
+  liga: 'liga-publica',
+  analytics: 'dashboard',
+  calendar: 'competencias',
+  calendario: 'competencias'
+};
+const navAliases: Record<string, string> = {
+  home: 'settings',
+  hero: 'settings',
+  content: 'settings',
+  institucional: 'liga-publica',
+  liga: 'liga-publica',
+  analytics: 'dashboard',
+  calendar: 'competencias',
+  calendario: 'competencias'
+};
+const activeTab = navAliases[requestedTab] ?? requestedTab;
+const contentTab = tabAliases[requestedTab] ?? requestedTab;
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
+const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
+const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
+const auditAction = (Astro.url.searchParams.get('auditAction') ?? '').trim();
+const auditEntity = (Astro.url.searchParams.get('auditEntity') ?? '').trim();
+const auditUserId = Number(Astro.url.searchParams.get('auditUserId') ?? 0);
+
+const data = await getAdminData();
+const docs = await listDocuments();
+const marks: Array<{ id: number; athlete: string; discipline: string; value: string; unit: string; recordDate: string }> = [];
+
+const user = Astro.locals.user as AuthUser | null;
+const isSuperAdmin = user?.role === 'SUPERADMIN';
+const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
+const users = isAdminRoot ? await listUsers() : [];
+const pqrs = isAdminRoot ? await listPqrs(500) : [];
+const postulationsDb = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA' || user.role === 'CLUB') ? await listPostulaciones() : [];
+const postulations = user?.role === 'CLUB' ? postulationsDb.filter(p => String(p.clubId) === String(user.clubId)) : postulationsDb;
+const postulationSummary = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA')
+  ? await summarizePostulaciones()
+  : { total: 0, byStatus: [], byConvocatoria: [] };
+const asambleas = isAdminRoot || user?.role === 'ASAMBLEISTA' || user?.role === 'LIGA' ? await listAssemblyMeetings() : [];
+const asambleaAttendanceSummary = isAdminRoot
+  ? await summarizeAssemblyAttendance()
+  : { total: 0, byStatus: [] };
+const asambleaMeetingsSummary = isAdminRoot ? await summarizeAssemblyMeetings() : [];
+const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAnalytics() : null;
+const alerts = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAlerts() : [];
+const notifications = isAdminRoot ? await listNotifications() : [];
+const approvals = isAdminRoot ? await listApprovalRequests() : [];
+const registrationRadicados = isAdminRoot ? await listRadicados('pending') : [];
+const auditLogs = isAdminRoot
+  ? await listAuditLogs({
+      action: auditAction || undefined,
+      entityType: auditEntity || undefined,
+      userId: Number.isFinite(auditUserId) && auditUserId > 0 ? auditUserId : undefined,
+      limit: 250
+    })
+  : [];
+const dashboardCards = [
+  { label: 'Convocatorias', value: analytics?.totals.convocatorias ?? 0, color: 'from-emerald-500 to-emerald-700' },
+  { label: 'Competencias', value: analytics?.totals.competencias ?? 0, color: 'from-sky-500 to-sky-700' },
+  { label: 'Clubes', value: analytics?.totals.clubes ?? 0, color: 'from-violet-500 to-violet-700' },
+  { label: 'Noticias', value: analytics?.totals.noticias ?? 0, color: 'from-amber-500 to-amber-700' },
+  { label: 'Documentos', value: analytics?.totals.documents ?? 0, color: 'from-rose-500 to-rose-700' },
+  { label: 'Usuarios', value: users.length, color: 'from-slate-600 to-slate-800' }
+];
+
+const filteredPostulations = postulations.filter((p) => {
+  if (postulationStatusFilter !== 'all' && p.status !== postulationStatusFilter) return false;
+  if (!postulationQuery) return true;
+  const q = postulationQuery.toLowerCase();
+  return (
+    p.id.toLowerCase().includes(q) ||
+    p.athleteName.toLowerCase().includes(q) ||
+    p.convocatoriaTitle.toLowerCase().includes(q) ||
+    String(p.clubId).includes(q)
+  );
+});
+
+const postulationStatusClass = (status: string) => {
+  const value = status.toLowerCase();
+  if (value.includes('aprobado') || value.includes('seleccionada') || value.includes('habilitada')) {
+    return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+  }
+  if (value.includes('rechazada') || value.includes('incompleta')) {
+    return 'bg-red-100 text-red-700 border-red-200';
+  }
+  if (value.includes('revisión') || value.includes('postulada')) {
+    return 'bg-amber-100 text-amber-700 border-amber-200';
+  }
+  return 'bg-slate-100 text-slate-700 border-slate-200';
+};
+
+const logoUrl = data.settings.logoUrl || '/logo.png';
+const assignableRoles = ROLES.filter((role) => role !== 'PUBLICO' && (isSuperAdmin || role !== 'SUPERADMIN'));
+const linesFromArray = (items: string[] | undefined) => (items ?? []).join('\n');
+const downloadsToLines = (downloads: Array<{ label: string; href: string }> | undefined) =>
+  (downloads ?? []).map((item) => `${item.label}|${item.href}`).join('\n');
+const resultsLinkFromDownloads = (downloads: Array<{ label: string; href: string }> | undefined) =>
+  (downloads ?? []).find((item) => String(item.label ?? '').trim().toLowerCase() === 'resultados')?.href ?? '';
+const slugFromHref = (href: string) => {
+  const parts = String(href ?? '').split('/').filter(Boolean);
+  return parts[parts.length - 1] ?? '';
+};
+const featuredNewsOrderMap = new Map<string, number>();
+for (const [index, item] of (data.home.news ?? []).entries()) {
+  const slug = slugFromHref(item.href);
+  if (slug) featuredNewsOrderMap.set(slug, index + 1);
+}
+const currentFeaturedCompetenciaTitle = String(data.home?.eventHighlight?.sourceCompetenciaTitle ?? '');
+const currentFeaturedEventDateTime = String(data.home?.eventHighlight?.eventDateTime ?? '');
+const pageHeroMap = data.publicSite?.pageHeroes ?? {};
+const laLigaContent = data.publicSite?.laLiga;
+const laLigaPrinciplesRows = (laLigaContent?.principles?.length ? laLigaContent.principles : [{ icon: 'star', title: '', desc: '' }]);
+const laLigaGovernanceRows = (laLigaContent?.governanceItems?.length ? laLigaContent.governanceItems : [{ label: '', title: '' }]);
+const laLigaNormativeRows = (laLigaContent?.normativeDocs?.length ? laLigaContent.normativeDocs : [{ icon: 'menu_book', title: '', href: '/documentos' }]);
+const rankingRows = (data.rankings?.length ? data.rankings : [
+  {
+    rank: '',
+    athlete: '',
+    club: '',
+    mark: '',
+    status: 'Verificado',
+    imageUrl: '',
+    category: '',
+    discipline: '',
+    gender: '',
+    season: ''
+  }
+]) as typeof data.rankings;
+
+const rawNavItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'perfil', label: 'Mi Perfil', icon: 'person' },
+  { id: 'settings', label: 'Configuración', icon: 'settings' },
+  { id: 'liga-publica', label: 'Liga pública', icon: 'public' },
+  { id: 'users', label: 'Usuarios', icon: 'manage_accounts' },
+  { id: 'pqrs', label: 'PQRS', icon: 'support_agent' },
+  { id: 'asambleas', label: 'Asambleas', icon: 'groups_2' },
+  { id: 'alertas', label: 'Alertas', icon: 'warning' },
+  { id: 'notificaciones', label: 'Notificaciones', icon: 'notifications' },
+  { id: 'aprobaciones', label: 'Aprobaciones', icon: 'fact_check' },
+  { id: 'auditoria', label: 'Auditoria', icon: 'manage_search' },
+  { id: 'clubs', label: 'Clubes', icon: 'groups' },
+  { id: 'convocatorias', label: 'Convocatorias', icon: 'campaign' },
+  { id: 'competencias', label: 'Competencias', icon: 'sports' },
+  { id: 'ranking', label: 'Ranking', icon: 'leaderboard' },
+  { id: 'results', label: 'Resultados', icon: 'fact_check' },
+  { id: 'noticias', label: 'Noticias', icon: 'newspaper' },
+  { id: 'blog', label: 'Blog', icon: 'article' },
+  { id: 'documents', label: 'Documentos', icon: 'newspaper' }
+];
+
+const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all'> = {
+  settings: 'admin:all',
+  'liga-publica': 'admin:all',
+  dashboard: 'records:manage',
+  users: 'admin:all',
+  pqrs: 'admin:all',
+  asambleas: 'admin:all',
+  alertas: 'records:manage',
+  notificaciones: 'admin:all',
+  aprobaciones: 'admin:all',
+  auditoria: 'admin:all',
+  noticias: 'admin:all',
+  blog: 'admin:all',
+  stats: 'records:manage',
+  clubs: 'clubs:manage',
+  competencias: 'competencias:manage',
+  convocatorias: 'convocatorias:manage',
+  results: 'results:manage',
+  ranking: 'rankings:manage',
+  documents: 'documents:manage'
+};
+
+const navItems = rawNavItems.filter((item) => {
+  if (item.id === 'perfil') return true;
+  const r = user?.role;
+  if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents', 'notificaciones', 'alertas'].includes(item.id)) return true;
+  if (r === 'ASAMBLEISTA' && ['asambleas', 'documents', 'notificaciones'].includes(item.id)) return true;
+  const need = NAV_PERMS[item.id] ?? 'admin:all';
+  if (need === 'admin:all') return hasPermission(user, 'admin:all');
+  return hasPermission(user, need);
+});
+
+if (!navItems.some((n) => n.id === activeTab)) {
+  const fallback = navItems[0]?.id ?? 'clubs';
+  return Astro.redirect(`/admin?tab=${fallback}`);
+}
+
+const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboard';
+
+
+return $$render`${$$renderComponent($$result,'BaseLayout',BaseLayout,{"title":"Admin | Liga de Atletismo","description":"Panel administrativo"},{"default": async () => $$render`
+  ${$$renderComponent($$result,'AdminShell',AdminShell,{"title":(currentLabel),"logoUrl":(logoUrl),"siteName":(data.settings.siteName)},{"default": async () => $$render`
+    
+
+    
+
+    ${saved ? (
+      $$render`${$$maybeRenderHead($$result)}<div class="admin-alert admin-alert-success">
+        <span class="material-symbols-outlined">check_circle</span>
+        <span>Cambios guardados exitosamente</span>
+      </div>`
+    ) : null}${error ? (
+      $$render`<div class="admin-alert admin-alert-error">
+        <span class="material-symbols-outlined">error</span>
+        <span>Error al guardar los cambios</span>
+      </div>`
+    ) : null}${contentTab === 'perfil' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Mi Perfil</h4>
+        </div>
+        <div class="admin-card-body space-y-4">
+          <p class="text-sm text-gray-500">Puedes modificar tu información aquí. Todos los cambios que realices se enviarán para revisión de la Liga y no se reflejarán hasta que sean aprobados.</p>
+          <form method="POST" action="/api/admin/profile_request" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
+            <h5 class="text-sm font-semibold text-gray-700">Información del Usuario</h5>
+            <div class="grid gap-5 md:grid-cols-2">
+              <div>
+                <label class="admin-label">Email</label>
+                <input class="admin-input" type="email"${$$addAttribute(user?.email, "value")} disabled>
+              </div>
+              <div class="md:col-span-1">
+                <label class="admin-label">Rol</label>
+                <input class="admin-input" type="text"${$$addAttribute(user?.role, "value")} disabled>
+              </div>
+            </div>
+            
+            ${user?.clubId ? (
+              $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+                <h5 class="text-sm font-semibold text-gray-700 mt-4 border-t pt-4">Información del Club asociado</h5>
+                <div class="grid gap-5 md:grid-cols-3">
+                  ${[data.clubs.find(c => c.id === user.clubId) || { name: '', municipality: '', coach: '' }].map(myClub => (
+                    $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+                      <div class="md:col-span-1">
+                          <label class="admin-label">Nombre del Club</label>
+                          <input class="admin-input" name="clubName"${$$addAttribute(myClub.name, "value")} required>
+                      </div>
+                      <div class="md:col-span-1">
+                          <label class="admin-label">Municipio</label>
+                          <input class="admin-input" name="clubMunicipality"${$$addAttribute(myClub.municipality, "value")} required>
+                      </div>
+                      <div class="md:col-span-1">
+                          <label class="admin-label">Entrenador</label>
+                          <input class="admin-input" name="clubCoach"${$$addAttribute(myClub.coach, "value")} required>
+                      </div>
+                    `,})}`
+                  ))}
+                </div>
+              `,})}`
+            ) : null}
+            
+            <div class="flex items-center justify-end pt-2">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">send</span>
+                Solicitar Cambio
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>`
+    ) : null}${contentTab === 'settings' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Configuración del Home</h4>
+        </div>
+        <div class="admin-card-body space-y-4">
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <h5 class="text-sm font-semibold text-emerald-800">Configuración guiada</h5>
+            <p class="text-sm text-emerald-700 mt-1">Abre solo la tarjeta que quieras editar y guarda cada bloque por separado.</p>
+            <div class="mt-3 flex flex-wrap gap-2 text-xs">
+              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-general">General</a>
+              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-hero">Hero</a>
+              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-home">CTA y Patrocinadores</a>
+            </div>
+          </div>
+
+          <details id="cfg-general" class="rounded-xl border border-gray-200 bg-gray-50 p-2" open>
+            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">1) Ajustes generales</summary>
+          <form method="POST" action="/api/admin/settings" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
+            <h5 class="text-sm font-semibold text-gray-700">1) Ajustes generales</h5>
+            <div class="grid gap-5 md:grid-cols-2">
+              <div>
+                <label class="admin-label">Nombre del sitio</label>
+                <input class="admin-input" type="text" name="siteName"${$$addAttribute(data.settings.siteName, "value")} required>
+              </div>
+              <div>
+                <label class="admin-label">Logo</label>
+                <input class="admin-input" type="file" name="logoFile" accept="image/*">
+                <input type="hidden" name="logoUrl"${$$addAttribute(data.settings.logoUrl, "value")}>
+                ${data.settings.logoUrl && (
+                  $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${data.settings.logoUrl}</p>`
+                )}
+              </div>
+              <div>
+                <label class="admin-label">Color principal</label>
+                <div class="flex gap-2">
+                  <input class="admin-input w-20 p-1" type="color" name="primaryColorPicker"${$$addAttribute(data.settings.primaryColor, "value")}${$$addAttribute((e) => { const target = e.target as HTMLInputElement; (target.closest('form')?.querySelector('input[name=primaryColor]') as HTMLInputElement).value = target.value; }, "on:input")}>
+                  <input class="admin-input flex-1" type="text" name="primaryColor"${$$addAttribute(data.settings.primaryColor, "value")} required>
+                </div>
+              </div>
+              <div>
+                <label class="admin-label">Color secundario</label>
+                <div class="flex gap-2">
+                  <input class="admin-input w-20 p-1" type="color" name="secondaryColorPicker"${$$addAttribute(data.settings.secondaryColor, "value")}${$$addAttribute((e) => { const target = e.target as HTMLInputElement; (target.closest('form')?.querySelector('input[name=secondaryColor]') as HTMLInputElement).value = target.value; }, "on:input")}>
+                  <input class="admin-input flex-1" type="text" name="secondaryColor"${$$addAttribute(data.settings.secondaryColor, "value")} required>
+                </div>
+              </div>
+              <div>
+                <label class="admin-label">Email de contacto</label>
+                <input class="admin-input" type="email" name="contactEmail"${$$addAttribute(data.settings.contactEmail, "value")}>
+              </div>
+              <div>
+                <label class="admin-label">Teléfono de contacto</label>
+                <input class="admin-input" type="text" name="contactPhone"${$$addAttribute(data.settings.contactPhone, "value")}>
+              </div>
+              <div>
+                <label class="admin-label">Instagram</label>
+                <input class="admin-input" type="text" name="socialInstagram"${$$addAttribute(data.settings.social?.instagram ?? '', "value")}>
+              </div>
+              <div>
+                <label class="admin-label">Facebook</label>
+                <input class="admin-input" type="text" name="socialFacebook"${$$addAttribute(data.settings.social?.facebook ?? '', "value")}>
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">X (Twitter)</label>
+                <input class="admin-input" type="text" name="socialX"${$$addAttribute(data.settings.social?.x ?? '', "value")}>
+              </div>
+            </div>
+            <div class="flex items-center justify-end pt-2">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar ajustes generales
+              </button>
+            </div>
+          </form>
+          </details>
+
+          <details id="cfg-hero" class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">2) Hero principal</summary>
+          <form method="POST" action="/api/admin/hero" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
+            <h5 class="text-sm font-semibold text-gray-700">2) Hero principal</h5>
+            <div>
+              <label class="admin-label">Etiqueta superior</label>
+              <input class="admin-input" type="text" name="badge"${$$addAttribute(data.hero.badge, "value")} required>
+            </div>
+            <div>
+              <label class="admin-label">Título</label>
+              <input class="admin-input" type="text" name="title"${$$addAttribute(data.hero.title, "value")} required>
+            </div>
+            <div>
+              <label class="admin-label">Subtítulo</label>
+              <textarea class="admin-input min-h-[100px]" name="subtitle" required>${data.hero.subtitle}</textarea>
+            </div>
+            <div>
+              <label class="admin-label">Imagen de fondo</label>
+              <input class="admin-input" type="file" name="imageFile" accept="image/*">
+              <input type="hidden" name="imageUrl"${$$addAttribute(data.hero.imageUrl, "value")}>
+              ${data.hero.imageUrl && (
+                $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${data.hero.imageUrl}</p>`
+              )}
+            </div>
+            <div class="flex items-center justify-end pt-2">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar Hero
+              </button>
+            </div>
+          </form>
+          </details>
+
+          <details id="cfg-home" class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">3) CTA y Patrocinadores</summary>
+          <form method="POST" action="/api/admin/home" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
+            <h5 class="text-sm font-semibold text-gray-700">3) CTA y Patrocinadores del Home</h5>
+            <p class="text-sm text-gray-500">La noticia destacada se maneja en <strong>Noticias</strong> y la competencia destacada en <strong>Competencias</strong>.</p>
+
+            <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Las noticias destacadas del Home ahora se gestionan en la sección <strong>Noticias</strong> seleccionando el orden 1, 2 y 3.
+            </div>
+
+            <div class="grid gap-3 rounded-lg border border-gray-200 bg-white p-3 md:grid-cols-2">
+              <h6 class="md:col-span-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Llamado final (CTA)</h6>
+              <div class="md:col-span-2">
+                <label class="admin-label">Título (permite HTML básico)</label>
+                <input class="admin-input" name="ctaTitleHtml"${$$addAttribute(data.home.cta.titleHtml, "value")} required>
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Subtítulo</label>
+                <textarea class="admin-input min-h-[80px]" name="ctaSubtitle" required>${data.home.cta.subtitle}</textarea>
+              </div>
+              <input class="admin-input" name="ctaPrimaryLabel"${$$addAttribute(data.home.cta.primaryLabel, "value")} placeholder="Botón principal" required>
+              <input class="admin-input" name="ctaPrimaryHref"${$$addAttribute(data.home.cta.primaryHref, "value")} placeholder="URL principal" required>
+              <input class="admin-input" name="ctaSecondaryLabel"${$$addAttribute(data.home.cta.secondaryLabel, "value")} placeholder="Botón secundario" required>
+              <input class="admin-input" name="ctaSecondaryHref"${$$addAttribute(data.home.cta.secondaryHref, "value")} placeholder="URL secundaria" required>
+              <div class="md:col-span-2">
+                <input class="admin-input" name="ctaFootnote"${$$addAttribute(data.home.cta.footnote, "value")} placeholder="Nota corta" required>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <h6 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Patrocinadores</h6>
+              <div id="home-sponsors-container" data-repeat-container>
+              ${data.home.sponsors.slice(0, 4).map((item) => (
+                $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-white p-3 md:grid-cols-3">
+                  <input class="admin-input" name="sponsorName"${$$addAttribute(item.name, "value")} placeholder="Nombre" required>
+                  <input class="admin-input" name="sponsorHref"${$$addAttribute(item.href, "value")} placeholder="Enlace" required>
+                  <div>
+                    <input class="admin-input" type="file" name="sponsorLogoFile" accept="image/*">
+                    <input type="hidden" name="sponsorLogoUrl"${$$addAttribute(item.logoUrl ?? '', "value")}>
+                    ${item.logoUrl ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${item.logoUrl}</p>` : null}
+                  </div>
+                  <div class="md:col-span-3 flex justify-end">
+                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                      <span class="material-symbols-outlined">delete</span>
+                      Quitar patrocinador
+                    </button>
+                  </div>
+                </div>`
+              ))}
+              </div>
+              <div class="flex justify-end">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-home-sponsor" data-container="#home-sponsors-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar patrocinador
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end pt-2">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar bloques Home
+              </button>
+            </div>
+          </form>
+          </details>
+
+        </div>
+      </section>`
+    ) : null}${contentTab === 'liga-publica' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Gestión de la vista pública de La Liga</h4>
+        </div>
+        <div class="admin-card-body space-y-6">
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+            Desde aquí editas el contenido institucional de <strong>/la-liga</strong> con formularios guiados.
+            La imagen principal de cada vista pública se administra en su módulo correspondiente.
+          </div>
+
+          <section class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-emerald-100/40 p-4 md:p-5">
+            <h5 class="text-sm font-semibold text-emerald-900">Editar por secciones</h5>
+            <p class="text-xs text-emerald-700 mt-1">Haz clic en una tarjeta para ir directo al formulario.</p>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#form-liga-hero-view">
+                <div class="text-xs uppercase tracking-wide text-emerald-600">Imagen</div>
+                <div class="mt-1 font-semibold text-gray-800">Hero de La Liga</div>
+                <div class="mt-1 text-xs text-gray-500">Portada de la vista /la-liga</div>
+              </button>
+              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#form-liga-info">
+                <div class="text-xs uppercase tracking-wide text-emerald-600">Contenido</div>
+                <div class="mt-1 font-semibold text-gray-800">Información institucional</div>
+                <div class="mt-1 text-xs text-gray-500">Acerca de la liga, misión y visión</div>
+              </button>
+              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-hero" data-open-details="#card-laliga-hero">
+                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
+                <div class="mt-1 font-semibold text-gray-800">Hero y cabecera</div>
+                <div class="mt-1 text-xs text-gray-500">Título, subtítulo e imagen de historia</div>
+              </button>
+              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-principios" data-open-details="#card-laliga-principios">
+                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
+                <div class="mt-1 font-semibold text-gray-800">Principios institucionales</div>
+                <div class="mt-1 text-xs text-gray-500">Tarjetas de principios de la sección</div>
+              </button>
+              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-organos" data-open-details="#card-laliga-organos">
+                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
+                <div class="mt-1 font-semibold text-gray-800">Órganos directivos</div>
+                <div class="mt-1 text-xs text-gray-500">Cargos y jerarquía institucional</div>
+              </button>
+              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-marco" data-open-details="#card-laliga-marco">
+                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
+                <div class="mt-1 font-semibold text-gray-800">Marco normativo</div>
+                <div class="mt-1 text-xs text-gray-500">Documentos y enlaces normativos</div>
+              </button>
+            </div>
+          </section>
+
+          <form id="form-liga-hero-view" method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
+            <input type="hidden" name="pageKey" value="laLiga">
+            <input type="hidden" name="tab" value="liga-publica">
+            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista La Liga</h5>
+            <div>
+              <label class="admin-label">Imagen del encabezado de /la-liga</label>
+              <input class="admin-input" type="file" name="heroFile" accept="image/*">
+              <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.laLiga ?? '', "value")}>
+              ${pageHeroMap.laLiga ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.laLiga}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+            </div>
+            <div class="flex items-center justify-end">
+              <button class="admin-btn admin-btn-secondary" type="submit">
+                <span class="material-symbols-outlined">image</span>
+                Guardar imagen de La Liga
+              </button>
+            </div>
+          </form>
+
+          <form id="form-liga-info" method="POST" action="/api/admin/federation" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
+            <h5 class="text-sm font-semibold text-gray-700">1) Información institucional (contenido)</h5>
+            <div>
+              <label class="admin-label">Acerca de la liga</label>
+              <textarea class="admin-input min-h-[120px]" name="about" required>${data.federation.about}</textarea>
+            </div>
+            <div>
+              <label class="admin-label">Misión</label>
+              <textarea class="admin-input min-h-[120px]" name="mission" required>${data.federation.mission}</textarea>
+            </div>
+            <div>
+              <label class="admin-label">Visión</label>
+              <textarea class="admin-input min-h-[120px]" name="vision" required>${data.federation.vision}</textarea>
+            </div>
+            <div class="flex items-center justify-end pt-2">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar contenido institucional
+              </button>
+            </div>
+          </form>
+
+          <form method="POST" action="/api/admin/public-site" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5">
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <h5 class="text-sm font-semibold text-gray-700">2) Sección La Liga (estructura pública)</h5>
+              <p class="text-xs text-gray-500 mt-1">Usa estas tarjetas para editar solo el bloque que necesites.</p>
+            </div>
+
+            <details id="card-laliga-hero" class="rounded-xl border border-gray-200 bg-gray-50 p-3 scroll-mt-24" open>
+              <summary class="cursor-pointer list-none px-1 py-1 text-sm font-semibold text-gray-700">Hero y cabecera</summary>
+              <div class="mt-3 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="admin-label">Título del hero de La Liga</label>
+                  <input class="admin-input" name="laLigaHeroTitle"${$$addAttribute(laLigaContent?.heroTitle ?? 'La Liga', "value")} required>
+                </div>
+                <div>
+                  <label class="admin-label">Subtítulo del hero de La Liga</label>
+                  <input class="admin-input" name="laLigaHeroSubtitle"${$$addAttribute(laLigaContent?.heroSubtitle ?? '', "value")} required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="admin-label">Imagen de historia (sección Nuestra historia)</label>
+                  <input class="admin-input" type="file" name="laLigaHistoryImageFile" accept="image/*">
+                  <input type="hidden" name="laLigaHistoryImageUrl"${$$addAttribute(laLigaContent?.historyImageUrl ?? '', "value")}>
+                  ${laLigaContent?.historyImageUrl ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${laLigaContent.historyImageUrl}</p>` : null}
+                </div>
+              </div>
+              <div class="flex items-center justify-end pt-3">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar cabecera
+                </button>
+              </div>
+            </details>
+
+            <details id="card-laliga-principios" class="rounded-xl border border-gray-200 bg-gray-50 p-3 scroll-mt-24">
+              <summary class="cursor-pointer list-none px-1 py-1 text-sm font-semibold text-gray-700">Principios institucionales (${laLigaPrinciplesRows.length})</summary>
+              <div class="mt-3">
+                <div class="flex items-center justify-end gap-2">
+                  <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-laliga-principle" data-container="#laliga-principles">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar principio
+                  </button>
+                </div>
+                <div id="laliga-principles" class="mt-2 space-y-3" data-repeat-container>
+                  ${laLigaPrinciplesRows.map((item) => (
+                    $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-white p-3 md:grid-cols-3">
+                      <input class="admin-input" name="principleIcon"${$$addAttribute(item.icon ?? 'star', "value")} placeholder="Icono (ej: military_tech)">
+                      <input class="admin-input" name="principleTitle"${$$addAttribute(item.title ?? '', "value")} placeholder="Título" required>
+                      <input class="admin-input" name="principleDesc"${$$addAttribute(item.desc ?? '', "value")} placeholder="Descripción" required>
+                      <div class="md:col-span-3 flex justify-end">
+                        <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                          <span class="material-symbols-outlined">delete</span>
+                          Quitar principio
+                        </button>
+                      </div>
+                    </div>`
+                  ))}
+                </div>
+              </div>
+              <div class="flex items-center justify-end pt-3">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar principios
+                </button>
+              </div>
+            </details>
+
+            <details id="card-laliga-organos" class="rounded-xl border border-gray-200 bg-gray-50 p-3 scroll-mt-24">
+              <summary class="cursor-pointer list-none px-1 py-1 text-sm font-semibold text-gray-700">Órganos directivos (${laLigaGovernanceRows.length})</summary>
+              <div class="mt-3">
+                <div class="flex items-center justify-end gap-2">
+                  <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-laliga-governance" data-container="#laliga-governance">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar órgano
+                  </button>
+                </div>
+                <div id="laliga-governance" class="mt-2 space-y-3" data-repeat-container>
+                  ${laLigaGovernanceRows.map((item) => (
+                    $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-white p-3 md:grid-cols-2">
+                      <input class="admin-input" name="governanceLabel"${$$addAttribute(item.label ?? '', "value")} placeholder="Etiqueta (ej: Gestión Administrativa)" required>
+                      <input class="admin-input" name="governanceTitle"${$$addAttribute(item.title ?? '', "value")} placeholder="Título (ej: Secretaría General)" required>
+                      <div class="md:col-span-2 flex justify-end">
+                        <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                          <span class="material-symbols-outlined">delete</span>
+                          Quitar órgano
+                        </button>
+                      </div>
+                    </div>`
+                  ))}
+                </div>
+              </div>
+              <div class="flex items-center justify-end pt-3">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar órganos
+                </button>
+              </div>
+            </details>
+
+            <details id="card-laliga-marco" class="rounded-xl border border-gray-200 bg-gray-50 p-3 scroll-mt-24">
+              <summary class="cursor-pointer list-none px-1 py-1 text-sm font-semibold text-gray-700">Marco normativo (${laLigaNormativeRows.length})</summary>
+              <div class="mt-3">
+                <div class="flex items-center justify-end gap-2">
+                  <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-laliga-normative" data-container="#laliga-normative">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar documento normativo
+                  </button>
+                </div>
+                <div id="laliga-normative" class="mt-2 space-y-3" data-repeat-container>
+                  ${laLigaNormativeRows.map((item) => (
+                    $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-white p-3 md:grid-cols-3">
+                      <input class="admin-input" name="normativeIcon"${$$addAttribute(item.icon ?? 'menu_book', "value")} placeholder="Icono (ej: gavel)">
+                      <input class="admin-input" name="normativeTitle"${$$addAttribute(item.title ?? '', "value")} placeholder="Título" required>
+                      <input class="admin-input" name="normativeHref"${$$addAttribute(item.href ?? '/documentos', "value")} placeholder="Enlace (ej: /documentos)" required>
+                      <div class="md:col-span-3 flex justify-end">
+                        <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                          <span class="material-symbols-outlined">delete</span>
+                          Quitar documento
+                        </button>
+                      </div>
+                    </div>`
+                  ))}
+                </div>
+              </div>
+              <div class="flex items-center justify-end pt-3">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar marco normativo
+                </button>
+              </div>
+            </details>
+          </form>
+        </div>
+      </section>`
+    ) : null}${contentTab === 'clubs' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Clubes afiliados</h4>
+        </div>
+        <div class="admin-card-body">
+          <p class="text-sm text-gray-500">
+            Edita el directorio de clubes (se usa en <strong>/clubes</strong> y en la ficha <strong>/clubes/[slug]</strong>).
+          </p>
+          <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 mt-4">
+            <input type="hidden" name="pageKey" value="clubes">
+            <input type="hidden" name="tab" value="clubs">
+            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Clubes</h5>
+            <div>
+              <input class="admin-input" type="file" name="heroFile" accept="image/*">
+              <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.clubes ?? '', "value")}>
+              ${pageHeroMap.clubes ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.clubes}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+            </div>
+            <div class="flex items-center justify-end">
+              <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Clubes</button>
+            </div>
+          </form>
+          <form method="POST" action="/api/admin/clubs" encType="multipart/form-data" class="grid gap-5 mt-6">
+            <p class="text-xs text-gray-400">Formulario guiado: completa los campos y guarda. Sin JSON.</p>
+            <div id="clubs-container" class="space-y-3" data-repeat-container>
+              ${data.clubs.map((club) => (
+                $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                  <div>
+                    <label class="admin-label">Nombre</label>
+                    <input class="admin-input" name="clubName"${$$addAttribute(club.name, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Municipio</label>
+                    <input class="admin-input" name="clubMunicipality"${$$addAttribute(club.municipality, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Atletas</label>
+                    <input class="admin-input" name="clubAthletes" type="number" min="0"${$$addAttribute(club.athletes, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Estado</label>
+                    <input class="admin-input" name="clubStatus"${$$addAttribute(club.status, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Entrenador</label>
+                    <input class="admin-input" name="clubCoach"${$$addAttribute(club.coach, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Categoría</label>
+                    <input class="admin-input" name="clubCategory"${$$addAttribute(club.category ?? '', "value")}>
+                  </div>
+                  <div class="md:col-span-3">
+                    <label class="admin-label">Imagen</label>
+                    <input class="admin-input" type="file" name="clubImageFile" accept="image/*">
+                    <input type="hidden" name="clubImageUrl"${$$addAttribute(club.imageUrl ?? '', "value")}>
+                    ${club.imageUrl && (
+                      $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${club.imageUrl}</p>`
+                    )}
+                  </div>
+                  <div class="md:col-span-3 flex justify-end">
+                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                      <span class="material-symbols-outlined">delete</span>
+                      Quitar club
+                    </button>
+                  </div>
+                </div>`
+              ))}
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-club">
+                <span class="material-symbols-outlined">add</span>
+                Agregar club
+              </button>
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar clubes
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>`
+    ) : null}${contentTab === 'convocatorias' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">${user?.role === 'CLUB' ? 'Mis Postulaciones' : 'Convocatorias'}</h4>
+        </div>
+        <div class="admin-card-body">
+          ${user?.role === 'CLUB' ? (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <p class="text-sm text-gray-500 mb-4">Aquí puedes dar seguimiento al estado de los atletas que tu club ha postulado a las Selecciones Chocó mediante las convocatorias.</p>
+              <div class="space-y-3">
+                ${filteredPostulations.map((p) => (
+                  $$render`<div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <div class="flex justify-between items-start mb-2">
+                      <div>
+                        <div class="text-xs text-gray-400 uppercase">Convocatoria</div>
+                        <div class="font-bold text-gray-700">${p.convocatoriaTitle}</div>
+                      </div>
+                      <div${$$addAttribute(`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${postulationStatusClass(p.status)}`, "class")}>
+                        ${p.status}
+                      </div>
+                    </div>
+                    <div class="text-sm">
+                      <span class="text-gray-500">Atleta:</span> <span class="font-medium text-gray-800">${p.athleteName}</span>
+                    </div>
+                    ${p.notes && (
+                      $$render`<div class="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                        <strong>Observaciones:</strong> ${p.notes}
+                      </div>`
+                    )}
+                  </div>`
+                ))}
+                ${filteredPostulations.length === 0 && (
+                  $$render`<div class="text-center py-8 text-gray-400 text-sm rounded-xl border border-dashed border-gray-200">
+                    <span class="material-symbols-outlined text-4xl mb-2 text-gray-300">inbox</span>
+                    <p>No tienes postulaciones en seguimiento todavía.</p>
+                    <a href="/convocatorias" class="mt-3 inline-block admin-btn admin-btn-secondary">Ir a Convocatorias Abiertas</a>
+                  </div>`
+                )}
+              </div>
+            `,})}`
+          ) : (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <p class="text-sm text-gray-500">
+                Edita el listado de convocatorias (se usa en <strong>/convocatorias</strong> y en <strong>/convocatorias/[slug]</strong>).
+              </p>
+              <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 mt-4">
+                <input type="hidden" name="pageKey" value="convocatorias">
+                <input type="hidden" name="tab" value="convocatorias">
+                <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Convocatorias</h5>
+                <div>
+                  <input class="admin-input" type="file" name="heroFile" accept="image/*">
+                  <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.convocatorias ?? '', "value")}>
+                  ${pageHeroMap.convocatorias ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.convocatorias}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+                </div>
+                <div class="flex items-center justify-end">
+                  <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Convocatorias</button>
+                </div>
+              </form>
+              <form method="POST" action="/api/admin/convocatorias" encType="multipart/form-data" class="grid gap-5 mt-6">
+                <p class="text-xs text-gray-400">Campos guiados. Requisitos y categorías: una línea por ítem.</p>
+                <div class="space-y-3" data-repeat-container>
+                  ${data.convocatorias.map((conv) => (
+                    $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                      <div>
+                        <label class="admin-label">Título</label>
+                        <input class="admin-input" name="convTitle"${$$addAttribute(conv.title, "value")} required>
+                      </div>
+                      <div>
+                        <label class="admin-label">Categoría</label>
+                        <input class="admin-input" name="convCategory"${$$addAttribute(conv.category, "value")} required>
+                      </div>
+                      <div>
+                        <label class="admin-label">Estado</label>
+                        <input class="admin-input" name="convStatus"${$$addAttribute(conv.status, "value")} required>
+                      </div>
+                      <div>
+                        <label class="admin-label">Apertura</label>
+                        <input class="admin-input" name="convOpenDate" type="date"${$$addAttribute(conv.openDate, "value")}>
+                      </div>
+                      <div>
+                        <label class="admin-label">Cierre</label>
+                        <input class="admin-input" name="convCloseDate" type="date"${$$addAttribute(conv.closeDate, "value")}>
+                      </div>
+                      <div>
+                        <label class="admin-label">Ubicación</label>
+                        <input class="admin-input" name="convLocation"${$$addAttribute(conv.location, "value")} required>
+                      </div>
+                      <div class="md:col-span-3">
+                        <label class="admin-label">Público objetivo</label>
+                        <input class="admin-input" name="convAudience"${$$addAttribute(conv.audience, "value")} required>
+                      </div>
+                      <div class="md:col-span-3">
+                        <label class="admin-label">Descripción</label>
+                        <textarea class="admin-input min-h-[80px]" name="convDescription" required>${conv.description}</textarea>
+                      </div>
+                      <div>
+                        <label class="admin-label">Requisitos (una línea por requisito)</label>
+                        <textarea class="admin-input min-h-[90px]" name="convRequirements">${linesFromArray(conv.requirements)}</textarea>
+                      </div>
+                      <div>
+                        <label class="admin-label">Categorías (una línea por categoría)</label>
+                        <textarea class="admin-input min-h-[90px]" name="convCategories">${linesFromArray(conv.categories)}</textarea>
+                      </div>
+                      <div>
+                        <label class="admin-label">Imagen</label>
+                        <input class="admin-input" type="file" name="convImageFile" accept="image/*">
+                        <input type="hidden" name="convImageUrl"${$$addAttribute(conv.imageUrl ?? '', "value")}>
+                        ${conv.imageUrl && (
+                          $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${conv.imageUrl}</p>`
+                        )}
+                      </div>
+                      <div class="md:col-span-3 flex justify-end">
+                        <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                          <span class="material-symbols-outlined">delete</span>
+                          Quitar convocatoria
+                        </button>
+                      </div>
+                    </div>`
+                  ))}
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                  <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-convocatoria">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar convocatoria
+                  </button>
+                  <button class="admin-btn admin-btn-primary" type="submit">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar convocatorias
+                  </button>
+                </div>
+              </form>
+            `,})}`
+          )}
+        </div>
+      </section>`
+    ) : null}${contentTab === 'competencias' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Competencias</h4>
+        </div>
+        <div class="admin-card-body">
+          ${user?.role === 'CLUB' ? (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <p class="text-sm text-gray-500 mb-4">Próximamente podrás realizar inscripciones de tu club directamente desde esta plataforma. Por ahora, aquí tienes el calendario activo de competencias.</p>
+              <div class="space-y-3">
+                ${data.competencias.map((comp) => (
+                  $$render`<div class="rounded-xl border border-gray-200 bg-white p-4 flex justify-between items-center">
+                    <div>
+                      <div class="font-bold text-gray-800">${comp.title}</div>
+                      <div class="text-xs text-gray-500">${comp.location} · ${comp.date}</div>
+                    </div>
+                    <div class="text-xs font-semibold px-2 py-1 bg-gray-100 rounded text-gray-700">${comp.status}</div>
+                  </div>`
+                ))}
+                ${data.competencias.length === 0 && (
+                  $$render`<p class="text-sm text-gray-400">No hay competencias activas.</p>`
+                )}
+              </div>
+            `,})}`
+          ) : (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <p class="text-sm text-gray-500">
+                Edita las competencias (se usa en <strong>/competencias</strong> y en <strong>/competencias/[slug]</strong>).
+              </p>
+              <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 mt-4">
+                <input type="hidden" name="pageKey" value="competencias">
+                <input type="hidden" name="tab" value="competencias">
+                <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Competencias</h5>
+                <div>
+                  <input class="admin-input" type="file" name="heroFile" accept="image/*">
+                  <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.competencias ?? '', "value")}>
+                  ${pageHeroMap.competencias ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.competencias}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+                </div>
+                <div class="flex items-center justify-end">
+                  <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Competencias</button>
+                </div>
+              </form>
+              <form method="POST" action="/api/admin/competencias" class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 mb-6 mt-4 grid gap-3 md:grid-cols-8">
+                <input type="hidden" name="intent" value="set-featured">
+                <div class="md:col-span-4">
+                  <label class="admin-label">Competencia destacada del Home</label>
+                  <select class="admin-input" name="featuredCompetenciaTitle">
+                    <option value=""${$$addAttribute(!currentFeaturedCompetenciaTitle, "selected")}>Automático: primera competencia</option>
+                    ${data.competencias.map((comp) => (
+                      $$render`<option${$$addAttribute(comp.title, "value")}${$$addAttribute(comp.title === currentFeaturedCompetenciaTitle, "selected")}>
+                        ${comp.title} · ${comp.date}
+                      </option>`
+                    ))}
+                  </select>
+                  <p class="text-xs text-emerald-700 mt-1">Si no eliges una, el Home toma automáticamente la primera competencia publicada.</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="admin-label">Fecha y hora exacta del evento</label>
+                  <input class="admin-input" type="datetime-local" name="featuredEventDateTime"${$$addAttribute(currentFeaturedEventDateTime, "value")}>
+                  <p class="text-xs text-emerald-700 mt-1">Este valor controla el contador del Home. Si lo dejas vacío, usa solo la fecha de la competencia.</p>
+                </div>
+                <div class="md:col-span-2 flex items-end justify-end">
+                  <button class="admin-btn admin-btn-secondary" type="submit">
+                    <span class="material-symbols-outlined">star</span>
+                    Guardar destacada
+                  </button>
+                </div>
+              </form>
+              <form method="POST" action="/api/admin/competencias" encType="multipart/form-data" class="grid gap-5 mt-6">
+                <p class="text-xs text-gray-400">Descargas: una línea por archivo con formato \`Etiqueta|URL\`.</p>
+                <div id="competencias-container" class="space-y-3" data-repeat-container>
+                  ${data.competencias.map((comp) => (
+                    $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                      <div>
+                        <label class="admin-label">Título</label>
+                        <input class="admin-input" name="compTitle"${$$addAttribute(comp.title, "value")} required>
+                      </div>
+                      <div>
+                        <label class="admin-label">Estado</label>
+                        <input class="admin-input" name="compStatus"${$$addAttribute(comp.status, "value")} required>
+                      </div>
+                      <div>
+                        <label class="admin-label">Fecha</label>
+                        <input class="admin-input" name="compDate" type="date"${$$addAttribute(comp.date, "value")}>
+                      </div>
+                      <div>
+                        <label class="admin-label">Ubicación</label>
+                        <input class="admin-input" name="compLocation"${$$addAttribute(comp.location, "value")} required>
+                      </div>
+                      <div>
+                        <label class="admin-label">Tipo</label>
+                        <input class="admin-input" name="compType"${$$addAttribute(comp.type ?? '', "value")}>
+                      </div>
+                      <div>
+                        <label class="admin-label">Imagen</label>
+                        <input class="admin-input" type="file" name="compImageFile" accept="image/*">
+                        <input type="hidden" name="compImageUrl"${$$addAttribute(comp.imageUrl ?? '', "value")}>
+                        ${comp.imageUrl && (
+                          $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${comp.imageUrl}</p>`
+                        )}
+                      </div>
+                      <div class="md:col-span-3">
+                        <label class="admin-label">Descripción</label>
+                        <textarea class="admin-input min-h-[90px]" name="compDescription" required>${comp.description}</textarea>
+                      </div>
+                      <div class="md:col-span-3">
+                        <label class="admin-label">Descargas</label>
+                        <textarea class="admin-input min-h-[90px]" name="compDownloads">${downloadsToLines(comp.downloads)}</textarea>
+                      </div>
+                      <div class="md:col-span-3 flex justify-end">
+                        <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                          <span class="material-symbols-outlined">delete</span>
+                          Quitar competencia
+                    </button>
+                  </div>
+                </div>`
+              ))}
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-competencia" data-container="#competencias-container">
+                <span class="material-symbols-outlined">add</span>
+                Agregar competencia
+              </button>
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar competencias
+              </button>
+            </div>
+          </form>
+        
+      
+    ) : null`,})}
+
+        ${contentTab === 'users' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Usuarios y Roles</h4>
+        </div>
+        <div class="admin-card-body space-y-8">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+            <h5 class="text-sm font-semibold text-gray-700 mb-4">Crear usuario</h5>
+            <form method="POST" action="/api/admin/users" class="grid gap-4 md:grid-cols-6">
+              <input type="hidden" name="intent" value="create">
+              <div class="md:col-span-2">
+                <label class="admin-label">Email</label>
+                <input class="admin-input" type="email" name="email" placeholder="usuario@correo.com" required>
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Nombre</label>
+                <input class="admin-input" type="text" name="displayName" placeholder="Nombre visible">
+              </div>
+              <div class="md:col-span-1">
+                <label class="admin-label">Rol</label>
+                <select class="admin-input" name="role" required>
+                  ${assignableRoles.map((r) => (
+                    $$render`<option${$$addAttribute(r, "value")}>${r}</option>`
+                  ))}
+                </select>
+              </div>
+              <div class="md:col-span-1">
+                <label class="admin-label">Club ID</label>
+                <input class="admin-input" name="clubId" placeholder="(opcional)">
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Contraseña</label>
+                <input class="admin-input" type="password" name="password" placeholder="Mínimo 8 caracteres" required>
+              </div>
+              <div class="md:col-span-4 flex items-end justify-end">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">person_add</span>
+                  Crear
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <h5 class="text-sm font-semibold text-gray-700">Usuarios existentes</h5>
+              <p class="text-xs text-gray-400">Tip: CLUB debe tener su \`clubId\` asignado.</p>
+            </div>
+
+            <div class="overflow-auto rounded-xl border border-gray-200">
+              <table class="min-w-[980px] w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th class="text-left p-3 font-medium">ID</th>
+                    <th class="text-left p-3 font-medium">Email</th>
+                    <th class="text-left p-3 font-medium">Nombre</th>
+                    <th class="text-left p-3 font-medium">Rol</th>
+                    <th class="text-left p-3 font-medium">Club ID</th>
+                    <th class="text-left p-3 font-medium">Activo</th>
+                    <th class="text-left p-3 font-medium">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                  ${users.map((u) => (
+                    $$render`<tr>
+                      <td class="p-3 align-top text-gray-500">${u.id}</td>
+                      <td class="p-3 align-top">${u.email}</td>
+                      <td class="p-3 align-top">
+                        <input class="admin-input"${$$addAttribute(`update-${u.id}`, "form")} name="displayName"${$$addAttribute(u.displayName ?? '', "value")} placeholder="Nombre"${$$addAttribute(!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN', "disabled")}>
+                      </td>
+                      <td class="p-3 align-top">
+                        <select class="admin-input"${$$addAttribute(`update-${u.id}`, "form")} name="role" required${$$addAttribute(!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN', "disabled")}>
+                          ${assignableRoles.map((r) => (
+                            $$render`<option${$$addAttribute(r, "value")}${$$addAttribute((u.roles?.[0] ?? 'PUBLICO') === r, "selected")}>
+                              ${r}
+                            </option>`
+                          ))}
+                        </select>
+                      </td>
+                      <td class="p-3 align-top">
+                        <input class="admin-input"${$$addAttribute(`update-${u.id}`, "form")} name="clubId"${$$addAttribute(u.clubId ?? '', "value")} placeholder="(vacío)"${$$addAttribute(!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN', "disabled")}>
+                      </td>
+                      <td class="p-3 align-top">
+                        <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                          <input${$$addAttribute(`update-${u.id}`, "form")} type="checkbox" name="isActive" value="1"${$$addAttribute(u.isActive, "checked")}${$$addAttribute(!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN', "disabled")}>
+                          Activo
+                        </label>
+                      </td>
+                      <td class="p-3 align-top">
+                        <div class="grid gap-2">
+                          <form${$$addAttribute(`update-${u.id}`, "id")} method="POST" action="/api/admin/users" class="grid gap-2">
+                            <input type="hidden" name="intent" value="update">
+                            <input type="hidden" name="id"${$$addAttribute(u.id, "value")}>
+                            <button class="admin-btn admin-btn-primary" type="submit"${$$addAttribute(!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN', "disabled")}>
+                              <span class="material-symbols-outlined">save</span>
+                              Guardar
+                            </button>
+                          </form>
+                          <form${$$addAttribute(`pw-${u.id}`, "id")} method="POST" action="/api/admin/users" class="grid gap-2">
+                            <input type="hidden" name="intent" value="password">
+                            <input type="hidden" name="id"${$$addAttribute(u.id, "value")}>
+                            <input class="admin-input" type="password" name="password" placeholder="Nueva contraseña" required${$$addAttribute(!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN', "disabled")}>
+                            <button class="admin-btn admin-btn-secondary" type="submit"${$$addAttribute(!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN', "disabled")}>
+                              <span class="material-symbols-outlined">key</span>
+                              Reset
+                            </button>
+                          </form>
+                          ${isSuperAdmin ? (
+                            $$render`<form${$$addAttribute(`permissions-${u.id}`, "id")} method="POST" action="/api/admin/users" class="grid gap-2">
+                              <input type="hidden" name="intent" value="permissions">
+                              <input type="hidden" name="id"${$$addAttribute(u.id, "value")}>
+                              <details class="rounded-lg border border-gray-200 bg-gray-50 p-2">
+                                <summary class="cursor-pointer text-xs font-semibold text-gray-600">Permisos extra</summary>
+                                <div class="mt-2 grid gap-1 max-h-40 overflow-auto pr-1">
+                                  ${PERMISSIONS.filter((p) => p !== 'super:all').map((perm) => (
+                                    $$render`<label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                                      <input type="checkbox" name="permissions"${$$addAttribute(perm, "value")}${$$addAttribute((u.directPermissions ?? []).includes(perm), "checked")}>
+                                      <span>${perm}</span>
+                                    </label>`
+                                  ))}
+                                </div>
+                                <button class="admin-btn admin-btn-secondary mt-2" type="submit">
+                                  <span class="material-symbols-outlined">verified_user</span>
+                                  Guardar permisos
+                                </button>
+                              </details>
+                            </form>`
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>`
+                  ))}
+                  ${users.length === 0 && (
+                    $$render`<tr>
+                      <td class="p-6 text-center text-gray-400"${$$addAttribute(7, "colSpan")}>
+                        No hay usuarios registrados (configura \`ADMIN_EMAIL\` y \`ADMIN_PASSWORD\` y corre el seed).
+                      </td>
+                    </tr>`
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <h5 class="text-sm font-semibold text-gray-700">Radicados de registro pendientes</h5>
+              <p class="text-xs text-gray-400">Aprobar crea la cuenta con el rol seleccionado.</p>
+            </div>
+
+            <div class="space-y-3">
+              ${registrationRadicados.map((item) => (
+                $$render`<form method="POST" action="/api/admin/radicados" class="rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3 md:grid-cols-10">
+                  <input type="hidden" name="id"${$$addAttribute(item.id, "value")}>
+                  <div class="md:col-span-3">
+                    <div class="text-xs uppercase tracking-wide text-gray-400">Radicado</div>
+                    <div class="font-semibold text-gray-700">${item.radicado}</div>
+                    <div class="text-xs text-gray-500 mt-1">${new Date(item.createdAt).toLocaleString('es-CO')}</div>
+                    <div class="text-xs mt-2 inline-flex rounded-full bg-white border border-gray-200 px-2 py-0.5 text-gray-700">
+                      Perfil: ${item.profile}
+                    </div>
+                  </div>
+                  <div class="md:col-span-3">
+                    <div class="text-xs uppercase tracking-wide text-gray-400">Solicitante</div>
+                    <div class="font-medium text-gray-700">${item.name}</div>
+                    <div class="text-sm text-gray-600">${item.email}</div>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="admin-label">Rol al aprobar</label>
+                    <select class="admin-input" name="role">
+                      <option value="PUBLICO"${$$addAttribute(item.profile !== 'club', "selected")}>PUBLICO</option>
+                      <option value="CLUB"${$$addAttribute(item.profile === 'club', "selected")}>CLUB</option>
+                    </select>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="admin-label">Clave temporal (aprobar)</label>
+                    <input class="admin-input" type="password" name="tempPassword" placeholder="Min 8 caracteres">
+                  </div>
+                  <div class="md:col-span-8">
+                    <label class="admin-label">Notas de revision</label>
+                    <input class="admin-input" name="reviewNotes" placeholder="Opcional">
+                  </div>
+                  <div class="md:col-span-2 flex items-end justify-end gap-2">
+                    <button class="admin-btn admin-btn-secondary" type="submit" name="decision" value="rejected">
+                      <span class="material-symbols-outlined">close</span>
+                      Rechazar
+                    </button>
+                    <button class="admin-btn admin-btn-primary" type="submit" name="decision" value="approved">
+                      <span class="material-symbols-outlined">check</span>
+                      Aprobar
+                    </button>
+                  </div>
+                </form>`
+              ))}
+              ${registrationRadicados.length === 0 ? (
+                $$render`<div class="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">
+                  No hay radicados pendientes.
+                </div>`
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'pqrs' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">PQRS y Atención</h4>
+        </div>
+        <div class="admin-card-body">
+          <p class="text-sm text-gray-500 mb-6">
+            Gestiona radicados de contacto: estado, responsable y nota de respuesta.
+          </p>
+
+          <div class="space-y-4">
+            ${pqrs.map((item) => (
+              $$render`<form method="POST" action="/api/admin/pqrs" class="rounded-xl border border-gray-200 p-4 grid gap-4 md:grid-cols-8">
+                <input type="hidden" name="id"${$$addAttribute(item.id, "value")}>
+                <div class="md:col-span-2">
+                  <div class="text-xs uppercase tracking-wide text-gray-400">Radicado</div>
+                  <div class="font-semibold text-gray-700">${item.radicado}</div>
+                  <div class="text-xs text-gray-400 mt-1">${new Date(item.createdAt).toLocaleString('es-CO')}</div>
+                </div>
+                <div class="md:col-span-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-400">Solicitante</div>
+                  <div class="font-medium text-gray-700">${item.name} · ${item.email}</div>
+                  <div class="text-xs text-gray-500 mt-1">${item.type.toUpperCase()} · ${item.subject}</div>
+                  <p class="text-sm text-gray-600 mt-2 max-h-20 overflow-auto">${item.message}</p>
+                </div>
+                <div class="md:col-span-1">
+                  <label class="admin-label">Estado</label>
+                  <select class="admin-input" name="status">
+                    <option value="PENDIENTE"${$$addAttribute(item.status === 'PENDIENTE', "selected")}>Pendiente</option>
+                    <option value="EN TRAMITE"${$$addAttribute(item.status === 'EN TRAMITE', "selected")}>En trámite</option>
+                    <option value="RESUELTO"${$$addAttribute(item.status === 'RESUELTO', "selected")}>Resuelto</option>
+                  </select>
+                </div>
+                <div class="md:col-span-1">
+                  <label class="admin-label">Responsable</label>
+                  <input class="admin-input" name="assignedTo"${$$addAttribute(item.assignedTo ?? '', "value")} placeholder="Nombre">
+                </div>
+                <div class="md:col-span-1">
+                  <label class="admin-label">Nota</label>
+                  <textarea class="admin-input min-h-[84px]" name="responseNote" placeholder="Respuesta o seguimiento">${item.responseNote ?? ''}</textarea>
+                </div>
+                <div class="md:col-span-8 flex justify-end">
+                  <button class="admin-btn admin-btn-primary" type="submit">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar PQRS
+                  </button>
+                </div>
+              </form>`
+            ))}
+            ${pqrs.length === 0 && (
+              $$render`<div class="text-center py-12 text-gray-400">
+                <span class="material-symbols-outlined text-4xl mb-2">support_agent</span>
+                <p class="text-sm">No hay radicados PQRS todavía.</p>
+              </div>`
+            )}
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'asambleas' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Asambleas y Asistencia</h4>
+        </div>
+        <div class="admin-card-body">
+          ${user?.role === 'ASAMBLEISTA' ? (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <p class="text-sm text-gray-500 mb-4">A continuación encuentras el listado de asambleas convocadas y sus respectivos órdenes del día.</p>
+              <div class="space-y-4">
+                ${asambleas.map((meeting) => (
+                  $$render`<div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <div class="flex justify-between items-start mb-2">
+                      <div>
+                        <div class="font-bold text-gray-800">${meeting.title}</div>
+                        <div class="text-xs text-gray-500">${meeting.date} · ${meeting.location}</div>
+                      </div>
+                      <div class="text-xs font-semibold px-2 py-1 bg-gray-100 rounded text-gray-700">${meeting.status}</div>
+                    </div>
+                    ${meeting.agenda && (
+                      $$render`<div class="mt-3 text-sm text-gray-600 bg-emerald-50 border border-emerald-100 p-3 rounded-lg">
+                        <strong class="block mb-1 text-emerald-800">Orden del día:</strong>
+                        <p class="whitespace-pre-wrap">${meeting.agenda}</p>
+                      </div>`
+                    )}
+                    ${meeting.documents && meeting.documents.length > 0 && (
+                      $$render`<div class="mt-3">
+                        <strong class="block mb-1 text-xs text-gray-500 uppercase">Documentos anexos:</strong>
+                        <div class="flex flex-wrap gap-2">
+                          ${meeting.documents.map((doc) => (
+                            $$render`<a${$$addAttribute(doc.href, "href")} target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 admin-btn admin-btn-secondary text-xs px-3 py-1.5 h-auto">
+                              <span class="material-symbols-outlined text-base">download</span>
+                              ${doc.label || 'Descargar archivo'}
+                            </a>`
+                          ))}
+                        </div>
+                      </div>`
+                    )}
+                  </div>`
+                ))}
+                ${asambleas.length === 0 && (
+                   $$render`<div class="text-center text-sm text-gray-500 py-8 border border-dashed border-gray-200 rounded-xl">No hay asambleas registradas.</div>`
+                )}
+              </div>
+            `,})}`
+          ) : (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <p class="text-sm text-gray-500">
+                Gestiona convocatorias de asamblea, agenda y anexos. Este módulo alimenta el panel del asambleísta.
+              </p>
+
+              <div class="mt-4 grid gap-3 md:grid-cols-3">
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-gray-400">Asambleas</div>
+                  <div class="text-2xl font-extrabold text-gray-700">${asambleas.length}</div>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-gray-400">Registros de asistencia</div>
+                  <div class="text-2xl font-extrabold text-gray-700">${asambleaAttendanceSummary.total}</div>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Asistencia por estado</div>
+                  <div class="flex flex-wrap gap-2">
+                    ${asambleaAttendanceSummary.byStatus.map((item) => (
+                      $$render`<span class="inline-flex items-center rounded-full border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                        ${item.status}: ${item.count}
+                      </span>`
+                    ))}
+                    ${asambleaAttendanceSummary.byStatus.length === 0 ? (
+                      $$render`<span class="text-xs text-gray-400">Sin datos</span>`
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-400">Quorum por asamblea</div>
+                  <a class="admin-btn admin-btn-secondary" href="/asambleas-quorum.csv">
+                    <span class="material-symbols-outlined">download</span>
+                    Exportar CSV
+                  </a>
+                </div>
+                <div class="space-y-2">
+                  ${asambleaMeetingsSummary.slice(0, 8).map((item) => (
+                    $$render`<div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                      <div>
+                        <div class="font-semibold text-gray-700">${item.title}</div>
+                        <div class="text-xs text-gray-500">${item.date}</div>
+                      </div>
+                      <div class="text-right">
+                        <div class="text-xs text-gray-500">Asistencia: ${item.asistio}/${item.total}</div>
+                        <div class="font-bold text-gray-800">Quorum ${item.quorum}%</div>
+                      </div>
+                    </div>`
+                  ))}
+                  ${asambleaMeetingsSummary.length === 0 ? (
+                    $$render`<div class="text-xs text-gray-400">Sin registros de quorum.</div>`
+                  ) : null}
+                </div>
+              </div>
+
+              <form method="POST" action="/api/admin/asambleas" class="grid gap-5 mt-6">
+                <p class="text-xs text-gray-400">Documentos: una línea por archivo con formato \`Etiqueta|URL\`.</p>
+                <div class="space-y-3" data-repeat-container>
+              ${asambleas.map((meeting) => (
+                $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                  <input type="hidden" name="meetingId"${$$addAttribute(meeting.id, "value")}>
+                  <div>
+                    <label class="admin-label">Título</label>
+                    <input class="admin-input" name="meetingTitle"${$$addAttribute(meeting.title, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Fecha</label>
+                    <input class="admin-input" name="meetingDate" type="date"${$$addAttribute(meeting.date, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Estado</label>
+                    <input class="admin-input" name="meetingStatus"${$$addAttribute(meeting.status, "value")}>
+                  </div>
+                  <div class="md:col-span-3">
+                    <label class="admin-label">Lugar</label>
+                    <input class="admin-input" name="meetingLocation"${$$addAttribute(meeting.location, "value")}>
+                  </div>
+                  <div class="md:col-span-3">
+                    <label class="admin-label">Agenda</label>
+                    <textarea class="admin-input min-h-[80px]" name="meetingAgenda">${meeting.agenda}</textarea>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="admin-label">Documentos</label>
+                    <textarea class="admin-input min-h-[90px]" name="meetingDocuments">${downloadsToLines(meeting.documents)}</textarea>
+                  </div>
+                  <div>
+                    <label class="admin-label">Privada</label>
+                    <select class="admin-input" name="meetingIsPrivate">
+                      <option value="1"${$$addAttribute(meeting.isPrivate, "selected")}>Sí</option>
+                      <option value="0"${$$addAttribute(!meeting.isPrivate, "selected")}>No</option>
+                    </select>
+                  </div>
+                  <div class="md:col-span-3 flex justify-end">
+                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                      <span class="material-symbols-outlined">delete</span>
+                      Quitar asamblea
+                    </button>
+                  </div>
+                </div>`
+              ))}
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-asamblea">
+                <span class="material-symbols-outlined">add</span>
+                Agregar asamblea
+              </button>
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar asambleas
+              </button>
+            </div>
+          </form>
+        
+      
+    ) : null`,})}
+
+    ${contentTab === 'dashboard' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Dashboard Estratégico</h4>
+        </div>
+        <div class="admin-card-body">
+          ${analytics ? (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <div class="rounded-2xl border border-gray-200 bg-gradient-to-r from-emerald-50 via-white to-sky-50 p-5">
+                <h5 class="text-lg font-extrabold text-gray-800">Resumen operativo de la liga</h5>
+                <p class="text-sm text-gray-600">Métricas clave para decisiones rápidas del equipo administrativo.</p>
+              </div>
+
+              <div class="mt-4 grid gap-3 md:grid-cols-3">
+                ${dashboardCards.map((card) => (
+                  $$render`<article class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div${$$addAttribute(`h-1.5 rounded-full bg-gradient-to-r ${card.color}`, "class")}></div>
+                    <div class="mt-3 text-xs uppercase tracking-wide text-gray-400">${card.label}</div>
+                    <div class="text-3xl font-black text-gray-800">${card.value}</div>
+                  </article>`
+                ))}
+              </div>
+
+              <div class="mt-6 grid gap-4 lg:grid-cols-3">
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 lg:col-span-2">
+                  <h5 class="text-sm font-semibold text-gray-700 mb-3">Postulaciones por estado</h5>
+                  <div class="space-y-2">
+                    ${analytics.postulationsByStatus.map((item) => (
+                      $$render`<div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
+                        <div class="flex items-center justify-between text-sm">
+                          <span class="text-gray-600">${item.status}</span>
+                          <strong class="text-gray-800">${item.count}</strong>
+                        </div>
+                        <div class="mt-2 h-2 rounded-full bg-gray-100">
+                          <div class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-700"${$$addAttribute(`width: ${Math.min(100, (item.count / Math.max(1, postulationSummary.total)) * 100)}%`, "style")}></div>
+                        </div>
+                      </div>`
+                    ))}
+                    ${analytics.postulationsByStatus.length === 0 ? (
+                      $$render`<div class="text-xs text-gray-400">Sin datos</div>`
+                    ) : null}
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <h5 class="text-sm font-semibold text-gray-700 mb-3">PQRS por estado</h5>
+                  <div class="space-y-2">
+                    ${analytics.pqrsByStatus.map((item) => (
+                      $$render`<div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                        <span class="text-gray-600">${item.status}</span>
+                        <strong class="text-gray-800">${item.count}</strong>
+                      </div>`
+                    ))}
+                    ${analytics.pqrsByStatus.length === 0 ? (
+                      $$render`<div class="text-xs text-gray-400">Sin datos</div>`
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                  <h5 class="text-sm font-semibold text-gray-700">Tendencia últimos 7 días</h5>
+                  <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-500 border border-gray-200">Actividad reciente</span>
+                </div>
+                <div class="grid gap-2 md:grid-cols-7">
+                  ${analytics.last7Days.map((day) => (
+                    $$render`<div class="rounded-lg border border-gray-200 bg-white p-3 text-xs">
+                      <div class="text-gray-400">${day.day}</div>
+                      <div class="mt-1 text-gray-700">POST: <strong>${day.postulations}</strong></div>
+                      <div class="text-gray-700">PQRS: <strong>${day.pqrs}</strong></div>
+                    </div>`
+                  ))}
+                </div>
+              </div>
+            `,})}`
+          ) : (
+            $$render`<div class="text-sm text-gray-400">Sin datos de analítica.</div>`
+          )}
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'alertas' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Alertas Automáticas</h4>
+        </div>
+        <div class="admin-card-body">
+          <p class="text-sm text-gray-500 mb-4">
+            Alertas calculadas en tiempo real sobre convocatorias, PQRS y postulaciones.
+          </p>
+          <div class="space-y-3">
+            ${alerts.map((item) => (
+              $$render`<article${$$addAttribute(`rounded-xl border p-4 ${item.level === 'critical' ? 'border-red-200 bg-red-50' : item.level === 'warning' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-gray-50'}`, "class")}>
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h5 class="font-semibold text-gray-700">${item.title}</h5>
+                    <p class="text-sm text-gray-600 mt-1">${item.detail}</p>
+                  </div>
+                  <a class="admin-btn admin-btn-secondary"${$$addAttribute(item.href, "href")}>Abrir</a>
+                </div>
+              </article>`
+            ))}
+            ${alerts.length === 0 ? (
+              $$render`<div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+                No hay alertas activas ahora mismo.
+              </div>`
+            ) : null}
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'notificaciones' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Notificaciones por Rol</h4>
+        </div>
+        <div class="admin-card-body">
+          <form method="POST" action="/api/admin/notificaciones" class="grid gap-4 md:grid-cols-6">
+            <input type="hidden" name="intent" value="create">
+            <div class="md:col-span-2">
+              <label class="admin-label">Título</label>
+              <input class="admin-input" name="title" required>
+            </div>
+            <div class="md:col-span-2">
+              <label class="admin-label">Mensaje</label>
+              <input class="admin-input" name="message" required>
+            </div>
+            <div>
+              <label class="admin-label">Nivel</label>
+              <select class="admin-input" name="level">
+                <option value="info">info</option>
+                <option value="warning">warning</option>
+                <option value="critical">critical</option>
+              </select>
+            </div>
+            <div>
+              <label class="admin-label">Rol</label>
+              <select class="admin-input" name="targetRole">
+                <option value="ALL">ALL</option>
+                ${ROLES.map((r) => (
+                  $$render`<option${$$addAttribute(r, "value")}>${r}</option>`
+                ))}
+              </select>
+            </div>
+            <div class="md:col-span-4">
+              <label class="admin-label">Acción (URL interna opcional)</label>
+              <input class="admin-input" name="actionHref" placeholder="/dashboard/club">
+            </div>
+            <div class="md:col-span-2 flex items-end justify-end">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">add</span>
+                Publicar
+              </button>
+            </div>
+          </form>
+
+          <div class="mt-6 space-y-3">
+            ${notifications.map((n) => (
+              $$render`<form method="POST" action="/api/admin/notificaciones" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-6">
+                <input type="hidden" name="intent" value="toggle">
+                <input type="hidden" name="id"${$$addAttribute(n.id, "value")}>
+                <div class="md:col-span-2">
+                  <div class="font-semibold text-gray-700">${n.title}</div>
+                  <div class="text-sm text-gray-600">${n.message}</div>
+                </div>
+                <div class="text-sm text-gray-600">
+                  <div>Nivel: <strong>${n.level}</strong></div>
+                  <div>Rol: <strong>${n.targetRole}</strong></div>
+                </div>
+                <div class="text-sm text-gray-600">
+                  <div>Acción: <strong>${n.actionHref || '-'}</strong></div>
+                  <div>Fecha: <strong>${new Date(n.createdAt).toLocaleDateString('es-CO')}</strong></div>
+                </div>
+                <div class="md:col-span-2 flex items-end justify-end">
+                  <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                    <input type="checkbox" name="isActive" value="1"${$$addAttribute(n.isActive, "checked")}>
+                    Activa
+                  </label>
+                  <button class="admin-btn admin-btn-secondary ml-3" type="submit">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar
+                  </button>
+                </div>
+              </form>`
+            ))}
+            ${notifications.length === 0 ? (
+              $$render`<div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+                No hay notificaciones creadas.
+              </div>`
+            ) : null}
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'aprobaciones' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Solicitudes de Aprobacion</h4>
+        </div>
+        <div class="admin-card-body">
+          <div class="space-y-3">
+            ${approvals.map((item) => (
+              $$render`<form method="POST" action="/api/admin/approvals" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-8">
+                <input type="hidden" name="id"${$$addAttribute(item.id, "value")}>
+                <div class="md:col-span-3">
+                  <div class="text-xs text-gray-400 uppercase">Solicitud #${item.id}</div>
+                  <h5 class="font-semibold text-gray-700">${item.module} · ${item.action}</h5>
+                  <p class="text-sm text-gray-600">Estado: <strong>${item.status}</strong></p>
+                </div>
+                <div class="md:col-span-3">
+                  <label class="admin-label">Notas de revisión</label>
+                  <input class="admin-input" name="reviewNotes" placeholder="Opcional">
+                </div>
+                <div class="md:col-span-2 flex items-end justify-end gap-2">
+                  <button class="admin-btn admin-btn-secondary" type="submit" name="decision" value="rejected">
+                    <span class="material-symbols-outlined">close</span>
+                    Rechazar
+                  </button>
+                  <button class="admin-btn admin-btn-primary" type="submit" name="decision" value="approved">
+                    <span class="material-symbols-outlined">check</span>
+                    Aprobar
+                  </button>
+                </div>
+              </form>`
+            ))}
+            ${approvals.length === 0 ? (
+              $$render`<div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+                No hay solicitudes de aprobación.
+              </div>`
+            ) : null}
+          </div>
+
+          <div class="mt-8 border-t border-gray-200 pt-6">
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <h5 class="text-sm font-semibold text-gray-700">Postulaciones recibidas</h5>
+              <p class="text-xs text-gray-400">Aprobado solo puede asignarlo rol LIGA.</p>
+            </div>
+
+            <div class="mb-4 grid gap-3 md:grid-cols-3">
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div class="text-xs uppercase tracking-wide text-gray-400">Total</div>
+                <div class="text-2xl font-extrabold text-gray-700">${postulationSummary.total}</div>
+              </div>
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 md:col-span-2">
+                <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Por estado</div>
+                <div class="flex flex-wrap gap-2">
+                  ${postulationSummary.byStatus.map((s) => (
+                    $$render`<span${$$addAttribute(`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${postulationStatusClass(s.status)}`, "class")}>
+                      ${s.status}: ${s.count}
+                    </span>`
+                  ))}
+                  ${postulationSummary.byStatus.length === 0 ? (
+                    $$render`<span class="text-xs text-gray-400">Sin datos</span>`
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Top convocatorias</div>
+              <div class="grid gap-2 md:grid-cols-2">
+                ${postulationSummary.byConvocatoria.slice(0, 6).map((item) => (
+                  $$render`<div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                    <span class="text-gray-700">${item.title}</span>
+                    <strong class="text-gray-800">${item.count}</strong>
+                  </div>`
+                ))}
+                ${postulationSummary.byConvocatoria.length === 0 ? (
+                  $$render`<span class="text-xs text-gray-400">Sin datos</span>`
+                ) : null}
+              </div>
+            </div>
+
+            <form method="GET" action="/admin" class="mb-4 rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-5">
+              <input type="hidden" name="tab" value="aprobaciones">
+              <div class="md:col-span-3">
+                <label class="admin-label">Buscar</label>
+                <input class="admin-input" name="postQ"${$$addAttribute(postulationQuery, "value")} placeholder="POST..., atleta, convocatoria, club">
+              </div>
+              <div>
+                <label class="admin-label">Estado</label>
+                <select class="admin-input" name="postStatus">
+                  <option value="all"${$$addAttribute(postulationStatusFilter === 'all', "selected")}>Todos</option>
+                  ${PostulationStatus.options.map((statusItem) => (
+                    $$render`<option${$$addAttribute(statusItem, "value")}${$$addAttribute(postulationStatusFilter === statusItem, "selected")}>${statusItem}</option>`
+                  ))}
+                </select>
+              </div>
+              <div class="flex items-end gap-2">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">filter_alt</span>
+                  Filtrar
+                </button>
+                <a class="admin-btn admin-btn-secondary" href="/admin?tab=aprobaciones">
+                  <span class="material-symbols-outlined">restart_alt</span>
+                  Limpiar
+                </a>
+              </div>
+              <div class="md:col-span-5 flex justify-end">
+                <a class="admin-btn admin-btn-secondary"${$$addAttribute(`/postulaciones.csv?status=${encodeURIComponent(postulationStatusFilter)}&q=${encodeURIComponent(postulationQuery)}`, "href")}>
+                  <span class="material-symbols-outlined">download</span>
+                  Exportar CSV
+                </a>
+              </div>
+            </form>
+
+            <div class="space-y-3">
+              ${filteredPostulations.map((p) => (
+                $$render`<form method="POST" action="/api/dashboard/liga/postulaciones" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-7">
+                  <input type="hidden" name="id"${$$addAttribute(p.id, "value")}>
+                  <div class="md:col-span-2">
+                    <div class="text-xs text-gray-400 uppercase">Postulación</div>
+                    <div class="font-semibold text-gray-700">${p.id}</div>
+                    <div class="text-sm text-gray-600">${p.convocatoriaTitle}</div>
+                    <div class="text-xs text-gray-500">Club #${p.clubId} · ${p.athleteName}</div>
+                    <div${$$addAttribute(`mt-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${postulationStatusClass(p.status)}`, "class")}>
+                      ${p.status}
+                    </div>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="admin-label">Estado</label>
+                    <select class="admin-input" name="status">
+                      ${PostulationStatus.options.map((statusItem) => (
+                        $$render`<option${$$addAttribute(statusItem, "value")}${$$addAttribute(p.status === statusItem, "selected")}>
+                          ${statusItem}
+                        </option>`
+                      ))}
+                    </select>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="admin-label">Notas</label>
+                    <textarea class="admin-input min-h-[84px]" name="notes">${p.notes ?? ''}</textarea>
+                  </div>
+                  <div class="md:col-span-1 flex items-end justify-end">
+                    <button class="admin-btn admin-btn-primary" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar
+                    </button>
+                  </div>
+                </form>`
+              ))}
+              ${filteredPostulations.length === 0 && (
+                $$render`<div class="text-center py-8 text-gray-400 text-sm rounded-xl border border-dashed border-gray-200">
+                  No hay postulaciones registradas.
+                </div>`
+              )}
+            </div>
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'auditoria' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Auditoria Avanzada</h4>
+        </div>
+        <div class="admin-card-body">
+          <form method="GET" action="/admin" class="mb-4 rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-5">
+            <input type="hidden" name="tab" value="auditoria">
+            <div>
+              <label class="admin-label">Accion</label>
+              <input class="admin-input" name="auditAction"${$$addAttribute(auditAction, "value")} placeholder="login_success">
+            </div>
+            <div>
+              <label class="admin-label">Modulo</label>
+              <input class="admin-input" name="auditEntity"${$$addAttribute(auditEntity, "value")} placeholder="documents">
+            </div>
+            <div>
+              <label class="admin-label">Usuario ID</label>
+              <input class="admin-input" name="auditUserId"${$$addAttribute(auditUserId > 0 ? String(auditUserId) : '', "value")} placeholder="123">
+            </div>
+            <div class="md:col-span-2 flex items-end gap-2">
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">filter_alt</span>
+                Filtrar
+              </button>
+              <a class="admin-btn admin-btn-secondary" href="/admin?tab=auditoria">
+                <span class="material-symbols-outlined">restart_alt</span>
+                Limpiar
+              </a>
+            </div>
+          </form>
+
+          <div class="space-y-2">
+            ${auditLogs.map((log) => (
+              $$render`<article class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="text-sm">
+                    <strong class="text-gray-700">${log.action}</strong> · ${log.entityType || 'general'} · ${log.entityId || '-'}
+                  </div>
+                  <div class="text-xs text-gray-500">${new Date(log.createdAt).toLocaleString('es-CO')}</div>
+                </div>
+                <div class="text-xs text-gray-600 mt-1">Usuario: ${log.userId ?? '-'} · IP: ${log.ip ?? '-'}</div>
+              </article>`
+            ))}
+            ${auditLogs.length === 0 ? (
+              $$render`<div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+                Sin registros con esos filtros.
+              </div>`
+            ) : null}
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'documents' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Documentos y Noticias</h4>
+        </div>
+        <div class="admin-card-body">
+          ${user?.role === 'CLUB' || user?.role === 'ASAMBLEISTA' ? (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <p class="text-sm text-gray-500 mb-4">Aquí encontrarás documentos, circulares y actas importantes para tu gestión.</p>
+              <div class="space-y-3">
+                ${docs.map((d) => (
+                  $$render`<article class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
+                    <div>
+                      <h5 class="font-bold text-gray-800">${d.title}</h5>
+                      <div class="text-xs text-gray-500">Categoría: ${d.category || '-'} · Fecha: ${d.date || '-'}</div>
+                      ${d.description && $$render`<p class="text-sm text-gray-600 mt-1">${d.description}</p>`}
+                    </div>
+                    <a${$$addAttribute(d.href, "href")} class="admin-btn admin-btn-secondary shrink-0" target="_blank" rel="noreferrer">
+                      <span class="material-symbols-outlined">download</span>
+                      Descargar
+                    </a>
+                  </article>`
+                ))}
+                ${docs.length === 0 && (
+                  $$render`<p class="text-sm text-gray-400">No hay documentos disponibles.</p>`
+                )}
+              </div>
+            `,})}`
+          ) : (
+            $$render`${$$renderComponent($$result,'Fragment',Fragment,{},{"default": async () => $$render`
+              <div class="mb-4">
+                <button type="button" id="toggle-create-document" class="admin-btn admin-btn-secondary">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar nuevo documento
+                </button>
+              </div>
+
+              <div id="create-document-panel"${$$addAttribute(['rounded-lg border border-gray-200 bg-gray-50 p-4', openCreateDocumentForm ? '' : 'hidden'], "class:list")}>
+                <form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="admin-form-row md:grid-cols-6">
+                  <input type="hidden" name="intent" value="create">
+                  <input class="admin-input" name="title" placeholder="Título" required>
+                  <input class="admin-input" name="category" placeholder="Categoría (ej: Estatutos)">
+                  <input class="admin-input" type="date" name="date" placeholder="Fecha (YYYY-MM-DD)">
+                  <div class="md:col-span-2">
+                    <input class="admin-input" type="file" name="file" required>
+                    <p class="text-xs text-gray-500 mt-1">Solo carga local desde tu equipo.</p>
+                  </div>
+                  <button class="admin-btn admin-btn-primary" type="submit">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar
+                  </button>
+                  <textarea class="admin-input min-h-[80px] md:col-span-6" name="description" placeholder="Descripción del documento"></textarea>
+                  <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-3">
+                    <input type="checkbox" name="isPrivate" value="1">
+                    Documento privado
+                  </label>
+                  <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-6">
+                    <input type="checkbox" name="isSensitive" value="1">
+                    Cambio sensible (si lo crea rol LIGA, pasará a aprobación ADMIN)
+                  </label>
+                </form>
+              </div>
+
+              <div class="mt-6 space-y-3">
+                ${docs.map((d) => (
+                  $$render`<form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="admin-list-item md:grid-cols-6">
+                    <input type="hidden" name="id"${$$addAttribute(d.id, "value")}>
+                    <input type="hidden" name="intent" value="update">
+                    <input type="hidden" name="existingHref"${$$addAttribute(d.href, "value")}>
+                    <input class="admin-input" name="title"${$$addAttribute(d.title, "value")} required>
+                    <input class="admin-input" name="category"${$$addAttribute(d.category ?? '', "value")} placeholder="Categoría">
+                    <input class="admin-input" type="date" name="date"${$$addAttribute(d.date ?? '', "value")} placeholder="YYYY-MM-DD">
+                    <div class="md:col-span-2">
+                      <input class="admin-input" type="file" name="file">
+                      <p class="text-xs text-gray-500 mt-1">
+                        Archivo actual: <a class="text-emerald-700 underline break-all"${$$addAttribute(d.href, "href")} target="_blank" rel="noreferrer">${d.href}</a>
+                      </p>
+                    </div>
+                    <button class="admin-btn admin-btn-primary" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Actualizar
+                    </button>
+                    <textarea class="admin-input min-h-[80px] md:col-span-5" name="description">${d.description}</textarea>
+                    <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-5">
+                      <input type="checkbox" name="isSensitive" value="1">
+                      Marcar como sensible para solicitar aprobación
+                    </label>
+                    <button class="admin-btn admin-btn-danger" type="submit" name="intent" value="delete">
+                      <span class="material-symbols-outlined">delete</span>
+                      Eliminar
+                    </button>
+                  </form>`
+                ))}
+                ${docs.length === 0 && (
+                  $$render`<div class="text-center py-12 text-gray-400">
+                    <span class="material-symbols-outlined text-4xl mb-2">description</span>
+                    <p class="text-sm">No hay documentos registrados</p>
+                  </div>`
+                )}
+              </div>
+            `,})}`
+          )}
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'ranking' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Ranking departamental</h4>
+        </div>
+        <div class="admin-card-body">
+          <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4">
+            <input type="hidden" name="pageKey" value="ranking">
+            <input type="hidden" name="tab" value="ranking">
+            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Ranking</h5>
+            <div>
+              <input class="admin-input" type="file" name="heroFile" accept="image/*">
+              <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.ranking ?? '', "value")}>
+              ${pageHeroMap.ranking ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.ranking}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+            </div>
+            <div class="flex items-center justify-end">
+              <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Ranking</button>
+            </div>
+          </form>
+          <form method="POST" action="/api/admin/ranking" encType="multipart/form-data" class="grid gap-5 mt-6">
+            <p class="text-xs text-gray-400">Formulario guiado del ranking destacado.</p>
+            <div class="space-y-3" data-repeat-container>
+              ${rankingRows.map((item) => (
+                $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-5">
+                  <input class="admin-input" name="rankingRank"${$$addAttribute(item.rank, "value")} placeholder="Puesto" required>
+                  <input class="admin-input md:col-span-2" name="rankingAthlete"${$$addAttribute(item.athlete, "value")} placeholder="Atleta" required>
+                  <input class="admin-input md:col-span-2" name="rankingClub"${$$addAttribute(item.club, "value")} placeholder="Club">
+                  <input class="admin-input" name="rankingMark"${$$addAttribute(item.mark, "value")} placeholder="Marca" required>
+                  <input class="admin-input" name="rankingStatus"${$$addAttribute(item.status, "value")} placeholder="Estado">
+                  <input class="admin-input" name="rankingCategory"${$$addAttribute(item.category, "value")} placeholder="Categoría">
+                  <input class="admin-input" name="rankingDiscipline"${$$addAttribute(item.discipline, "value")} placeholder="Disciplina">
+                  <input class="admin-input" name="rankingGender"${$$addAttribute(item.gender, "value")} placeholder="Sexo">
+                  <input class="admin-input" name="rankingSeason"${$$addAttribute(item.season, "value")} placeholder="Temporada">
+                  <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*">
+                  <input type="hidden" name="rankingImageUrl"${$$addAttribute(item.imageUrl ?? '', "value")}>
+                  ${item.imageUrl && (
+                    $$render`<p class="text-xs text-gray-500 mt-1 md:col-span-3">Actual: ${item.imageUrl}</p>`
+                  )}
+                  <div class="md:col-span-5 flex justify-end">
+                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                      <span class="material-symbols-outlined">delete</span>
+                      Quitar fila
+                    </button>
+                  </div>
+                </div>`
+              ))}
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-ranking">
+                <span class="material-symbols-outlined">add</span>
+                Agregar fila
+              </button>
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar ranking
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'stars' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Nuestras Estrellas (Home)</h4>
+        </div>
+        <div class="admin-card-body">
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <h5 class="text-sm font-semibold text-emerald-800">Flujo recomendado</h5>
+            <p class="mt-1 text-sm text-emerald-700">Gestiona primero el ranking y luego sincroniza el Top 3 aquí para evitar doble trabajo.</p>
+            <form method="POST" action="/api/admin/stars" class="mt-3">
+              <input type="hidden" name="intent" value="sync-ranking">
+              <button class="admin-btn admin-btn-secondary" type="submit">
+                <span class="material-symbols-outlined">sync</span>
+                Usar Top 3 del ranking
+              </button>
+            </form>
+          </div>
+
+          <form method="POST" action="/api/admin/stars" class="grid gap-5 mt-6">
+            <input type="hidden" name="intent" value="save">
+            <div class="space-y-3" id="home-stars-container" data-repeat-container>
+              ${data.home.stars.slice(0, 6).map((item) => (
+                $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-2">
+                  <div>
+                    <label class="admin-label">Nombre atleta</label>
+                    <input class="admin-input" name="starName"${$$addAttribute(item.name, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Disciplina</label>
+                    <input class="admin-input" name="starDiscipline"${$$addAttribute(item.discipline, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Etiqueta</label>
+                    <input class="admin-input" name="starBadge"${$$addAttribute(item.badge, "value")} required>
+                  </div>
+                  <div>
+                    <label class="admin-label">Dato destacado</label>
+                    <input class="admin-input" name="starStat"${$$addAttribute(item.stat, "value")} required>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="admin-label">Imagen URL</label>
+                    <input class="admin-input" name="starImageUrl"${$$addAttribute(item.imageUrl, "value")} required>
+                  </div>
+                  <div class="md:col-span-2 flex justify-end">
+                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                      <span class="material-symbols-outlined">delete</span>
+                      Quitar estrella
+                    </button>
+                  </div>
+                </div>`
+              ))}
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-star" data-container="#home-stars-container">
+                <span class="material-symbols-outlined">add</span>
+                Agregar estrella
+              </button>
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar estrellas
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'results' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Resultados por competencia</h4>
+        </div>
+        <div class="admin-card-body">
+          <p class="text-sm text-gray-500">Aquí no se cargan resultados manuales. Solo conecta cada competencia con su enlace de resultados.</p>
+          <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 mt-4">
+            <input type="hidden" name="pageKey" value="resultados">
+            <input type="hidden" name="tab" value="results">
+            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Resultados</h5>
+            <div>
+              <input class="admin-input" type="file" name="heroFile" accept="image/*">
+              <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.resultados ?? '', "value")}>
+              ${pageHeroMap.resultados ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.resultados}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+            </div>
+            <div class="flex items-center justify-end">
+              <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Resultados</button>
+            </div>
+          </form>
+          <div class="mt-6 space-y-3">
+            ${(data.competencias ?? []).map((competencia, index) => {
+              const resultsLink = resultsLinkFromDownloads(competencia.downloads);
+              return (
+              $$render`<article class="rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3 md:grid-cols-8 items-center">
+                <div class="md:col-span-3">
+                  <div class="text-xs text-gray-400 uppercase">Competencia</div>
+                  <div class="font-semibold text-gray-800">${competencia.title}</div>
+                  <div class="text-xs text-gray-500">${competencia.date} · ${competencia.location}</div>
+                </div>
+                <div class="md:col-span-3">
+                  <div class="text-xs text-gray-400 uppercase">Link de resultados</div>
+                  ${resultsLink ? (
+                    $$render`<a class="text-sm text-emerald-700 font-semibold underline break-all"${$$addAttribute(resultsLink, "href")} target="_blank" rel="noreferrer">
+                      ${resultsLink}
+                    </a>`
+                  ) : (
+                    $$render`<span class="text-sm text-amber-700">Sin enlace asignado</span>`
+                  )}
+                </div>
+                <div class="md:col-span-2">
+                  <form method="POST" action="/api/admin/competencia-results-link" class="flex gap-2 md:justify-end">
+                    <input type="hidden" name="competenciaIndex"${$$addAttribute(index, "value")}>
+                    <input class="admin-input min-w-[180px]" type="url" name="resultsUrl"${$$addAttribute(resultsLink, "value")} placeholder="https://..."${$$addAttribute(!resultsLink, "required")}>
+                    <button class="admin-btn admin-btn-secondary" type="submit">
+                      <span class="material-symbols-outlined">link</span>
+                      ${resultsLink ? 'Actualizar link' : 'Agregar link'}
+                    </button>
+                  </form>
+                </div>
+              </article>`
+            )})}
+            ${(data.competencias ?? []).length === 0 ? (
+              $$render`<div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+                Aún no hay competencias. Crea competencias en la pestaña <strong>Competencias</strong>.
+              </div>`
+            ) : null}
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'noticias' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Noticias</h4>
+        </div>
+        <div class="admin-card-body">
+          <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4">
+            <input type="hidden" name="pageKey" value="noticias">
+            <input type="hidden" name="tab" value="noticias">
+            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Noticias</h5>
+            <div>
+              <input class="admin-input" type="file" name="heroFile" accept="image/*">
+              <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.noticias ?? '', "value")}>
+              ${pageHeroMap.noticias ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.noticias}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+            </div>
+            <div class="flex items-center justify-end">
+              <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Noticias</button>
+            </div>
+          </form>
+          <form method="POST" action="/api/admin/news" encType="multipart/form-data" class="grid gap-5 mt-6">
+            <p class="text-xs text-gray-400">Formulario guiado. Contenido: una línea por párrafo.</p>
+            <div class="space-y-3" data-repeat-container>
+              ${data.news.map((item) => (
+                $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                  <input class="admin-input" name="newsSlug"${$$addAttribute(item.slug, "value")} placeholder="Slug (opcional)">
+                  <input class="admin-input md:col-span-2" name="newsTitle"${$$addAttribute(item.title, "value")} placeholder="Título" required>
+                  <input class="admin-input md:col-span-3" name="newsExcerpt"${$$addAttribute(item.excerpt, "value")} placeholder="Resumen">
+                  <input class="admin-input" name="newsDate" type="date"${$$addAttribute(item.date, "value")}>
+                  <input class="admin-input" name="newsCategory"${$$addAttribute(item.category, "value")} placeholder="Categoría">
+                  <input class="admin-input" type="file" name="newsImageFile" accept="image/*">
+                  <input type="hidden" name="newsImageUrl"${$$addAttribute(item.imageUrl ?? '', "value")}>
+                  ${item.imageUrl && (
+                    $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${item.imageUrl}</p>`
+                  )}
+                  <div>
+                    <label class="admin-label">Destacada en Home</label>
+                    <select class="admin-input" name="newsFeaturedOrder">
+                      <option value=""${$$addAttribute(!featuredNewsOrderMap.get(item.slug), "selected")}>No destacar</option>
+                      <option value="1"${$$addAttribute(featuredNewsOrderMap.get(item.slug) === 1, "selected")}>Orden 1</option>
+                      <option value="2"${$$addAttribute(featuredNewsOrderMap.get(item.slug) === 2, "selected")}>Orden 2</option>
+                      <option value="3"${$$addAttribute(featuredNewsOrderMap.get(item.slug) === 3, "selected")}>Orden 3</option>
+                    </select>
+                  </div>
+                  <div class="md:col-span-3">
+                    <label class="admin-label">Párrafos del contenido</label>
+                    <textarea class="admin-input min-h-[110px]" name="newsBody">${linesFromArray(item.body)}</textarea>
+                  </div>
+                  <div class="md:col-span-3 flex justify-end">
+                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                      <span class="material-symbols-outlined">delete</span>
+                      Quitar noticia
+                    </button>
+                  </div>
+                </div>`
+              ))}
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-news">
+                <span class="material-symbols-outlined">add</span>
+                Agregar noticia
+              </button>
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar noticias
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'blog' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Blog</h4>
+        </div>
+        <div class="admin-card-body">
+          <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4">
+            <input type="hidden" name="pageKey" value="blog">
+            <input type="hidden" name="tab" value="blog">
+            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Blog</h5>
+            <div>
+              <input class="admin-input" type="file" name="heroFile" accept="image/*">
+              <input type="hidden" name="heroUrl"${$$addAttribute(pageHeroMap.blog ?? '', "value")}>
+              ${pageHeroMap.blog ? $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${pageHeroMap.blog}</p>` : $$render`<p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>`}
+            </div>
+            <div class="flex items-center justify-end">
+              <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Blog</button>
+            </div>
+          </form>
+          <form method="POST" action="/api/admin/blog" encType="multipart/form-data" class="grid gap-5 mt-6">
+            <p class="text-xs text-gray-400">Etiquetas separadas por coma. Contenido: una línea por párrafo.</p>
+            <div class="space-y-3" data-repeat-container>
+              ${data.blogPosts.map((item) => (
+                $$render`<div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                  <input class="admin-input" name="blogSlug"${$$addAttribute(item.slug, "value")} placeholder="Slug (opcional)">
+                  <input class="admin-input" name="blogType"${$$addAttribute(item.type, "value")} placeholder="Tipo">
+                  <input class="admin-input" name="blogDate" type="date"${$$addAttribute(item.date, "value")}>
+                  <input class="admin-input md:col-span-3" name="blogTitle"${$$addAttribute(item.title, "value")} placeholder="Título" required>
+                  <input class="admin-input md:col-span-3" name="blogExcerpt"${$$addAttribute(item.excerpt, "value")} placeholder="Resumen">
+                  <input class="admin-input md:col-span-2" name="blogTags"${$$addAttribute((item.tags ?? []).join(', '), "value")} placeholder="tags, separadas, por, coma">
+                  <input class="admin-input" type="file" name="blogImageFile" accept="image/*">
+                  <input type="hidden" name="blogImageUrl"${$$addAttribute(item.imageUrl ?? '', "value")}>
+                  ${item.imageUrl && (
+                    $$render`<p class="text-xs text-gray-500 mt-1">Actual: ${item.imageUrl}</p>`
+                  )}
+                  <div class="md:col-span-3">
+                    <label class="admin-label">Párrafos del contenido</label>
+                    <textarea class="admin-input min-h-[110px]" name="blogBody">${linesFromArray(item.body)}</textarea>
+                  </div>
+                  <div class="md:col-span-3 flex justify-end">
+                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                      <span class="material-symbols-outlined">delete</span>
+                      Quitar artículo
+                    </button>
+                  </div>
+                </div>`
+              ))}
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-blog">
+                <span class="material-symbols-outlined">add</span>
+                Agregar artículo
+              </button>
+              <button class="admin-btn admin-btn-primary" type="submit">
+                <span class="material-symbols-outlined">save</span>
+                Guardar blog
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>`
+    ) : null}
+
+    ${contentTab === 'stats' ? (
+      $$render`<section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Récords y Marcas</h4>
+        </div>
+        <div class="admin-card-body">
+          <form method="POST" action="/api/admin/marks" class="admin-form-row md:grid-cols-6">
+            <input type="hidden" name="intent" value="create">
+            <input class="admin-input md:col-span-2" name="athleteName" placeholder="Nombre del atleta" required>
+            <input class="admin-input md:col-span-2" name="discipline" placeholder="Disciplina (100m, salto largo...)" required>
+            <input class="admin-input" name="value" type="number" step="any" placeholder="Valor" required>
+            <input class="admin-input" name="unit" placeholder="Unidad (s, m)" required>
+            <input class="admin-input md:col-span-2" name="recordDate" type="date" required>
+            <button class="admin-btn admin-btn-primary md:col-span-4" type="submit">
+              <span class="material-symbols-outlined">add</span>
+              Agregar récord
+            </button>
+          </form>
+
+          <div class="mt-6 admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Atleta</th>
+                  <th>Disciplina</th>
+                  <th>Valor</th>
+                  <th>Unidad</th>
+                  <th>Fecha</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${marks.map((m) => (
+                  $$render`<tr>
+                    <td class="athlete-name">${m.athlete}</td>
+                    <td>${m.discipline}</td>
+                    <td class="font-semibold">${m.value}</td>
+                    <td>${m.unit}</td>
+                    <td class="text-gray-500">${m.recordDate}</td>
+                    <td>
+                      <form method="POST" action="/api/admin/marks" class="inline">
+                        <input type="hidden" name="intent" value="delete">
+                        <input type="hidden" name="id"${$$addAttribute(m.id, "value")}>
+                        <button class="admin-btn admin-btn-danger admin-btn-icon" type="submit" title="Eliminar">
+                          <span class="material-symbols-outlined">delete</span>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>`
+                ))}
+              </tbody>
+            </table>
+            ${marks.length === 0 && (
+              $$render`<div class="text-center py-12 text-gray-400">
+                <span class="material-symbols-outlined text-4xl mb-2">emoji_events</span>
+                <p class="text-sm">No hay récords registrados</p>
+              </div>`
+            )}
+          </div>
+        </div>
+      </section>`
+    ) : null}
+
+    <template id="tpl-laliga-principle">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <input class="admin-input" name="principleIcon" value="star" placeholder="Icono (ej: military_tech)">
+        <input class="admin-input" name="principleTitle" placeholder="Título" required>
+        <input class="admin-input" name="principleDesc" placeholder="Descripción" required>
+        <div class="md:col-span-3 flex justify-end">
+          <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar principio</button>
+        </div>
+      </div>
+    </template>
+    <template id="tpl-laliga-governance">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-2">
+        <input class="admin-input" name="governanceLabel" placeholder="Etiqueta (ej: Gestión Administrativa)" required>
+        <input class="admin-input" name="governanceTitle" placeholder="Título (ej: Secretaría General)" required>
+        <div class="md:col-span-2 flex justify-end">
+          <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar órgano</button>
+        </div>
+      </div>
+    </template>
+    <template id="tpl-laliga-normative">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <input class="admin-input" name="normativeIcon" value="menu_book" placeholder="Icono (ej: gavel)">
+        <input class="admin-input" name="normativeTitle" placeholder="Título" required>
+        <input class="admin-input" name="normativeHref" value="/documentos" placeholder="Enlace (ej: /documentos)" required>
+        <div class="md:col-span-3 flex justify-end">
+          <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar documento</button>
+        </div>
+      </div>
+    </template>
+    <template id="tpl-star">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-white p-3 md:grid-cols-2">
+        <div><label class="admin-label">Nombre atleta</label><input class="admin-input" name="starName" required></div>
+        <div><label class="admin-label">Disciplina</label><input class="admin-input" name="starDiscipline" required></div>
+        <div><label class="admin-label">Etiqueta</label><input class="admin-input" name="starBadge" required></div>
+        <div><label class="admin-label">Dato destacado</label><input class="admin-input" name="starStat" required></div>
+        <div class="md:col-span-2"><label class="admin-label">Imagen URL</label><input class="admin-input" name="starImageUrl" required></div>
+        <div class="md:col-span-2 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar estrella</button></div>
+      </div>
+    </template>
+    <template id="tpl-home-sponsor">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-white p-3 md:grid-cols-3">
+        <input class="admin-input" name="sponsorName" placeholder="Nombre" required>
+        <input class="admin-input" name="sponsorHref" placeholder="Enlace" required>
+        <div>
+          <input class="admin-input" type="file" name="sponsorLogoFile" accept="image/*">
+          <input type="hidden" name="sponsorLogoUrl" value="">
+        </div>
+        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar patrocinador</button></div>
+      </div>
+    </template>
+    <template id="tpl-club">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <div><label class="admin-label">Nombre</label><input class="admin-input" name="clubName" required></div>
+        <div><label class="admin-label">Municipio</label><input class="admin-input" name="clubMunicipality" required></div>
+        <div><label class="admin-label">Atletas</label><input class="admin-input" name="clubAthletes" type="number" min="0" value="0" required></div>
+        <div><label class="admin-label">Estado</label><input class="admin-input" name="clubStatus" value="Activo" required></div>
+        <div><label class="admin-label">Entrenador</label><input class="admin-input" name="clubCoach" required></div>
+        <div><label class="admin-label">Categoría</label><input class="admin-input" name="clubCategory"></div>
+        <div class="md:col-span-3"><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="clubImageFile" accept="image/*"><input type="hidden" name="clubImageUrl" value=""></div>
+        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar club</button></div>
+      </div>
+    </template>
+    <template id="tpl-convocatoria">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <div><label class="admin-label">Título</label><input class="admin-input" name="convTitle" required></div>
+        <div><label class="admin-label">Categoría</label><input class="admin-input" name="convCategory" required></div>
+        <div><label class="admin-label">Estado</label><input class="admin-input" name="convStatus" value="Abierta" required></div>
+        <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date"></div>
+        <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date"></div>
+        <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required></div>
+        <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required></div>
+        <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
+        <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
+        <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
+        <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*"><input type="hidden" name="convImageUrl" value=""></div>
+        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
+      </div>
+    </template>
+        <template id="tpl-competencia">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <div><label class="admin-label">Título</label><input class="admin-input" name="compTitle" required></div>
+        <div><label class="admin-label">Estado</label><input class="admin-input" name="compStatus" value="Confirmado" required></div>
+        <div><label class="admin-label">Fecha</label><input class="admin-input" name="compDate" type="date"></div>
+        <div><label class="admin-label">Ubicación</label><input class="admin-input" name="compLocation" required></div>
+        <div><label class="admin-label">Tipo</label><input class="admin-input" name="compType"></div>
+        <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="compImageFile" accept="image/*"><input type="hidden" name="compImageUrl" value=""></div>
+        <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[90px]" name="compDescription" required></textarea></div>
+        <div class="md:col-span-3"><label class="admin-label">Descargas (\`Etiqueta|URL\`)</label><textarea class="admin-input min-h-[90px]" name="compDownloads"></textarea></div>
+        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar competencia</button></div>
+      </div>
+    </template>
+    <template id="tpl-asamblea">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <input type="hidden" name="meetingId" value="0">
+        <div><label class="admin-label">Título</label><input class="admin-input" name="meetingTitle" required></div>
+        <div><label class="admin-label">Fecha</label><input class="admin-input" name="meetingDate" type="date" required></div>
+        <div><label class="admin-label">Estado</label><input class="admin-input" name="meetingStatus" value="Programada"></div>
+        <div class="md:col-span-3"><label class="admin-label">Lugar</label><input class="admin-input" name="meetingLocation"></div>
+        <div class="md:col-span-3"><label class="admin-label">Agenda</label><textarea class="admin-input min-h-[80px]" name="meetingAgenda"></textarea></div>
+        <div class="md:col-span-2"><label class="admin-label">Documentos (\`Etiqueta|URL\`)</label><textarea class="admin-input min-h-[90px]" name="meetingDocuments"></textarea></div>
+        <div><label class="admin-label">Privada</label><select class="admin-input" name="meetingIsPrivate"><option value="1" selected>Sí</option><option value="0">No</option></select></div>
+        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar asamblea</button></div>
+      </div>
+    </template>
+    <template id="tpl-ranking">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-5">
+        <input class="admin-input" name="rankingRank" placeholder="Puesto" required>
+        <input class="admin-input md:col-span-2" name="rankingAthlete" placeholder="Atleta" required>
+        <input class="admin-input md:col-span-2" name="rankingClub" placeholder="Club">
+        <input class="admin-input" name="rankingMark" placeholder="Marca" required>
+        <input class="admin-input" name="rankingStatus" placeholder="Estado">
+        <input class="admin-input" name="rankingCategory" placeholder="Categoría">
+        <input class="admin-input" name="rankingDiscipline" placeholder="Disciplina">
+        <input class="admin-input" name="rankingGender" placeholder="Sexo">
+        <input class="admin-input" name="rankingSeason" placeholder="Temporada">
+        <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" placeholder="Imagen"><input type="hidden" name="rankingImageUrl" value="">
+        <div class="md:col-span-5 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar fila</button></div>
+      </div>
+    </template>
+    <template id="tpl-result">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-4">
+        <input class="admin-input" name="resultPos" placeholder="Posición" required>
+        <input class="admin-input md:col-span-2" name="resultAthlete" placeholder="Atleta" required>
+        <select class="admin-input" name="resultIsGold"><option value="1">Sí</option><option value="0" selected>No</option></select>
+        <input class="admin-input" name="resultCategory" placeholder="Categoría">
+        <input class="admin-input" name="resultClub" placeholder="Club">
+        <input class="admin-input" name="resultMark" placeholder="Marca" required>
+        <input class="admin-input" name="resultEvent" placeholder="Evento">
+        <input class="admin-input" name="resultDate" type="date">
+        <input class="admin-input md:col-span-2" type="file" name="resultImageFile" accept="image/*" placeholder="Imagen"><input type="hidden" name="resultImageUrl" value="">
+        <input class="admin-input md:col-span-2" name="resultDownloadUrl" placeholder="URL de descarga">
+        <div class="md:col-span-4 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar resultado</button></div>
+      </div>
+    </template>
+    <template id="tpl-news">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <input class="admin-input" name="newsSlug" placeholder="Slug (opcional)">
+        <input class="admin-input md:col-span-2" name="newsTitle" placeholder="Título" required>
+        <input class="admin-input md:col-span-3" name="newsExcerpt" placeholder="Resumen">
+        <input class="admin-input" name="newsDate" type="date">
+        <input class="admin-input" name="newsCategory" placeholder="Categoría">
+        <input class="admin-input" type="file" name="newsImageFile" accept="image/*" placeholder="Imagen"><input type="hidden" name="newsImageUrl" value="">
+        <div>
+          <label class="admin-label">Destacada en Home</label>
+          <select class="admin-input" name="newsFeaturedOrder">
+            <option value="" selected>No destacar</option>
+            <option value="1">Orden 1</option>
+            <option value="2">Orden 2</option>
+            <option value="3">Orden 3</option>
+          </select>
+        </div>
+        <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="newsBody"></textarea></div>
+        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar noticia</button></div>
+      </div>
+    </template>
+    <template id="tpl-blog">
+      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+        <input class="admin-input" name="blogSlug" placeholder="Slug (opcional)">
+        <input class="admin-input" name="blogType" placeholder="Tipo">
+        <input class="admin-input" name="blogDate" type="date">
+        <input class="admin-input md:col-span-3" name="blogTitle" placeholder="Título" required>
+        <input class="admin-input md:col-span-3" name="blogExcerpt" placeholder="Resumen">
+        <input class="admin-input md:col-span-2" name="blogTags" placeholder="tags, separadas, por, coma">
+        <input class="admin-input" type="file" name="blogImageFile" accept="image/*" placeholder="Imagen"><input type="hidden" name="blogImageUrl" value="">
+        <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="blogBody"></textarea></div>
+        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar artículo</button></div>
+      </div>
+    </template>
+
+    <script>
+      const root = document;
+      root.addEventListener('click', (event) => {
+        const targetEl = event.target instanceof HTMLElement ? event.target : null;
+        if (!targetEl) return;
+
+        const jumpCard = targetEl.closest('.js-jump-card');
+        if (jumpCard) {
+          const targetSelector = jumpCard.getAttribute('data-target');
+          const openDetailsSelector = jumpCard.getAttribute('data-open-details');
+          if (openDetailsSelector) {
+            const detailsEl = root.querySelector(openDetailsSelector);
+            if (detailsEl instanceof HTMLDetailsElement) detailsEl.open = true;
+          }
+          if (targetSelector) {
+            const targetNode = root.querySelector(targetSelector);
+            if (targetNode instanceof HTMLElement) {
+              targetNode.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+          return;
+        }
+
+        const createToggle = targetEl.closest('#toggle-create-document');
+        if (createToggle) {
+          const panel = root.querySelector('#create-document-panel');
+          if (!panel) return;
+          panel.classList.toggle('hidden');
+          return;
+        }
+
+        const addButton = targetEl.closest('.js-add-row');
+        if (addButton) {
+          const target = addButton.getAttribute('data-target');
+          const containerSelector = addButton.getAttribute('data-container');
+          if (!target) return;
+          const template = root.querySelector(target);
+          const container = containerSelector
+            ? addButton.closest('form')?.querySelector(containerSelector) || root.querySelector(containerSelector)
+            : addButton.closest('form')?.querySelector('[data-repeat-container]');
+          if (!template || !container) return;
+          const fragment = template.content.cloneNode(true);
+          container.appendChild(fragment);
+          return;
+        }
+
+        const trigger = targetEl.closest('.js-remove-row');
+        if (!trigger) return;
+        const item = trigger.closest('.js-repeat-item');
+        if (!item) return;
+        const container = item.parentElement;
+        if (!container) return;
+        if (container.querySelectorAll('.js-repeat-item').length <= 1) return;
+        item.remove();
+      });
+    </script>`
+  }
+</div></section>`}`}</div></section>`}`,"header": async () => $$render`<header class="admin-header sticky top-0 z-40 flex items-center justify-between px-8 py-4">
+      <div class="flex items-center gap-3">
+        <h2 class="admin-header-title">${currentLabel}</h2>
+        <div class="admin-badge">En vivo</div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <a class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-gray-600" href="/admin?tab=settings" aria-label="Configuración">
+          <span class="material-symbols-outlined">settings</span>
+        </a>
+        <div class="flex items-center gap-3 border-l border-gray-200 pl-4">
+          <div class="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+            <img${$$addAttribute(logoUrl, "src")} alt="Admin" class="h-full w-full object-contain">
+          </div>
+          <a class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-red-600" href="/admin/logout" aria-label="Cerrar sesión">
+            <span class="material-symbols-outlined">logout</span>
+          </a>
+        </div>
+      </div>
+    </header>`,"nav": async () => $$render`<div class="space-y-1">
+      ${navItems.map((item) => (
+        $$render`<a${$$addAttribute(`/admin?tab=${item.id}`, "href")}${$$addAttribute(`nav-item ${activeTab === item.id ? 'active' : ''}`, "class")}>
+          <span class="material-symbols-outlined">${item.icon}</span>
+          <span>${item.label}</span>
+        </a>`
+      ))}
+    </div>`,})}`,})}`;
+}, '<stdin>', undefined);
+export default $$stdin;

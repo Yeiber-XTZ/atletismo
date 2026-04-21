@@ -1,0 +1,294 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Navbar from '../../../components/Navbar.astro';
+import FooterKinetic from '../../../components/FooterKinetic.astro';
+import { getHomeData } from '../../../lib/content';
+import { getClubById, getClubByOwnerUserId } from '../../../lib/clubs';
+import { listPostulaciones } from '../../../lib/postulaciones';
+import { listNotificationsForRole } from '../../../lib/notificaciones';
+import { listClubTechnicalStaff } from '../../../lib/club-technical-staff';
+import { getDb } from '../../../lib/db';
+
+const data = await getHomeData();
+const { settings, documents } = data;
+const user = Astro.locals.user;
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+
+let club = null;
+if (user?.clubId) {
+  club = await getClubById(Number(user.clubId));
+}
+if (!club && user?.id) {
+  club = await getClubByOwnerUserId(Number(user.id));
+}
+
+const clubId = club?.id ?? (user?.clubId ? Number(user.clubId) : 0);
+const myPostulaciones = clubId ? await listPostulaciones({ clubId }) : [];
+const notifications = await listNotificationsForRole('CLUB');
+const technicalStaff = clubId ? await listClubTechnicalStaff(clubId) : [];
+const docsToShow = Array.isArray(documents) ? documents.slice(0, 5) : [];
+
+// Obtener atletas del club
+let clubAthletes = [];
+if (clubId && club) {
+  try {
+    const db = await getDb();
+    if (db) {
+      const result = await db.query(
+        `SELECT 
+          a.id,
+          a.first_name || ' ' || a.last_name as name,
+          a.document,
+          a.gender,
+          a.birthdate,
+          a.municipality,
+          a.email,
+          a.coach,
+          a.status,
+          a.created_at,
+          COUNT(DISTINCT ad.id) as disciplines_count
+        FROM athletes a
+        LEFT JOIN athlete_disciplines ad ON a.id = ad.athlete_id
+        LEFT JOIN club_athletes ca ON a.id = ca.athlete_id
+        WHERE a.club = $1 OR ca.club_id = $2
+        GROUP BY a.id, a.first_name, a.last_name, a.document, a.gender, a.birthdate, a.municipality, a.email, a.coach, a.status, a.created_at
+        ORDER BY a.created_at DESC
+        LIMIT 10`,
+        [club.name, clubId]
+      );
+      clubAthletes = result.rows;
+    }
+  } catch (err) {
+    console.error('Error fetching club athletes:', err);
+  }
+}
+
+function statusTone(status: string) {
+  const value = String(status || '').toLowerCase();
+  if (value.includes('activo') || value.includes('aprob')) return 'text-green-700 bg-green-100 border-green-200';
+  if (value.includes('revision') || value.includes('pend')) return 'text-amber-800 bg-amber-100 border-amber-200';
+  return 'text-slate-700 bg-slate-100 border-slate-200';
+}
+
+function calculateAge(birthdate: string) {
+  if (!birthdate) return '-';
+  const birth = new Date(birthdate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+---
+
+<BaseLayout title="Dashboard Club | Liga de Atletismo del Chocó" description="Módulo operativo para clubes afiliados.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[74px] bg-surface">
+    <section class="container mx-auto px-6 py-12 md:py-16 space-y-8">
+      <header class="rounded-2xl border border-[var(--border)] bg-white p-6 md:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-on-surface-variant font-semibold">Club afiliado</p>
+            <h1 class="mt-2 font-headline text-3xl md:text-4xl font-black uppercase tracking-tight text-on-surface">
+              Panel del Club
+            </h1>
+            <p class="mt-2 text-on-surface-variant">
+              Gestiona tu perfil, documentos legales, nómina técnica e inscripciones.
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <a class="btn-secondary btn-slant" href="/convocatorias">Ir a convocatorias</a>
+            <form method="POST" action="/api/logout">
+              <button class="btn-secondary btn-slant" type="submit">Cerrar sesión</button>
+            </form>
+          </div>
+        </div>
+      </header>
+
+      {saved ? (
+        <div class="rounded-xl border border-green-200 bg-green-50 p-4 text-green-800">
+          Cambios guardados correctamente.
+        </div>
+      ) : null}
+      {error ? (
+        <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+          No se pudo completar la operación. Revisa los datos del formulario.
+        </div>
+      ) : null}
+
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <article class="lg:col-span-5 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Estado de afiliación</h2>
+          {club ? (
+            <div class="mt-4 space-y-3 text-sm">
+              <div>
+                <p class="text-on-surface-variant">Club</p>
+                <p class="font-semibold text-on-surface">{club.name}</p>
+              </div>
+              <div>
+                <p class="text-on-surface-variant">Municipio</p>
+                <p class="font-semibold text-on-surface">{club.municipality || 'Sin definir'}</p>
+              </div>
+              <div class={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(club.status)}`}>
+                {club.status || 'En revisión'}
+              </div>
+              <p class="text-on-surface-variant">
+                Vigencia de afiliación: <strong class="text-on-surface">{club.affiliationExpires || 'Sin fecha registrada'}</strong>
+              </p>
+            </div>
+          ) : (
+            <p class="mt-3 text-sm text-on-surface-variant">
+              Tu cuenta no está asociada a un club todavía. Solicita vinculación a la Liga.
+            </p>
+          )}
+        </article>
+
+        <article class="lg:col-span-7 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Alertas y notificaciones</h2>
+          <div class="mt-4 grid gap-3">
+            {notifications.map((n) => (
+              <div class="rounded-xl border border-[var(--border)] bg-surface-container-low p-4">
+                <p class="text-[11px] uppercase tracking-wide text-on-surface-variant">{n.level}</p>
+                <h3 class="font-semibold text-on-surface">{n.title}</h3>
+                <p class="text-sm text-on-surface-variant">{n.message}</p>
+                {n.actionHref ? (
+                  <a href={n.actionHref} class="text-sm text-primary font-semibold hover:underline">Ver detalle</a>
+                ) : null}
+              </div>
+            ))}
+            {notifications.length === 0 ? <p class="text-sm text-on-surface-variant">No hay alertas por ahora.</p> : null}
+          </div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <article class="lg:col-span-7 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Perfil institucional</h2>
+          <p class="mt-2 text-sm text-on-surface-variant">
+            Aquí se actualiza el perfil oficial y se carga el documento legal del club (PDF privado).
+          </p>
+          {clubId ? (
+            <form class="mt-5 grid gap-4" method="POST" action="/api/dashboard/club/profile" encType="multipart/form-data">
+              <input type="hidden" name="clubId" value={String(clubId)} />
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="form-label">Entrenador responsable</label>
+                  <input class="form-input" name="coach" value={club?.coach ?? ''} />
+                </div>
+                <div>
+                  <label class="form-label">Categoría / enfoque</label>
+                  <input class="form-input" name="category" value={club?.category ?? ''} />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="form-label">Correo institucional</label>
+                  <input class="form-input" name="contactEmail" type="email" value={club?.contactEmail ?? ''} />
+                </div>
+                <div>
+                  <label class="form-label">Teléfono de contacto</label>
+                  <input class="form-input" name="contactPhone" value={club?.contactPhone ?? ''} />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="form-label">Logo (opcional)</label>
+                  <input class="form-input" type="file" name="imageFile" accept="image/*" />
+                </div>
+                <div>
+                  <label class="form-label">Documento legal (PDF)</label>
+                  <input class="form-input" type="file" name="legalDocumentFile" accept="application/pdf,.pdf" />
+                </div>
+              </div>
+              <p class="text-xs text-on-surface-variant">
+                Este documento solo lo ve el propietario del club y los roles ADMIN/LIGA.
+              </p>
+              <div class="flex justify-end">
+                <button class="btn-primary btn-slant" type="submit">Guardar perfil del club</button>
+              </div>
+            </form>
+          ) : (
+            <p class="mt-4 text-sm text-on-surface-variant">No hay club asociado para editar.</p>
+          )}
+        </article>
+
+        <article class="lg:col-span-5 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Nómina técnica</h2>
+          <p class="mt-2 text-sm text-on-surface-variant">Agrega o elimina entrenadores y personal de apoyo.</p>
+          {clubId ? (
+            <form method="POST" action="/api/dashboard/club/staff" class="mt-4 grid gap-3">
+              <input type="hidden" name="action" value="create" />
+              <input type="hidden" name="clubId" value={String(clubId)} />
+              <input class="form-input" name="fullName" placeholder="Nombre completo" required />
+              <input class="form-input" name="role" placeholder="Cargo (Entrenador, Fisio...)" required />
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input class="form-input" name="phone" placeholder="Teléfono" />
+                <input class="form-input" name="email" type="email" placeholder="Correo" />
+              </div>
+              <button class="btn-primary btn-slant w-full" type="submit">Agregar integrante</button>
+            </form>
+          ) : null}
+
+          <div class="mt-4 space-y-3">
+            {technicalStaff.map((member) => (
+              <div class="rounded-xl border border-[var(--border)] bg-surface-container-low p-3">
+                <p class="font-semibold text-on-surface">{member.fullName}</p>
+                <p class="text-sm text-on-surface-variant">{member.role}</p>
+                <p class="text-xs text-on-surface-variant">{member.phone || 'Sin teléfono'} · {member.email || 'Sin correo'}</p>
+                <form method="POST" action="/api/dashboard/club/staff" class="mt-2">
+                  <input type="hidden" name="action" value="delete" />
+                  <input type="hidden" name="clubId" value={String(clubId)} />
+                  <input type="hidden" name="id" value={String(member.id)} />
+                  <button type="submit" class="text-xs font-semibold text-red-700 hover:underline">Eliminar</button>
+                </form>
+              </div>
+            ))}
+            {technicalStaff.length === 0 ? <p class="text-sm text-on-surface-variant">Aún no hay integrantes registrados.</p> : null}
+          </div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <article class="lg:col-span-7 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Seguimiento de postulaciones</h2>
+          <div class="mt-4 space-y-3">
+            {myPostulaciones.map((p) => (
+              <div class="rounded-xl border border-[var(--border)] bg-surface-container-low p-4">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                  <h3 class="font-semibold text-on-surface">{p.convocatoriaTitle}</h3>
+                  <span class="text-xs font-semibold rounded-full bg-white px-3 py-1 border border-[var(--border)]">{p.status}</span>
+                </div>
+                <p class="text-sm text-on-surface-variant">{p.athleteName}</p>
+                <p class="text-xs text-on-surface-variant">{p.id}</p>
+              </div>
+            ))}
+            {myPostulaciones.length === 0 ? (
+              <p class="text-sm text-on-surface-variant">
+                No hay postulaciones registradas. Puedes inscribir atletas desde la vista de convocatoria.
+              </p>
+            ) : null}
+          </div>
+        </article>
+
+        <article class="lg:col-span-5 rounded-2xl border border-[var(--border)] bg-white p-6">
+          <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">Circulares y manuales</h2>
+          <div class="mt-4 space-y-3">
+            {docsToShow.map((doc) => (
+              <a class="block rounded-xl border border-[var(--border)] bg-surface-container-low p-4 hover:border-primary transition-colors" href={doc.href}>
+                <p class="font-semibold text-on-surface">{doc.title}</p>
+                <p class="text-sm text-on-surface-variant">{doc.description}</p>
+              </a>
+            ))}
+            {docsToShow.length === 0 ? <p class="text-sm text-on-surface-variant">No hay documentos publicados.</p> : null}
+          </div>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

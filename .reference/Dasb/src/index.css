@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lexend:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: "Lexend", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+
+  --color-primary: #006b1b;
+  --color-primary-container: #9bfc96;
+  --color-on-primary: #ffffff;
+  --color-secondary: #6c5a00;
+  --color-secondary-container: #fefce8;
+  --color-tertiary: #4252b4;
+  --color-tertiary-container: #9fabff;
+  --color-background: #ddffe2;
+  --color-surface: #ffffff;
+  --color-surface-container-low: #cafdd4;
+  --color-surface-container-highest: #acecbb;
+  --color-on-surface: #0f172a;
+  --color-outline-variant: rgba(139, 183, 149, 0.15);
+
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background font-body text-on-surface;
+  }
+}
+
+@layer components {
+  .kinetic-slant {
+    clip-path: polygon(0 0, 100% 5%, 100% 100%, 0 95%);
+  }
+  
+  .ambient-shadow {
+    box-shadow: 0 20px 40px rgba(11, 54, 29, 0.08);
+  }
+}
+

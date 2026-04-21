@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings, news } = data;
+
+const slug = Astro.params.slug ?? '';
+const items = Array.isArray(news) ? news : [];
+const item = items.find((n) => n.slug === slug);
+if (!item) {
+  Astro.response.status = 404;
+}
+
+const itemDate = item?.date ? new Date(item.date) : null;
+const formattedDate = itemDate ? itemDate.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+---
+<BaseLayout
+  title={`${item ? item.title : 'Noticia no encontrada'} | Liga de Atletismo del Chocó`}
+  description="Noticia y comunicado oficial de la Liga de Atletismo del Chocó."
+>
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[80px] bg-gray-50">
+    <section class="page-hero">
+      <div class="container mx-auto px-6">
+        <nav class="page-breadcrumb">
+          <a href="/" class="page-breadcrumb-link">
+            <span class="material-symbols-outlined text-sm">home</span>
+            Inicio
+          </a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <a href="/noticias" class="page-breadcrumb-link">Noticias</a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <span class="page-breadcrumb-current">{item ? item.title : 'No encontrada'}</span>
+        </nav>
+        <h1 class="page-title">{item ? item.title : 'Noticia no encontrada'}</h1>
+        <p class="page-subtitle">{item ? item.excerpt : 'La noticia solicitada no existe o fue retirada.'}</p>
+      </div>
+    </section>
+
+    <section class="page-section">
+      <div class="container mx-auto px-6">
+        {item ? (
+          <article class="rounded-2xl border border-[var(--border)] bg-white p-8">
+            {item.imageUrl ? (
+              <div class="mb-8 overflow-hidden rounded-2xl ring-1 ring-slate-100">
+                <img src={item.imageUrl} alt={item.title} class="w-full max-h-[420px] object-cover" referrerpolicy="no-referrer" />
+              </div>
+            ) : null}
+            <div class="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
+              <span class="rounded-full bg-[#e8f5e0] px-3 py-1 text-xs font-bold text-[#006b1b]">{item.category}</span>
+              <span class="inline-flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">calendar_month</span>
+                {formattedDate}
+              </span>
+            </div>
+            <div class="mt-8 space-y-4 text-[var(--text-secondary)] leading-relaxed">
+              {(Array.isArray(item.body) ? item.body : []).map((p) => (
+                <p>{p}</p>
+              ))}
+            </div>
+          </article>
+        ) : (
+          <div class="rounded-2xl border border-[var(--border)] bg-white p-8">
+            <p class="text-[var(--text-secondary)]">Vuelve a noticias para continuar.</p>
+            <div class="mt-6">
+              <a href="/noticias" class="btn-primary">Ver noticias</a>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>

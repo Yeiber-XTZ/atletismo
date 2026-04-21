@@ -1,0 +1,349 @@
+﻿---
+const { siteName = 'Liga de Atletismo del Chocó', logoUrl = '/logo.png', social = {} as Record<string, string> } = Astro.props;
+
+const year = new Date().getFullYear();
+const socialEntries = Object.entries(social).filter(([, href]) => Boolean(href));
+
+const iconByKey: Record<string, string> = {
+  instagram: 'photo_camera',
+  facebook: 'public',
+  x: 'tag',
+  twitter: 'tag',
+  youtube: 'smart_display',
+  tiktok: 'movie',
+  whatsapp: 'chat',
+  email: 'mail'
+};
+
+const quickLinks = [
+  { label: 'La Liga', href: '/la-liga' },
+  { label: 'Convocatorias', href: '/convocatorias' },
+  { label: 'Competencias', href: '/competencias' },
+  { label: 'Calendario', href: '/calendario' },
+  { label: 'Documentos', href: '/documentos' },
+  { label: 'Contacto', href: '/contacto' }
+];
+---
+
+<footer class="footer-clean" aria-label="Pie de página">
+  <div class="footer-clean-cap" aria-hidden="true">
+    <span class="footer-clean-cap-end"></span>
+  </div>
+
+  <div class="footer-clean-container">
+    <div class="footer-clean-main">
+        <div class="footer-clean-brand-block">
+          <a class="footer-clean-brand" href="/">
+            <img src={logoUrl} alt={siteName} class="footer-clean-logo" />
+            <span>{siteName}</span>
+          </a>
+          <p class="footer-clean-tagline">Organizamos el atletismo del departamento con transparencia y alto rendimiento.</p>
+        </div>
+
+        <nav class="footer-clean-links" aria-label="Navegación del footer">
+          {quickLinks.map((link) => (
+            <a class="footer-clean-link" href={link.href}>{link.label}</a>
+          ))}
+        </nav>
+
+        <div class="footer-clean-actions">
+          <div class="footer-clean-social" aria-label="Redes sociales">
+            {socialEntries.length ? (
+              socialEntries.slice(0, 2).map(([key, href]) => (
+                <a class="footer-clean-pill" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${key}`}>
+                  <span class="material-symbols-outlined">{iconByKey[key.toLowerCase()] ?? 'link'}</span>
+                  <span class="capitalize">{key}</span>
+                </a>
+              ))
+            ) : null}
+          </div>
+
+          <a class="footer-clean-cta" href="/documentos">
+            Transparencia
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </a>
+        </div>
+    </div>
+
+    <div class="footer-clean-bottom">
+      <p>© {year} {siteName}. Todos los derechos reservados.</p>
+      <p>Hecho para una liga moderna, técnica y competitiva.</p>
+    </div>
+    <div class="footer-clean-floor"></div>
+  </div>
+</footer>
+
+<style is:global>
+  .footer-clean {
+    position: relative;
+    margin-top: 78px;
+    background: #f6faf6;
+    border-top: 1px solid #d7e4d6;
+    color: #1f2937;
+  }
+
+  .footer-clean-cap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -14px;
+    height: 14px;
+    background: #5aac32;
+    overflow: hidden;
+  }
+
+  .footer-clean-cap-end {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 170px;
+    height: 100%;
+    background: #f6faf6;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%, 76% 0);
+  }
+
+  .footer-clean-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 42px 28px 0;
+  }
+
+  .footer-clean-main {
+    display: grid;
+    grid-template-columns: minmax(340px, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "links links";
+    gap: 22px 28px;
+    align-items: center;
+  }
+
+  .footer-clean-brand-block {
+    grid-area: brand;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .footer-clean-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Lexend', sans-serif;
+    font-size: clamp(19px, 1.25vw, 22px);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    color: #0b361d;
+    text-decoration: none;
+    line-height: 1.12;
+    max-width: 460px;
+    text-wrap: balance;
+  }
+
+  .footer-clean-logo {
+    width: auto;
+    height: 56px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .footer-clean-tagline {
+    margin: 0;
+    color: #5b695f;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 13.5px;
+    line-height: 1.55;
+    max-width: 460px;
+  }
+
+  .footer-clean-links {
+    grid-area: links;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    border-top: 1px solid #dbe7da;
+    padding-top: 14px;
+  }
+
+  .footer-clean-link {
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #344239;
+    padding: 9px 11px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: all 150ms ease;
+    white-space: nowrap;
+    text-align: left;
+  }
+
+  .footer-clean-link:hover {
+    color: #0b361d;
+    background: #eef8eb;
+    border-color: #d3e5d1;
+  }
+
+  .footer-clean-actions {
+    grid-area: actions;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 10px;
+    min-width: 210px;
+  }
+
+  .footer-clean-social {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .footer-clean-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid #d4dfd2;
+    background: #fdfefd;
+    color: #2f3f36;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: all 150ms ease;
+  }
+
+  .footer-clean-pill .material-symbols-outlined {
+    font-size: 16px;
+    color: #5aac32;
+  }
+
+  .footer-clean-pill:hover {
+    border-color: #c2d8bf;
+    background: #f4faf3;
+  }
+
+  .footer-clean-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 16px;
+    border-radius: 14px;
+    background: #0b361d;
+    color: #e8f5e0;
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 180ms ease;
+  }
+
+  .footer-clean-cta:hover {
+    background: #14452a;
+    transform: translateY(-1px);
+  }
+
+  .footer-clean-bottom {
+    margin-top: 18px;
+    border-top: 1px solid #d9e4d8;
+    padding: 16px 0 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #607065;
+    font-size: 12.5px;
+  }
+
+  .footer-clean-floor {
+    height: 12px;
+    background: #edf5ec;
+    margin: 0 -24px;
+    border-top: 1px solid #d7e4d6;
+  }
+
+  @media (min-width: 900px) {
+    .footer-clean-bottom {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  @media (max-width: 1199px) {
+    .footer-clean-main {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "brand"
+        "actions"
+        "links";
+      gap: 16px;
+    }
+
+    .footer-clean-brand-block,
+    .footer-clean-brand {
+      justify-content: center;
+      text-align: center;
+      max-width: 100%;
+    }
+
+    .footer-clean-tagline {
+      text-align: center;
+      margin: 0 auto;
+    }
+
+    .footer-clean-links {
+      grid-template-columns: repeat(3, minmax(110px, 1fr));
+    }
+
+    .footer-clean-actions {
+      align-items: center;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .footer-clean-social {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .footer-clean-container {
+      padding: 30px 14px 0;
+    }
+
+    .footer-clean {
+      margin-top: 64px;
+    }
+
+    .footer-clean-cap-end {
+      width: 96px;
+    }
+
+    .footer-clean-links {
+      justify-content: center;
+    }
+
+    .footer-clean-logo {
+      height: 44px;
+    }
+
+    .footer-clean-link {
+      text-align: center;
+    }
+
+    .footer-clean-floor {
+      margin: 0 -14px;
+    }
+  }
+</style>

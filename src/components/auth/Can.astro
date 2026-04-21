@@ -1,0 +1,23 @@
+---
+import { hasPermission, hasRole, type AuthUser, type Permission, type Role } from '../../lib/rbac';
+
+const {
+  user,
+  roles,
+  permission,
+  negate = false
+} = Astro.props as {
+  user: AuthUser | null | undefined;
+  roles?: Role[];
+  permission?: Permission;
+  negate?: boolean;
+};
+
+const allowedByRole = roles ? hasRole(user ?? undefined, roles) : true;
+const allowedByPerm = permission ? hasPermission(user ?? undefined, permission) : true;
+const allowed = allowedByRole && allowedByPerm;
+const show = negate ? !allowed : allowed;
+---
+
+{show ? <slot /> : null}
+

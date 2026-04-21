@@ -1,0 +1,314 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+import { slugify } from '../../lib/slug';
+
+const data = await getHomeData();
+const { settings, hero, convocatorias: allConvocatorias, publicSite } = data;
+const pageHeroes = publicSite?.pageHeroes ?? {};
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const category = (Astro.url.searchParams.get('cat') ?? 'Todas').trim();
+
+const convocatorias = (allConvocatorias ?? []).map((c) => ({
+  ...c,
+  imageUrl:
+    c.imageUrl ||
+    'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop'
+}));
+
+const categories = ['Todas', ...Array.from(new Set(convocatorias.map((c) => c.category).filter(Boolean)))];
+
+const filtered = convocatorias.filter((c) => {
+  if (q && !c.title.toLowerCase().includes(q.toLowerCase())) return false;
+  if (category !== 'Todas' && c.category !== category) return false;
+  return true;
+});
+
+const heroImage =
+  pageHeroes.convocatorias ||
+  hero?.imageUrl ||
+  'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop';
+
+const statusKey = (s: string) => s.trim().toLowerCase();
+const chipClass = (s: string) => {
+  const key = statusKey(s);
+  if (key.includes('abierta') || key.includes('abierto')) return 'bg-[#5AAC32] text-white';
+  if (key.includes('próx') || key.includes('proxi')) return 'bg-[#eab308] text-[#5b4b00]';
+  return 'bg-slate-400 text-white';
+};
+---
+
+<BaseLayout
+  title={`Convocatorias | ${settings.siteName}`}
+  description="Convocatorias y procesos de postulación para la Selección Chocó y eventos oficiales."
+>
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[80px]">
+    <!-- HERO (clon de referencia) -->
+    <header class="relative h-[700px] w-full overflow-hidden bg-slate-950">
+      <div class="absolute inset-0 opacity-55">
+        <img alt="Atletas en movimiento" class="h-full w-full object-cover" src={heroImage} referrerpolicy="no-referrer" />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+
+      <div class="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-6 lg:px-8">
+        <div class="mb-4 inline-flex items-center gap-2 bg-[#eab308] px-3 py-1 font-headline text-[10px] font-black uppercase tracking-[0.2em] text-[#5b4b00]">
+          <span class="material-symbols-outlined text-[16px]">campaign</span>
+          Última oportunidad
+        </div>
+
+        <h1 class="mb-6 font-headline text-5xl font-black italic tracking-tighter text-white sm:text-7xl lg:text-8xl leading-none">
+          Convocatorias<br />
+          <span class="text-[#eab308]">abiertas</span>
+        </h1>
+
+        <p class="mb-10 max-w-xl text-base font-medium leading-relaxed text-slate-200 sm:text-lg">
+          El futuro del atletismo chocoano se construye hoy. Participa en procesos oficiales y sigue tu estado desde el panel.
+        </p>
+
+        <div class="flex flex-wrap gap-4">
+          <a class="bg-[#5AAC32] px-8 py-4 font-headline text-base font-black italic uppercase tracking-widest text-white transition hover:scale-105" href="/registro/atleta">
+            Postularse ahora
+          </a>
+          <a class="border-2 border-white px-8 py-4 font-headline text-base font-black italic uppercase tracking-widest text-white transition hover:bg-white hover:text-black" href="/calendario">
+            Ver calendario
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- FILTER BAR -->
+    <section class="sticky top-[80px] z-40 border-b border-slate-200 bg-white py-4">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div class="flex w-full gap-1 overflow-x-auto pb-2 md:w-auto md:pb-0">
+          {categories.map((cat) => (
+            <a
+              href={`/convocatorias?cat=${encodeURIComponent(cat)}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+              class:list={[
+                'px-5 py-1.5 font-headline text-[11px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors',
+                cat === category ? 'bg-[#5AAC32] text-white' : 'text-slate-600 hover:text-[#5AAC32]'
+              ]}
+            >
+              {cat}
+            </a>
+          ))}
+        </div>
+
+        <form class="relative w-full md:w-72" method="GET" action="/convocatorias">
+          <input type="hidden" name="cat" value={category} />
+          <input
+            class="w-full border border-slate-200 bg-slate-50 py-2 pl-4 pr-10 text-xs outline-none focus:ring-1 focus:ring-[#5AAC32]"
+            placeholder="Buscar convocatoria..."
+            name="q"
+            value={q}
+          />
+          <span class="material-symbols-outlined absolute right-3 top-2 text-slate-500">search</span>
+        </form>
+      </div>
+    </section>
+
+    <!-- GRID -->
+    <section class="mx-auto w-full max-w-7xl px-6 py-14 lg:px-8">
+      {filtered.length ? (
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((c) => {
+            const key = statusKey(c.status);
+            const isClosed = key.includes('cerrad');
+            const isUpcoming = key.includes('próx') || key.includes('proxi');
+            const isOpen = key.includes('abierta') || key.includes('abierto');
+
+            return (
+              <article
+                class:list={[
+                  'group border border-slate-200 bg-white transition-all duration-300 hover:border-[#5AAC32]/20 hover:shadow-xl',
+                  isClosed ? 'opacity-80 bg-slate-50' : ''
+                ]}
+              >
+                <div class="relative h-44 overflow-hidden">
+                  <img
+                    alt={c.title}
+                    class:list={[
+                      'h-full w-full object-cover transition-transform duration-700 group-hover:scale-105',
+                      isClosed ? 'grayscale' : isUpcoming ? 'grayscale group-hover:grayscale-0' : ''
+                    ]}
+                    src={c.imageUrl}
+                    referrerpolicy="no-referrer"
+                  />
+                  <div class="absolute left-0 top-0">
+                    <span class={`px-4 py-1 font-headline text-[10px] font-black italic uppercase tracking-widest ${chipClass(c.status)}`}>
+                      {c.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="p-6">
+                  <span class="mb-2 block font-headline text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 opacity-80">
+                    Categoría: {c.category}
+                  </span>
+                  <h3 class:list={['mb-4 font-headline text-xl font-bold italic uppercase leading-tight', isClosed ? 'text-slate-500' : 'text-slate-900']}>
+                    {c.title}
+                  </h3>
+
+                  <div class="mb-6 space-y-3">
+                    <div class="flex items-center gap-3">
+                      <span class="material-symbols-outlined text-[#5AAC32]">event</span>
+                      <div class="text-[11px]">
+                        <p class="font-bold uppercase opacity-50">{isUpcoming ? 'Apertura' : 'Cierre de inscripción'}</p>
+                        <p class="font-bold">{isUpcoming ? c.openDate : c.closeDate}</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class:list={['material-symbols-outlined', isClosed ? 'text-slate-400' : 'text-[#5AAC32]']}>
+                        {isClosed ? 'block' : 'location_on'}
+                      </span>
+                      <span class:list={['text-[11px] font-bold uppercase', isClosed ? 'text-slate-400 italic' : 'text-slate-700']}>
+                        {isClosed ? 'Inscripciones finalizadas' : c.location}
+                      </span>
+                    </div>
+                  </div>
+
+                  <a
+                    href={`/convocatorias/${slugify(c.title)}`}
+                    aria-disabled={isClosed ? 'true' : 'false'}
+                    class:list={[
+                      'block w-full -skew-x-6 py-3 text-center font-headline text-sm font-bold italic uppercase tracking-widest transition-all',
+                      isClosed
+                        ? 'cursor-not-allowed bg-slate-200 text-slate-400'
+                        : isUpcoming
+                          ? 'border border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white'
+                          : 'bg-[#5AAC32] text-white hover:bg-black'
+                    ]}
+                  >
+                    {isClosed ? 'Finalizada' : isUpcoming ? 'Ver detalles' : 'Postularse'}
+                  </a>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div class="rounded-3xl bg-white p-10 text-center ring-1 ring-slate-200">
+          <p class="text-slate-600">No encontramos convocatorias con ese filtro/búsqueda.</p>
+          <div class="mt-6">
+            <a class="btn-primary" href="/convocatorias">Ver todas</a>
+          </div>
+        </div>
+      )}
+    </section>
+
+    <!-- VALUE SECTION -->
+    <section class="overflow-hidden border-b border-t border-slate-200 bg-white py-20 sm:py-24">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="flex flex-col gap-12 md:flex-row md:items-center md:gap-16">
+          <div class="md:w-1/2">
+            <span class="mb-4 block font-headline text-[10px] font-black uppercase tracking-[0.4em] text-[#5AAC32]">
+              Alto rendimiento
+            </span>
+            <h2 class="mb-8 font-headline text-4xl font-black italic uppercase tracking-tighter text-slate-900 sm:text-5xl md:text-6xl leading-none">
+              ¿Por qué<br /><span class="text-[#5AAC32]">participar?</span>
+            </h2>
+            <p class="mb-10 max-w-lg text-base text-slate-500">
+              Buscamos deportistas y embajadores del Chocó. Únete al programa con trazabilidad y transparencia.
+            </p>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div class="border border-slate-200 p-6 transition-colors hover:border-[#5AAC32]/30">
+                <span class="material-symbols-outlined mb-4 text-[32px] text-[#5AAC32]">star</span>
+                <h4 class="mb-2 font-headline text-xs font-bold italic uppercase tracking-wider text-slate-900">Ranking departamental</h4>
+                <p class="text-[11px] leading-relaxed text-slate-500">Visibilización de talento y criterios técnicos claros.</p>
+              </div>
+              <div class="border border-slate-200 p-6 transition-colors hover:border-[#5AAC32]/30">
+                <span class="material-symbols-outlined mb-4 text-[32px] text-[#5AAC32]">psychology</span>
+                <h4 class="mb-2 font-headline text-xs font-bold italic uppercase tracking-wider text-slate-900">Gestión técnica</h4>
+                <p class="text-[11px] leading-relaxed text-slate-500">Observaciones y control de estado por parte del comité.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative md:w-1/2">
+            <div class="pointer-events-none absolute -left-10 -top-10 select-none font-headline text-[6rem] font-black italic leading-none text-slate-900/5 sm:text-[8rem]">
+              CHOCÓ
+            </div>
+            <img
+              alt="Entrenamiento"
+              class="relative z-10 aspect-square w-full object-cover border-8 border-white shadow-2xl"
+              src="https://images.unsplash.com/photo-1594882645126-14020914d58d?q=80&w=2085&auto=format&fit=crop"
+              referrerpolicy="no-referrer"
+            />
+            <div class="absolute -bottom-6 -right-6 z-20 bg-[#eab308] p-6 shadow-lg">
+              <p class="font-headline text-3xl font-black italic leading-none text-[#5b4b00]">+200</p>
+              <p class="text-[9px] font-black uppercase tracking-[0.2em] text-[#5b4b00]">Postulaciones</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEPS -->
+    <section class="bg-slate-50 py-20 sm:py-24">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="mb-12 text-center sm:mb-16">
+          <span class="text-[#5AAC32] font-headline text-[10px] font-black uppercase tracking-[0.4em]">Proceso de selección</span>
+          <h2 class="mt-2 font-headline text-3xl font-black italic uppercase text-slate-900 sm:text-4xl">Pasos para tu registro</h2>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-4">
+          {[
+            { number: '01', icon: 'description', title: 'Revisa bases', desc: 'Lee requisitos de edad, categoría y marcas mínimas.' },
+            { number: '02', icon: 'edit', title: 'Formulario', desc: 'Completa datos personales y deportivos.' },
+            { number: '03', icon: 'upload', title: 'Documentos', desc: 'Sube soportes requeridos según la convocatoria.' },
+            { number: '04', icon: 'check_circle', title: 'Validación', desc: 'El comité revisa y define el estado final.', highlight: true }
+          ].map((s) => (
+            <div
+              class:list={[
+                'relative border p-7 transition-all',
+                s.highlight ? 'bg-[#5AAC32] border-[#5AAC32] shadow-xl' : 'bg-white border-slate-200 hover:border-[#5AAC32]/50'
+              ]}
+            >
+              <span class:list={['absolute right-4 top-4 font-headline text-5xl font-black', s.highlight ? 'text-white/10' : 'text-slate-100']}>
+                {s.number}
+              </span>
+              <span class:list={['material-symbols-outlined mb-6 text-[40px]', s.highlight ? 'text-[#eab308]' : 'text-[#5AAC32]']}>
+                {s.icon}
+              </span>
+              <h3 class:list={['mb-3 font-headline text-sm font-bold italic uppercase', s.highlight ? 'text-white' : 'text-slate-900']}>
+                {s.title}
+              </h3>
+              <p class:list={['text-xs leading-relaxed', s.highlight ? 'text-white/80' : 'text-slate-500']}>{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="relative overflow-hidden py-20 sm:py-24">
+      <div class="absolute inset-0 bg-[#0b361d]">
+        <div class="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent"></div>
+      </div>
+      <div class="relative z-10 mx-auto max-w-7xl px-6 text-center lg:px-8">
+        <h2 class="font-headline text-3xl font-black italic uppercase tracking-tighter text-white sm:text-5xl leading-none">
+          ¿Eres club y quieres postular atletas?
+        </h2>
+        <p class="mx-auto mt-6 max-w-2xl text-sm text-slate-200">
+          Regístrate como club para gestionar postulaciones, adjuntar documentos y hacer seguimiento del estado desde el panel.
+        </p>
+        <div class="mt-10 flex flex-wrap justify-center gap-4">
+          <a class="bg-[#5AAC32] px-8 py-4 font-headline text-sm font-black uppercase tracking-widest text-white transition hover:bg-[#4a9528]" href="/registro/club">
+            Registro de club
+          </a>
+          <a class="bg-white/10 px-8 py-4 font-headline text-sm font-black uppercase tracking-widest text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/20" href="/contacto">
+            Pedir ayuda
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+

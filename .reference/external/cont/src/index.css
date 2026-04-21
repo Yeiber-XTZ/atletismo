@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-headline: "Lexend", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+
+  --color-primary: #006b1b;
+  --color-primary-dim: #005d16;
+  --color-on-primary: #d1ffc8;
+  --color-primary-container: #9bfc96;
+  
+  --color-secondary: #6c5a00;
+  --color-secondary-container: #fdd835;
+  --color-on-secondary-container: #5b4b00;
+  
+  --color-tertiary: #4252b4;
+  --color-tertiary-container: #9fabff;
+  
+  --color-background: #ddffe2;
+  --color-on-background: #0b361d;
+  
+  --color-surface: #ddffe2;
+  --color-surface-bright: #ddffe2;
+  --color-surface-container-low: #cafdd4;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-highest: #acecbb;
+  
+  --color-outline: #568061;
+  --color-outline-variant: #8bb795;
+  --color-on-surface-variant: #3b6447;
+}
+
+@layer base {
+  body {
+    @apply font-body text-on-background bg-white;
+  }
+}
+
+@layer utilities {
+  .kinetic-slant {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 92%);
+  }
+  .btn-slant {
+    clip-path: polygon(0 0, 95% 0, 100% 100%, 5% 100%);
+  }
+  .btn-slant-right {
+    clip-path: polygon(0 0, 100% 0, 92% 100%, 0% 100%);
+  }
+}

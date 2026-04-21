@@ -1,0 +1,5 @@
+---
+const error = Astro.url.searchParams.get('error');
+const to = error ? `/login?next=/admin&error=${encodeURIComponent(error)}` : '/login?next=/admin';
+return Astro.redirect(to);
+---

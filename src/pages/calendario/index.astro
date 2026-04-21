@@ -1,0 +1,390 @@
+﻿---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings, hero, competencias, publicSite } = data;
+const pageHeroes = publicSite?.pageHeroes ?? {};
+
+type CalendarEvent = {
+  name: string;
+  date: string;
+  location: string;
+  category?: string;
+  status?: string;
+  resultsUrl?: string | null;
+};
+
+const allEvents: CalendarEvent[] = Array.isArray(competencias)
+  ? competencias.map((comp: any) => ({
+      name: comp.title,
+      date: comp.date,
+      location: comp.location,
+      category: comp.type ?? '',
+      status: comp.status,
+      resultsUrl:
+        comp.downloads?.find((item: any) => String(item?.label ?? '').trim().toLowerCase() === 'resultados')?.href ?? null
+    }))
+  : [];
+
+const monthParam = (Astro.url.searchParams.get('m') ?? '').trim(); // YYYY-MM
+const category = (Astro.url.searchParams.get('cat') ?? '').trim();
+const municipality = (Astro.url.searchParams.get('mun') ?? '').trim();
+
+const isValidMonth = (m: string) => /^\d{4}-\d{2}$/.test(m);
+
+const toMonthKey = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  return `${y}-${mo}`;
+};
+
+const uniqueMonths = Array.from(
+  new Set(allEvents.map((e) => toMonthKey(e.date)).filter(Boolean))
+).sort();
+
+const defaultMonth = uniqueMonths[0] || (() => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  return `${y}-${mo}`;
+})();
+
+const month = isValidMonth(monthParam) ? monthParam : defaultMonth;
+
+const monthDate = new Date(`${month}-01T00:00:00`);
+const monthLabel = monthDate.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+
+const prevMonth = (() => {
+  const d = new Date(monthDate);
+  d.setMonth(d.getMonth() - 1);
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  return `${y}-${mo}`;
+})();
+
+const nextMonth = (() => {
+  const d = new Date(monthDate);
+  d.setMonth(d.getMonth() + 1);
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  return `${y}-${mo}`;
+})();
+
+const fmtLong = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+};
+
+const fmtDay = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '--';
+  return String(d.getDate()).padStart(2, '0');
+};
+
+const fmtMonthUpper = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '--';
+  return d.toLocaleDateString('es-CO', { month: 'long' }).toUpperCase();
+};
+
+const fmtMonthShortUpper = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '--';
+  return d.toLocaleDateString('es-CO', { month: 'short' }).toUpperCase();
+};
+
+const monthEvents = allEvents
+  .filter((e) => toMonthKey(e.date) === month)
+  .filter((e) => (category ? String((e as any).category ?? '').toLowerCase() === category.toLowerCase() : true))
+  .filter((e) => (municipality ? e.location.toLowerCase().includes(municipality.toLowerCase()) : true))
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+const municipalitiesCount = new Set(monthEvents.map((e) => e.location)).size;
+
+const monthOptions = uniqueMonths.length ? uniqueMonths : [month];
+const categoryOptions = Array.from(
+  new Set(allEvents.map((e: any) => String(e.category ?? '').trim()).filter(Boolean))
+).slice(0, 24);
+const municipalityOptions = Array.from(
+  new Set(allEvents.map((e) => e.location).filter(Boolean))
+).slice(0, 24);
+
+const statusToType = (status?: string) => {
+  const s = String(status ?? '').toLowerCase();
+  if (s.includes('cerr') || s.includes('final') || s.includes('pendiente resultados')) return 'closed';
+  if (s.includes('prÃ³x') || s.includes('proxi') || s.includes('por confirmar')) return 'tertiary';
+  return 'primary';
+};
+
+const statusLabel = (status?: string) => {
+  const s = String(status ?? '').toLowerCase();
+  if (s.includes('cerr') || s.includes('final')) return 'CERRADO';
+  if (s.includes('prÃ³x') || s.includes('proxi') || s.includes('por confirmar')) return 'PRÃ“XIMAMENTE';
+  if (s.includes('abiert') || s.includes('inscrip')) return 'ABIERTO';
+  if (status) return status.toUpperCase();
+  return 'ABIERTO';
+};
+
+const eventsUi = monthEvents.map((e, idx) => {
+  const type = statusToType(e.status);
+  const d = new Date(e.date);
+  const monthText = Number.isNaN(d.getTime()) ? monthLabel.toUpperCase() : d.toLocaleDateString('es-CO', { month: 'long' }).toUpperCase();
+  const categoryText = String((e as any).category ?? '').trim() || 'Evento oficial';
+  const action = type === 'primary' ? 'INSCRIBIRSE' : type === 'tertiary' ? 'NOTIFICARME' : 'VER RESULTADOS';
+  return {
+    id: `${month}-${idx}`,
+    date: fmtDay(e.date),
+    month: monthText,
+    status: statusLabel(e.status),
+    category: categoryText,
+    title: e.name,
+    location: e.location,
+    type,
+    action,
+    resultsUrl: e.resultsUrl
+  };
+});
+
+const monthDays = (() => {
+  const firstDay = new Date(monthDate);
+  const lastDay = new Date(monthDate);
+  lastDay.setMonth(lastDay.getMonth() + 1);
+  lastDay.setDate(0);
+  const total = lastDay.getDate();
+
+  // Monday-first offset
+  const jsDay = firstDay.getDay(); // 0 Sun - 6 Sat
+  const offset = (jsDay + 6) % 7;
+
+  const cells: Array<{ day?: number; hasEvent?: boolean }> = [];
+  for (let i = 0; i < offset; i++) cells.push({});
+
+  const daysWithEvents = new Set(
+    monthEvents
+      .map((e) => {
+        const d = new Date(e.date);
+        return Number.isNaN(d.getTime()) ? null : d.getDate();
+      })
+      .filter((n): n is number => typeof n === 'number')
+  );
+
+  for (let day = 1; day <= total; day++) {
+    cells.push({ day, hasEvent: daysWithEvents.has(day) });
+  }
+  return cells;
+})();
+
+const heroImage =
+  pageHeroes.calendario ||
+  hero?.imageUrl ||
+  'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop';
+---
+
+<BaseLayout title={`Calendario | ${settings.siteName}`} description="Calendario oficial de eventos y competencias.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <div class="pt-[80px]">
+    <!-- HERO (idÃ©ntico al repo de referencia) -->
+    <header class="relative w-full h-[500px] md:h-[614px] flex items-center overflow-hidden bg-inverse-surface kinetic-slant">
+      <img class="absolute inset-0 w-full h-full object-cover opacity-60" src={heroImage} alt="Professional sprinter" referrerpolicy="no-referrer" />
+      <div class="absolute inset-0 bg-gradient-to-r from-inverse-surface via-transparent to-transparent"></div>
+      <div class="relative z-10 px-6 md:px-12 max-w-7xl mx-auto w-full">
+        <span class="inline-block px-4 py-1 bg-secondary-container text-on-secondary-container font-headline font-bold text-sm mb-4 speed-slant">
+          TEMPORADA 2026
+        </span>
+        <h1 class="text-5xl md:text-8xl lg:text-9xl font-headline font-black text-on-primary italic leading-none tracking-tighter mb-6 uppercase">
+          AGENDA DE<br /><span class="text-primary-container">VELOCIDAD</span>
+        </h1>
+        <p class="text-lg md:text-xl text-surface-container-low max-w-xl font-medium">
+          Sigue el rastro de los atletas mÃ¡s veloces del PacÃ­fico. Filtra por mes, busca eventos y exporta a tu calendario.
+        </p>
+      </div>
+    </header>
+
+    <!-- Main Content (idÃ©ntico al repo de referencia) -->
+    <main class="max-w-7xl mx-auto px-6 md:px-12 py-16 w-full" id="eventos">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <!-- Left Column: Filters & Events -->
+        <div class="lg:col-span-8 space-y-12">
+          <section class="p-6 bg-surface-container-low rounded-xl shadow-sm">
+            <form class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end" method="GET" action="/calendario">
+              <div class="space-y-2">
+                <label class="block text-[0.6875rem] font-headline font-bold text-tertiary uppercase tracking-widest">Mes del evento</label>
+                <select class="w-full bg-surface-container-highest border-none rounded-sm font-body font-semibold text-on-surface focus:ring-2 focus:ring-primary p-3" name="m">
+                  {monthOptions.map((m) => (
+                    <option value={m} selected={m === month}>{new Date(`${m}-01T00:00:00`).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-[0.6875rem] font-headline font-bold text-tertiary uppercase tracking-widest">CategorÃ­a</label>
+                <select class="w-full bg-surface-container-highest border-none rounded-sm font-body font-semibold text-on-surface focus:ring-2 focus:ring-primary p-3" name="cat">
+                  <option value="" selected={!category}>Todas las categorÃ­as</option>
+                  {categoryOptions.map((x) => (
+                    <option value={x} selected={category === x}>{x}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-[0.6875rem] font-headline font-bold text-tertiary uppercase tracking-widest">Municipio</label>
+                <select class="w-full bg-surface-container-highest border-none rounded-sm font-body font-semibold text-on-surface focus:ring-2 focus:ring-primary p-3" name="mun">
+                  <option value="" selected={!municipality}>Todo el ChocÃ³</option>
+                  {municipalityOptions.map((x) => (
+                    <option value={x} selected={municipality === x}>{x}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div class="md:col-span-3 flex justify-end">
+                <button class="bg-primary text-on-primary px-10 py-3 font-headline font-bold text-sm speed-slant hover:scale-105 transition-transform uppercase" type="submit">
+                  Filtrar
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="space-y-6">
+            {eventsUi.length ? (
+              eventsUi.map((event, idx) => (
+                <div
+                  class:list={[
+                    'group relative bg-white overflow-hidden rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_rgba(0,107,27,0.12)] transition-all duration-500 border-l-[12px]',
+                    event.type === 'primary' ? 'border-primary' : event.type === 'tertiary' ? 'border-tertiary' : 'border-on-surface-variant/20 grayscale opacity-75'
+                  ]}
+                >
+                  <div class="flex flex-col md:flex-row p-8 gap-8 items-center">
+                    <div class="text-center md:text-left min-w-[100px]">
+                      <span class:list={[
+                        'block text-4xl font-headline font-black leading-none',
+                        event.type === 'primary' ? 'text-primary' : event.type === 'tertiary' ? 'text-tertiary' : 'text-on-surface-variant'
+                      ]}>{event.date}</span>
+                      <span class="block text-sm font-headline font-bold text-on-surface-variant uppercase tracking-widest">{event.month}</span>
+                    </div>
+
+                    <div class="flex-1 space-y-2">
+                      <div class="flex items-center gap-3">
+                        <span class:list={[
+                          'px-3 py-1 text-[0.6rem] font-headline font-black rounded-full uppercase',
+                          event.type === 'primary'
+                            ? 'bg-primary-container text-on-primary-container'
+                            : event.type === 'tertiary'
+                              ? 'bg-tertiary-container text-on-tertiary-container'
+                              : 'bg-surface-container-high text-on-surface-variant'
+                        ]}>
+                          {event.status}
+                        </span>
+                        <span class="text-tertiary text-xs font-bold font-headline uppercase tracking-tighter">{event.category}</span>
+                      </div>
+                      <h3 class="text-2xl md:text-3xl font-headline font-extrabold text-on-surface italic uppercase group-hover:text-primary transition-colors">
+                        {event.title}
+                      </h3>
+                      <div class="flex items-center gap-2 text-on-surface-variant font-medium">
+                        <span class="material-symbols-outlined text-[18px]">location_on</span>
+                        <span>{event.location}</span>
+                      </div>
+                    </div>
+
+                    <div class="w-full md:w-auto">
+                      {event.type === 'primary' ? (
+                        <a class="block w-full md:w-auto px-10 py-3 font-headline font-black italic rounded-sm transition-all border-2 border-primary text-primary hover:bg-primary hover:text-on-primary text-center" href="/convocatorias">
+                          {event.action}
+                        </a>
+                      ) : event.type === 'tertiary' ? (
+                        <span class="block w-full md:w-auto px-10 py-3 font-headline font-black italic rounded-sm bg-surface-container-highest text-on-surface-variant cursor-not-allowed opacity-50 text-center">
+                          {event.action}
+                        </span>
+                      ) : (
+                        <a class="block w-full md:w-auto px-10 py-3 font-headline font-black italic rounded-sm transition-all border-2 border-on-surface-variant text-on-surface-variant text-center" href={event.resultsUrl || '/resultados'}>
+                          {event.action}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div class="rounded-2xl bg-white ring-1 ring-slate-200 p-8">
+                <p class="text-slate-600">No hay eventos para este filtro.</p>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <!-- Right Column: Sidebar -->
+        <aside class="lg:col-span-4 space-y-8">
+          <div class="bg-surface-container-high p-8 rounded-2xl shadow-xl sticky top-24">
+            <div class="flex items-center justify-between mb-8">
+              <h4 class="font-headline font-black text-xl italic uppercase text-primary tracking-tight">
+                {monthDate.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).toUpperCase()}
+              </h4>
+              <div class="flex gap-2">
+                <a class="p-1 hover:bg-primary-container rounded transition-colors" href={`/calendario?m=${encodeURIComponent(prevMonth)}${category ? `&cat=${encodeURIComponent(category)}` : ''}${municipality ? `&mun=${encodeURIComponent(municipality)}` : ''}`} aria-label="Anterior">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </a>
+                <a class="p-1 hover:bg-primary-container rounded transition-colors" href={`/calendario?m=${encodeURIComponent(nextMonth)}${category ? `&cat=${encodeURIComponent(category)}` : ''}${municipality ? `&mun=${encodeURIComponent(municipality)}` : ''}`} aria-label="Siguiente">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </a>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-7 gap-2 text-center text-xs font-headline font-bold text-on-surface-variant mb-4">
+              {['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO'].map((d) => (
+                <span>{d}</span>
+              ))}
+            </div>
+
+            <div class="grid grid-cols-7 gap-2 text-center font-body text-sm">
+              {monthDays.map((cell) => (
+                <span class:list={[
+                  'p-2 rounded cursor-pointer transition-all',
+                  cell.day ? 'hover:bg-primary-container' : 'opacity-0',
+                  cell.hasEvent ? 'bg-primary text-on-primary font-black shadow-lg' : ''
+                ]}>
+                  {cell.day ?? ''}
+                </span>
+              ))}
+            </div>
+
+            <div class="mt-8 pt-8 border-t border-primary/10">
+              <h5 class="font-headline font-bold text-xs text-on-surface-variant uppercase mb-4 tracking-widest">Resumen mensual</h5>
+              <div class="space-y-4">
+                <div class="flex justify-between items-center bg-white p-3 rounded-lg">
+                  <span class="font-body text-sm font-semibold">Total eventos</span>
+                  <span class="font-headline font-black text-primary">{String(monthEvents.length).padStart(2, '0')}</span>
+                </div>
+                <div class="flex justify-between items-center bg-white p-3 rounded-lg">
+                  <span class="font-body text-sm font-semibold">Municipios</span>
+                  <span class="font-headline font-black text-primary">{String(municipalitiesCount).padStart(2, '0')}</span>
+                </div>
+              </div>
+            </div>
+
+            <a class="mt-8 rounded-xl overflow-hidden relative h-40 block group" href="/documentos">
+              <img
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                src="https://images.unsplash.com/photo-1530549387074-d5629d75b734?q=80&w=2070&auto=format&fit=crop"
+                alt="Athletic track"
+                referrerpolicy="no-referrer"
+              />
+              <div class="absolute inset-0 bg-primary/40 flex items-center justify-center p-4 text-center group-hover:bg-primary/60 transition-colors">
+                <div class="flex flex-col items-center gap-2">
+                  <span class="material-symbols-outlined text-white">download</span>
+                  <span class="text-white font-headline font-black italic text-lg leading-tight uppercase">Descarga el Calendario Oficial PDF</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+

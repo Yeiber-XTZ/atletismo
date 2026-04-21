@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings, blogPage, blogPosts, hero, publicSite } = data;
+const pageHeroes = publicSite?.pageHeroes ?? {};
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const type = (Astro.url.searchParams.get('type') ?? '').trim();
+const tag = (Astro.url.searchParams.get('tag') ?? '').trim();
+
+const all = Array.isArray(blogPosts) ? blogPosts : [];
+
+const typeOptions = Array.from(new Set(all.map((p) => p.type).filter(Boolean))).slice(0, 16);
+const tagOptions = Array.from(new Set(all.flatMap((p) => p.tags ?? []).filter(Boolean))).slice(0, 24);
+
+const filtered = all
+  .filter((p) => (type ? p.type === type : true))
+  .filter((p) => (tag ? (p.tags ?? []).includes(tag) : true))
+  .filter((p) => {
+    if (!q) return true;
+    const hay = `${p.title} ${p.excerpt} ${(p.tags ?? []).join(' ')}`.toLowerCase();
+    return hay.includes(q.toLowerCase());
+  });
+
+const featured = filtered[0] ?? all[0];
+const gridPosts = filtered.slice(0, 9);
+const featuredHeroImage =
+  pageHeroes.blog ||
+  featured?.imageUrl ||
+  blogPage?.featuredImageUrl ||
+  hero?.imageUrl ||
+  'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=2070&auto=format&fit=crop';
+---
+
+<BaseLayout title={`Blog | ${settings.siteName}`} description="Artículos de formación, reglamentación e historias del atletismo en el Chocó.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[112px] pb-20 px-6 max-w-7xl mx-auto">
+    <!-- HERO (clon visual) -->
+    <header class="mb-12">
+      <h1 class="text-5xl md:text-7xl font-black font-headline text-[var(--on-surface)] uppercase tracking-tighter mb-4">
+        {blogPage?.title || 'Blog de la'} <span class="text-[var(--primary)] italic">Liga</span>
+      </h1>
+      <div class="w-24 h-2 bg-[var(--secondary)] mb-12"></div>
+
+      <div class="editorial-grid">
+        <!-- Featured -->
+        <article class="col-span-12 lg:col-span-8 group relative bg-[#cafdd4] overflow-hidden rounded-xl kinetic-shadow">
+          <div class="relative h-[500px]">
+            <img
+              alt={featured?.title || 'Artículo destacado'}
+              class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+              src={featuredHeroImage}
+              referrerpolicy="no-referrer"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-[#001205] via-transparent to-transparent opacity-80"></div>
+            <div class="absolute bottom-0 p-10">
+              <span class="inline-block px-4 py-1 bg-[#fdd835] text-[#5b4b00] text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+                {featured?.type || blogPage?.featuredTag || 'Artículo'}
+              </span>
+              <h2 class="text-4xl font-black font-headline text-white leading-none uppercase mb-4 max-w-2xl">
+                {featured?.title || blogPage?.featuredTitle || 'Contenido destacado'}
+              </h2>
+              <a class="flex items-center gap-2 text-[#ddffe2] font-bold uppercase tracking-widest text-xs group/btn" href={featured ? `/blog/${featured.slug}` : '/contacto'}>
+                {blogPage?.featuredCtaLabel || 'Ver artículo'}
+                <span class="material-symbols-outlined text-[18px] group-hover/btn:translate-x-2 transition-transform">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Callout -->
+        <aside class="col-span-12 lg:col-span-4 flex flex-col gap-8">
+          <div class="bg-[var(--primary)] p-8 rounded-xl flex flex-col justify-between h-full min-h-[300px]">
+            <div>
+              <div class="text-[#ddffe2] mb-4">
+                <span class="material-symbols-outlined text-[40px]">bolt</span>
+              </div>
+              <h3 class="text-2xl font-black font-headline text-[#d1ffc8] uppercase leading-tight">
+                {blogPage?.calloutTitle || 'Únete a la nueva generación de campeones'}
+              </h3>
+            </div>
+            <a class="w-full bg-white text-[var(--primary)] font-black py-4 rounded-lg uppercase tracking-widest text-sm hover:bg-[#fdd835] transition-colors text-center" href={blogPage?.calloutCtaHref || '/registro'}>
+              {blogPage?.calloutCtaLabel || 'Inscripciones abiertas'}
+            </a>
+          </div>
+        </aside>
+      </div>
+    </header>
+
+    <!-- FILTERS -->
+    <section class="mb-12">
+      <form class="grid gap-4 md:grid-cols-12" method="GET" action="/blog">
+        <div class="md:col-span-6">
+          <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Buscar</label>
+          <input class="w-full rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 font-semibold" name="q" value={q} placeholder="Buscar artículos..." />
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Tipo</label>
+          <select class="w-full rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 font-semibold" name="type">
+            <option value="" selected={!type}>Todos</option>
+            {typeOptions.map((t) => (
+              <option value={t} selected={t === type}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-[10px] font-headline font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Tag</label>
+          <select class="w-full rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 font-semibold" name="tag">
+            <option value="" selected={!tag}>Todos</option>
+            {tagOptions.map((t) => (
+              <option value={t} selected={t === tag}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <div class="md:col-span-12 flex justify-end">
+          <button class="bg-[#001205] text-white px-8 py-3 rounded-xl font-headline font-black uppercase tracking-tight hover:bg-[var(--primary)] transition-colors" type="submit">
+            Filtrar
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- GRID -->
+    <section>
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {gridPosts.map((p) => (
+          <a href={`/blog/${p.slug}`} class="bg-white p-6 rounded-xl kinetic-shadow hover:bg-[#ddffe2] transition-colors group">
+            <div class="aspect-[4/3] mb-6 overflow-hidden rounded-lg bg-[#bef5ca]">
+              {p.imageUrl ? (
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={p.imageUrl} alt={p.title} referrerpolicy="no-referrer" />
+              ) : null}
+            </div>
+            <span class="text-[10px] font-black text-[var(--tertiary)] uppercase tracking-widest block mb-3">{p.type}</span>
+            <h3 class="text-2xl font-bold font-headline mb-4 leading-tight group-hover:text-[var(--primary)] transition-colors">{p.title}</h3>
+            <p class="text-[var(--text-secondary)] text-sm mb-6 leading-relaxed">{p.excerpt}</p>
+            <div class="text-[var(--primary)] font-black uppercase tracking-widest text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
+              Leer más <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div class="mt-10 rounded-2xl bg-white ring-1 ring-slate-200 p-8 text-slate-600">
+          No hay artículos para este filtro.
+        </div>
+      ) : null}
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+
+<style is:global>
+  .editorial-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2rem;
+  }
+  .kinetic-shadow {
+    box-shadow: 0 20px 40px rgba(11, 54, 29, 0.05);
+  }
+</style>

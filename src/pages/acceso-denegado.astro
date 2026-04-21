@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import FooterKinetic from '../components/FooterKinetic.astro';
+import { getHomeData } from '../lib/content';
+
+const data = await getHomeData();
+const { settings } = data;
+---
+
+<BaseLayout title="Acceso denegado | Liga de Atletismo del Chocó" description="No tienes permisos para acceder a esta sección.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px] bg-white">
+    <section class="container mx-auto px-6 py-20">
+      <div class="mx-auto max-w-2xl rounded-2xl border border-[var(--border)] bg-surface-container-low p-10 text-center kinetic-slant">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-primary">
+          <span class="material-symbols-outlined text-4xl">block</span>
+        </div>
+        <h1 class="mt-6 font-headline text-3xl md:text-4xl font-black uppercase tracking-tight text-on-surface">
+          Acceso denegado
+        </h1>
+        <p class="mt-3 text-on-surface-variant">
+          Tu cuenta no tiene permisos para ver esta sección. Si crees que es un error, contacta a la Liga.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a class="btn-primary btn-slant" href="/">Volver al inicio</a>
+          <a class="btn-secondary btn-slant" href="/contacto">Contactar</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+</BaseLayout>
+

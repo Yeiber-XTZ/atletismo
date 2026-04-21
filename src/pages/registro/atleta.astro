@@ -1,0 +1,410 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import FooterKinetic from '../../components/FooterKinetic.astro';
+import { getHomeData } from '../../lib/content';
+
+const data = await getHomeData();
+const { settings } = data;
+---
+<BaseLayout title="Registro Atleta | Liga de Atletismo del Chocó" description="Registro de atleta para procesos y convocatorias de la Liga.">
+  <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
+
+  <main class="pt-[72px]">
+    <section class="page-hero">
+      <div class="container mx-auto px-6">
+        <nav class="page-breadcrumb">
+          <a href="/" class="page-breadcrumb-link">
+            <span class="material-symbols-outlined text-sm">home</span>
+            Inicio
+          </a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <a href="/registro" class="page-breadcrumb-link">Registro</a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <span class="page-breadcrumb-current">Atleta</span>
+        </nav>
+        <h1 class="page-title">Registro de Atleta</h1>
+        <p class="page-subtitle">Completa tus datos. Este registro crea un radicado para verificación y aprobación. Los campos marcados con * son obligatorios.</p>
+      </div>
+    </section>
+
+    <section class="page-section">
+      <div class="container mx-auto px-6">
+        <div class="max-w-4xl mx-auto">
+          <!-- Búsqueda por documento -->
+          <div class="rounded-2xl border border-blue-200 bg-blue-50 p-6 mb-8">
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-blue-700 flex-shrink-0 mt-1">info</span>
+              <div class="flex-1">
+                <h3 class="font-semibold text-blue-900 mb-3">¿Ya te has registrado antes?</h3>
+                <p class="text-sm text-blue-800 mb-4">
+                  Si ya tienes un registro anterior, ingresa tu número de documento y haremos auto-relleno de tus datos generales. Solo deberás completar la información nueva.
+                </p>
+                <div class="flex gap-2">
+                  <input 
+                    id="searchDocument"
+                    type="text" 
+                    placeholder="Ingresa tu número de documento..."
+                    class="form-input flex-1"
+                  />
+                  <button 
+                    type="button"
+                    onclick="searchAthlete()"
+                    class="btn-secondary px-6"
+                  >
+                    <span class="material-symbols-outlined">search</span>
+                    Buscar
+                  </button>
+                </div>
+                <div id="searchStatus" class="mt-3 text-sm"></div>
+              </div>
+            </div>
+          </div>
+
+          <form method="POST" action="/api/registro" id="athleteForm" class="rounded-2xl border border-[var(--border)] bg-white p-8">
+            <input type="hidden" name="profile" value="atleta" />
+            
+            <!-- Sección 1: Datos Personales -->
+            <fieldset class="mb-10 pb-10 border-b border-gray-200">
+              <legend class="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[var(--primary)]">person</span>
+                Datos Personales
+              </legend>
+              
+              <div class="grid gap-5 md:grid-cols-2">
+                <div class="md:col-span-2">
+                  <label class="form-label">Nombre completo *</label>
+                  <input 
+                    class="form-input" 
+                    type="text" 
+                    name="name" 
+                    id="name"
+                    required 
+                    placeholder="Nombres y apellidos" 
+                  />
+                </div>
+
+                <div>
+                  <label class="form-label">Tipo de documento *</label>
+                  <select class="form-input" name="documentType" id="documentType" required>
+                    <option value="">Selecciona...</option>
+                    <option value="CC">Cédula de Ciudadanía</option>
+                    <option value="TI">Tarjeta de Identidad</option>
+                    <option value="PASAPORTE">Pasaporte</option>
+                    <option value="CE">Cédula de Extranjería</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="form-label">Número de documento *</label>
+                  <input 
+                    class="form-input" 
+                    type="text" 
+                    name="document" 
+                    id="document"
+                    required 
+                    placeholder="Sin puntos ni comas"
+                    inputmode="numeric"
+                  />
+                </div>
+
+                <div>
+                  <label class="form-label">Fecha de nacimiento *</label>
+                  <input 
+                    class="form-input" 
+                    type="date" 
+                    name="birthdate" 
+                    id="birthdate"
+                    required 
+                  />
+                </div>
+
+                <div>
+                  <label class="form-label">Sexo *</label>
+                  <select class="form-input" name="sex" id="sex" required>
+                    <option value="">Selecciona...</option>
+                    <option value="F">Femenino</option>
+                    <option value="M">Masculino</option>
+                    <option value="X">Otro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="form-label">Correo electrónico *</label>
+                  <input 
+                    class="form-input" 
+                    type="email" 
+                    name="email" 
+                    id="email"
+                    required 
+                    placeholder="tu@correo.com" 
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="form-label">Municipio *</label>
+                  <input 
+                    class="form-input" 
+                    type="text" 
+                    name="municipality" 
+                    id="municipality"
+                    required 
+                    placeholder="Quibdó, Istmina, ..." 
+                  />
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Sección 2: Información Deportiva -->
+            <fieldset class="mb-10 pb-10 border-b border-gray-200">
+              <legend class="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[var(--primary)]">sports_basketball</span>
+                Información Deportiva
+              </legend>
+              
+              <div class="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label class="form-label">Club *</label>
+                  <input 
+                    class="form-input" 
+                    type="text" 
+                    name="club" 
+                    id="club"
+                    required
+                    placeholder="Nombre del club" 
+                  />
+                </div>
+
+                <div>
+                  <label class="form-label">Entrenador *</label>
+                  <input 
+                    class="form-input" 
+                    type="text" 
+                    name="coach" 
+                    id="coach"
+                    required
+                    placeholder="Nombre del entrenador" 
+                  />
+                </div>
+
+                <!-- Disciplinas Dinámicas -->
+                <div class="md:col-span-2">
+                  <label class="form-label mb-3 block">Pruebas/Especialidades *</label>
+                  <div id="disciplinesContainer" class="space-y-3 mb-4">
+                    <div class="discipline-row flex gap-3">
+                      <input 
+                        type="text" 
+                        name="discipline_name[]" 
+                        class="form-input flex-1" 
+                        placeholder="Ej: 100m, 200m, Salto largo..."
+                        required
+                      />
+                      <input 
+                        type="text" 
+                        name="discipline_best[]" 
+                        class="form-input flex-1" 
+                        placeholder="Mejor marca (opcional)"
+                      />
+                      <button 
+                        type="button"
+                        class="btn-secondary px-3"
+                        onclick="removeDiscipline(this)"
+                        style="display: none;"
+                      >
+                        <span class="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                  <button 
+                    type="button"
+                    onclick="addDiscipline()"
+                    class="btn-secondary btn-sm"
+                  >
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar otra prueba
+                  </button>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Sección 3: Información Adicional -->
+            <fieldset class="mb-10">
+              <legend class="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[var(--primary)]">emergency</span>
+                Información Adicional
+              </legend>
+              
+              <div class="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label class="form-label">EPS *</label>
+                  <input 
+                    class="form-input" 
+                    type="text" 
+                    name="eps" 
+                    id="eps"
+                    required
+                    placeholder="Nombre de tu EPS" 
+                  />
+                </div>
+
+                <div>
+                  <label class="form-label">Contacto de emergencia *</label>
+                  <input 
+                    class="form-input" 
+                    type="text" 
+                    name="emergency" 
+                    id="emergency"
+                    required
+                    placeholder="Nombre y teléfono" 
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="form-label">Marcas destacadas (opcional)</label>
+                  <textarea 
+                    class="form-input form-textarea" 
+                    name="marks" 
+                    id="marks"
+                    placeholder="Ej: 100m 11.22s (2026-03-28), 200m 23.45s (2026-03-15)"
+                  ></textarea>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Consentimiento -->
+            <div class="mt-6 flex items-start gap-3 pb-8 border-b border-gray-200">
+              <input 
+                id="consent" 
+                type="checkbox" 
+                name="consent" 
+                value="yes" 
+                required 
+                class="mt-1 h-4 w-4 accent-[#5AAC32]" 
+              />
+              <label for="consent" class="text-sm text-[var(--text-secondary)]">
+                Autorizo el tratamiento de datos personales conforme a la política de privacidad. *
+              </label>
+            </div>
+
+            <!-- Acciones -->
+            <div class="mt-8 flex items-center justify-between gap-4">
+              <a href="/registro" class="btn-secondary">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Atrás
+              </a>
+              <button class="btn-primary" type="submit">
+                <span class="material-symbols-outlined">send</span>
+                Enviar Registro
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <FooterKinetic siteName={settings.siteName} social={settings.social} />
+
+  <style>
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+  </style>
+
+  <script>
+    // Funciones para manejar disciplinas dinámicas
+    function addDiscipline() {
+      const container = document.getElementById('disciplinesContainer');
+      const newRow = document.createElement('div');
+      newRow.className = 'discipline-row flex gap-3';
+      
+      newRow.innerHTML = `
+        <input 
+          type="text" 
+          name="discipline_name[]" 
+          class="form-input flex-1" 
+          placeholder="Ej: 100m, 200m, Salto largo..."
+          required
+        />
+        <input 
+          type="text" 
+          name="discipline_best[]" 
+          class="form-input flex-1" 
+          placeholder="Mejor marca (opcional)"
+        />
+        <button 
+          type="button"
+          class="btn-secondary px-3"
+          onclick="removeDiscipline(this)"
+        >
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      `;
+      
+      container.appendChild(newRow);
+      updateDeleteButtons();
+    }
+
+    function removeDiscipline(btn) {
+      btn.closest('.discipline-row').remove();
+      updateDeleteButtons();
+    }
+
+    function updateDeleteButtons() {
+      const rows = document.querySelectorAll('.discipline-row');
+      rows.forEach((row, idx) => {
+        const deleteBtn = row.querySelector('button');
+        deleteBtn.style.display = rows.length > 1 ? 'inline-flex' : 'none';
+      });
+    }
+
+    // Función para buscar atleta por documento
+    async function searchAthlete() {
+      const document = document.getElementById('searchDocument').value.trim();
+      const statusDiv = document.getElementById('searchStatus');
+
+      if (!document) {
+        statusDiv.innerHTML = '<span class="text-red-600">Por favor ingresa un número de documento</span>';
+        return;
+      }
+
+      statusDiv.innerHTML = '<span class="text-gray-600">Buscando...</span>';
+
+      try {
+        const response = await fetch(`/api/athletes/search?document=${encodeURIComponent(document)}`);
+        const result = await response.json();
+
+        if (result.success && result.athlete) {
+          // Auto-rellenar campos
+          const athlete = result.athlete;
+          document.getElementById('name').value = athlete.name || '';
+          document.getElementById('birthdate').value = athlete.birthdate || '';
+          document.getElementById('sex').value = athlete.sex || '';
+          document.getElementById('municipality').value = athlete.municipality || '';
+          document.getElementById('email').value = athlete.email || '';
+          document.getElementById('club').value = athlete.club || '';
+          document.getElementById('coach').value = athlete.coach || '';
+          document.getElementById('eps').value = athlete.eps || '';
+          document.getElementById('emergency').value = athlete.emergency || '';
+          document.getElementById('document').value = document;
+          
+          statusDiv.innerHTML = '<span class="text-green-600">✓ Atleta encontrado. Campos completados automáticamente. Por favor verifica y actualiza si es necesario.</span>';
+          
+          // Scroll al formulario
+          document.getElementById('athleteForm').scrollIntoView({ behavior: 'smooth' });
+        } else {
+          statusDiv.innerHTML = '<span class="text-amber-600">No se encontró registro anterior. Por favor completa todos los campos.</span>';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<span class="text-red-600">Error en la búsqueda. Por favor intenta de nuevo.</span>';
+      }
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDeleteButtons();
+    });
+  </script>
+</BaseLayout>

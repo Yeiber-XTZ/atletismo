@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-label: "Lexend", ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #006b1b;
+  --color-on-primary: #d1ffc8;
+  --color-primary-container: #9bfc96;
+  
+  --color-secondary: #6c5a00;
+  --color-on-secondary: #fff2cd;
+  --color-secondary-container: #fdd835;
+  --color-on-secondary-container: #5b4b00;
+
+  --color-tertiary: #4252b4;
+  --color-on-tertiary: #f3f1ff;
+  --color-tertiary-container: #9fabff;
+
+  --color-surface: #ffffff;
+  --color-surface-bright: #ddffe2;
+  --color-surface-dim: #a0e4b1;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #cafdd4;
+  --color-surface-container: #bef5ca;
+  --color-surface-container-high: #b5f0c2;
+  --color-surface-container-highest: #acecbb;
+
+  --color-on-surface: #0b361d;
+  --color-on-surface-variant: #3b6447;
+  --color-outline: #568061;
+  --color-outline-variant: #8bb795;
+}
+
+@layer utilities {
+  .slanted-edge {
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
+  }
+  .kinetic-slant {
+    clip-path: polygon(0 0, 100% 5%, 100% 100%, 0 95%);
+  }
+}
+
+body {
+  @apply font-body text-on-surface bg-white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-headline;
+}

@@ -1,0 +1,404 @@
+---
+const { siteName = 'Liga Chocó', logoUrl = '/logo.png' } = Astro.props;
+
+const currentPath = Astro.url.pathname;
+const isActive = (href: string) => currentPath === href || (href !== '/' && currentPath.startsWith(href));
+
+const menu = [
+  { label: 'Inicio', href: '/' },
+  { label: 'La Liga', href: '/la-liga' },
+  {
+    label: 'Deportivo',
+    items: [
+      { label: 'Convocatorias', href: '/convocatorias' },
+      { label: 'Competencias', href: '/competencias' },
+      { label: 'Calendario', href: '/calendario' },
+      { label: 'Resultados', href: '/resultados' },
+      { label: 'Ranking', href: '/ranking' }
+    ]
+  },
+  {
+    label: 'Comunidad',
+    items: [
+      { label: 'Noticias', href: '/noticias' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Documentos', href: '/documentos' }
+    ]
+  },
+  { label: 'Clubes', href: '/clubes' },
+  { label: 'Contacto', href: '/contacto' }
+] as const;
+---
+<nav class="nav-root" aria-label="Navegación principal">
+  <!-- SVG Curva declive -->
+  <svg class="nav-curve-svg" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,0 L1440,0 L1440,25 C1200,30 900,40 600,45 C300,50 150,55 0,60 Z" fill="white"/>
+  </svg>
+  
+  <div class="nav-wrap">
+    <a href="/" class="nav-logo" aria-label={siteName}>
+      <img src={logoUrl} alt={siteName} class="nav-logo-img" />
+    </a>
+
+    <div class="nav-desktop" aria-label="Menú">
+      {menu.map((item) => {
+        if ('href' in item) {
+          const active = isActive(item.href);
+          return (
+            <a class:list={['nav-link', active ? 'is-active' : '']} href={item.href}>
+              {item.label}
+            </a>
+          );
+        }
+
+        const groupActive = item.items.some((x) => isActive(x.href));
+        return (
+          <details class:list={['nav-dd', groupActive ? 'is-active' : '']}>
+            <summary class="nav-dd-summary" aria-label={item.label}>
+              <span>{item.label}</span>
+              <span class="material-symbols-outlined nav-dd-caret" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="nav-dd-menu" role="menu">
+              {item.items.map((x) => (
+                <a class:list={['nav-dd-item', isActive(x.href) ? 'is-active' : '']} href={x.href} role="menuitem">
+                  {x.label}
+                </a>
+              ))}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+
+    <div class="nav-actions">
+      <a class="nav-login" href="/admin/login" aria-label="Panel / Iniciar sesión">
+        <span class="material-symbols-outlined">lock</span>
+        <span>Panel</span>
+      </a>
+
+      <details class="nav-mobile">
+        <summary aria-label="Abrir menú" class="nav-mobile-toggle">
+          <span class="material-symbols-outlined">menu</span>
+        </summary>
+        <div class="nav-mobile-menu">
+          {menu.map((item) => {
+            if ('href' in item) {
+              return (
+                <a class:list={['nav-mobile-link', isActive(item.href) ? 'is-active' : '']} href={item.href}>
+                  {item.label}
+                </a>
+              );
+            }
+            return (
+              <div class="nav-mobile-group">
+                <div class="nav-mobile-group-title">{item.label}</div>
+                {item.items.map((x) => (
+                  <a class:list={['nav-mobile-link', isActive(x.href) ? 'is-active' : '']} href={x.href}>
+                    {x.label}
+                  </a>
+                ))}
+              </div>
+            );
+          })}
+          <a class="nav-mobile-cta" href="/admin/login">
+            <span class="material-symbols-outlined">lock</span> Panel
+          </a>
+        </div>
+      </details>
+    </div>
+  </div>
+</nav>
+
+<style>
+  .nav-root {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .nav-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 72px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .nav-logo-img {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .nav-desktop {
+    display: none;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-desktop {
+      display: flex;
+    }
+  }
+
+  .nav-link {
+    font-family: 'Lexend', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    padding: 10px 12px;
+    border-radius: 12px;
+    transition: background 150ms ease, color 150ms ease;
+    white-space: nowrap;
+  }
+
+  .nav-link:hover {
+    background: rgba(90, 172, 50, 0.08);
+    color: #5AAC32;
+  }
+
+  .nav-link.is-active {
+    background: rgba(90, 172, 50, 0.12);
+    color: #5AAC32;
+  }
+
+  .nav-dd {
+    position: relative;
+  }
+
+  .nav-dd-summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Lexend', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    padding: 10px 12px;
+    border-radius: 12px;
+    transition: background 150ms ease, color 150ms ease;
+    white-space: nowrap;
+  }
+
+  .nav-dd-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .nav-dd:hover > .nav-dd-summary,
+  .nav-dd[open] > .nav-dd-summary {
+    background: rgba(90, 172, 50, 0.08);
+    color: #5AAC32;
+  }
+
+  .nav-dd.is-active > .nav-dd-summary {
+    background: rgba(90, 172, 50, 0.12);
+    color: #5AAC32;
+  }
+
+  .nav-dd-caret {
+    font-size: 18px;
+    opacity: 0.9;
+  }
+
+  .nav-dd-menu {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(100% + 10px);
+    min-width: 230px;
+    padding: 10px;
+    border-radius: 16px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    display: grid;
+    gap: 6px;
+  }
+
+  .nav-dd-item {
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+    transition: background 150ms ease, color 150ms ease;
+  }
+
+  .nav-dd-item:hover {
+    background: rgba(90, 172, 50, 0.08);
+    color: #5AAC32;
+  }
+
+  .nav-dd-item.is-active {
+    background: rgba(90, 172, 50, 0.12);
+    color: #5AAC32;
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .nav-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #5AAC32;
+    color: white;
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    white-space: nowrap;
+  }
+
+  .nav-login:hover {
+    background: #4a9528;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(90, 172, 50, 0.25);
+  }
+
+  .nav-login .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  .nav-login-text {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .nav-login-text {
+      display: inline;
+    }
+  }
+
+  .nav-mobile {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-mobile {
+      display: none;
+    }
+  }
+
+  .nav-mobile-toggle {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    color: #5AAC32;
+    background: rgba(90, 172, 50, 0.08);
+    border: 1px solid rgba(90, 172, 50, 0.15);
+    transition: background 150ms ease, transform 150ms ease;
+  }
+
+  .nav-mobile-toggle:hover {
+    background: rgba(90, 172, 50, 0.14);
+    transform: translateY(-1px);
+  }
+
+  .nav-mobile-menu {
+    position: absolute;
+    right: 16px;
+    top: calc(100% + 10px);
+    width: min(340px, 92vw);
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .nav-mobile-link {
+    font-family: 'Lexend', sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #374151;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  .nav-mobile-link.is-active {
+    border-color: rgba(90, 172, 50, 0.3);
+    background: rgba(90, 172, 50, 0.1);
+    color: #5AAC32;
+  }
+
+  .nav-mobile-group {
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .nav-mobile-group-title {
+    font-family: 'Lexend', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    padding: 4px 2px 0;
+  }
+
+  .nav-mobile-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: #5AAC32;
+    color: white;
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+</style>
