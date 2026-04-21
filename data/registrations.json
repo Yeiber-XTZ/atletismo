@@ -1,6 +1,21 @@
 [
   {
     "profile": "club",
+    "name": "Afrotech",
+    "email": "franklin2blandon@gmail.com",
+    "radicado": "REG-20260421-D6D6B0",
+    "createdAt": "2026-04-21T16:32:40.413Z",
+    "data": {
+      "phone": "+573105179422",
+      "municipality": "QUIBDO",
+      "nit": "12223214411",
+      "legalRepresentative": "Franklin",
+      "recognitionDoc": "https://claude.ai/new",
+      "documents": "Certicados electoral"
+    }
+  },
+  {
+    "profile": "club",
     "name": "Tom",
     "email": "ANDRESROBLEDO171@GMAIL.COM",
     "radicado": "REG-20260420-EF526E",
