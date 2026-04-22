@@ -181,6 +181,7 @@ CREATE TABLE IF NOT EXISTS athletes (
   gender TEXT,
   birthdate DATE,
   club TEXT,
+  photo_url TEXT,
   category TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -512,3 +513,4 @@ ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS lower_is_better BOOLEAN 
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS source_result_id INTEGER REFERENCES results(id) ON DELETE SET NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rankings_ranking_key_unique ON rankings(ranking_key) WHERE ranking_key IS NOT NULL;
 ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS status_mode TEXT NOT NULL DEFAULT 'auto';
+ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS photo_url TEXT;
