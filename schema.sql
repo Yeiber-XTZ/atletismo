@@ -278,6 +278,15 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 
 -- Convocatorias
+CREATE TABLE IF NOT EXISTS convocatoria_categories (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_convocatoria_categories_name_ci ON convocatoria_categories (LOWER(name));
+
 CREATE TABLE IF NOT EXISTS convocatorias (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
@@ -377,6 +386,7 @@ CREATE INDEX IF NOT EXISTS idx_marks_athlete_id ON marks(athlete_id);
 CREATE INDEX IF NOT EXISTS idx_events_start_date ON events(start_date);
 CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at);
 CREATE INDEX IF NOT EXISTS idx_convocatorias_created_at ON convocatorias(created_at);
+CREATE INDEX IF NOT EXISTS idx_convocatoria_categories_name ON convocatoria_categories(name);
 CREATE INDEX IF NOT EXISTS idx_competencias_date ON competencias(event_date);
 CREATE INDEX IF NOT EXISTS idx_clubs_name ON clubs(name);
 CREATE INDEX IF NOT EXISTS idx_rankings_municipality ON rankings(municipality);

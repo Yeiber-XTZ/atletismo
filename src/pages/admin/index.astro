@@ -14,6 +14,7 @@ import { listNotifications } from '../../lib/notificaciones';
 import { listApprovalRequests } from '../../lib/approvals';
 import { listAuditLogs } from '../../lib/audit';
 import { listRadicados } from '../../lib/radicados';
+import { listConvocatoriaCategories } from '../../lib/convocatoria-categories';
 
 const user = Astro.locals.user as AuthUser | null;
 const requestedTab = Astro.url.searchParams.get('tab') ?? ((user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') ? 'dashboard' : 'settings');
@@ -53,8 +54,17 @@ const auditEntity = (Astro.url.searchParams.get('auditEntity') ?? '').trim();
 const auditUserId = Number(Astro.url.searchParams.get('auditUserId') ?? 0);
 
 const data = await getAdminData();
+const managedConvocatoriaCategories = await listConvocatoriaCategories();
 const docs = await listDocuments();
 const marks: Array<{ id: number; athlete: string; discipline: string; value: string; unit: string; recordDate: string }> = [];
+const convocatoriaCategoryOptions = Array.from(
+  new Set(
+    [
+      ...managedConvocatoriaCategories.map((item) => String(item.name ?? '').trim()),
+      ...(data.convocatorias ?? []).map((item) => String(item.category ?? '').trim())
+    ].filter(Boolean)
+  )
+).sort((a, b) => a.localeCompare(b, 'es-CO'));
 
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
@@ -907,6 +917,53 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                   <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Convocatorias</button>
                 </div>
               </form>
+              <section class="rounded-xl border border-gray-200 bg-white p-4 mt-4">
+                <h5 class="text-sm font-semibold text-gray-700">Gestión de categorías de convocatorias</h5>
+                <p class="text-xs text-gray-500 mt-1">Crea, edita o elimina categorías para usar en el selector de convocatorias.</p>
+                <form method="POST" action="/api/admin/convocatoria-categories" class="mt-3 grid gap-3 md:grid-cols-6">
+                  <input type="hidden" name="intent" value="create" />
+                  <div class="md:col-span-4">
+                    <label class="admin-label">Nueva categoría</label>
+                    <input class="admin-input" name="name" placeholder="Ej: Selectivo nacional" required />
+                  </div>
+                  <div class="md:col-span-2 flex items-end justify-end">
+                    <button class="admin-btn admin-btn-primary" type="submit">
+                      <span class="material-symbols-outlined">add</span>
+                      Crear categoría
+                    </button>
+                  </div>
+                </form>
+                <div class="mt-3 space-y-2">
+                  {managedConvocatoriaCategories.map((item) => (
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 grid gap-2 md:grid-cols-12">
+                      <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-10 grid gap-2 md:grid-cols-6">
+                        <input type="hidden" name="intent" value="update" />
+                        <input type="hidden" name="id" value={item.id} />
+                        <div class="md:col-span-4">
+                          <input class="admin-input" name="name" value={item.name} required />
+                        </div>
+                        <div class="md:col-span-2 flex items-end justify-end">
+                          <button class="admin-btn admin-btn-secondary" type="submit">
+                            <span class="material-symbols-outlined">save</span>
+                            Guardar
+                          </button>
+                        </div>
+                      </form>
+                      <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-2 flex items-end justify-end">
+                        <input type="hidden" name="intent" value="delete" />
+                        <input type="hidden" name="id" value={item.id} />
+                        <button class="admin-btn admin-btn-danger" type="submit">
+                          <span class="material-symbols-outlined">delete</span>
+                          Eliminar
+                        </button>
+                      </form>
+                    </div>
+                  ))}
+                  {managedConvocatoriaCategories.length === 0 ? (
+                    <p class="text-xs text-gray-400">No hay categorías definidas aún.</p>
+                  ) : null}
+                </div>
+              </section>
               <form method="POST" action="/api/admin/convocatorias" encType="multipart/form-data" class="grid gap-5 mt-6">
                 <p class="text-xs text-gray-400">Campos guiados. Requisitos y categorías: una línea por ítem.</p>
                 <div class="space-y-3" data-repeat-container>
@@ -918,7 +975,17 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       </div>
                       <div>
                         <label class="admin-label">Categoría</label>
-                        <input class="admin-input" name="convCategory" value={conv.category} required />
+                        <select class="admin-input" name="convCategory" required>
+                          {convocatoriaCategoryOptions.map((categoryOption) => (
+                            <option value={categoryOption} selected={conv.category === categoryOption}>{categoryOption}</option>
+                          ))}
+                          {convocatoriaCategoryOptions.length === 0 ? (
+                            <option value="General" selected={!conv.category || conv.category === 'General'}>General</option>
+                          ) : null}
+                          {!convocatoriaCategoryOptions.includes(conv.category) && conv.category ? (
+                            <option value={conv.category} selected>{conv.category}</option>
+                          ) : null}
+                        </select>
                       </div>
                       <div>
                         <label class="admin-label">Estado</label>
@@ -2671,7 +2738,17 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     <template id="tpl-convocatoria">
       <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
         <div><label class="admin-label">Título</label><input class="admin-input" name="convTitle" required /></div>
-        <div><label class="admin-label">Categoría</label><input class="admin-input" name="convCategory" required /></div>
+        <div>
+          <label class="admin-label">Categoría</label>
+          <select class="admin-input" name="convCategory" required>
+            {convocatoriaCategoryOptions.map((categoryOption, idx) => (
+              <option value={categoryOption} selected={idx === 0}>{categoryOption}</option>
+            ))}
+            {convocatoriaCategoryOptions.length === 0 ? (
+              <option value="General" selected>General</option>
+            ) : null}
+          </select>
+        </div>
         <div>
           <label class="admin-label">Estado</label>
           <select class="admin-input" name="convStatus" required>
