@@ -3186,10 +3186,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
     </template>
 
-    <script is:inline>
+    <script is:inline define:vars={{ geoDepartments, geoMunicipalities }}>
       const root = document;
-      const GEO_DEPARTMENTS = {JSON.stringify(geoDepartments)};
-      const GEO_MUNICIPALITIES = {JSON.stringify(geoMunicipalities)};
+      const GEO_DEPARTMENTS = geoDepartments;
+      const GEO_MUNICIPALITIES = geoMunicipalities;
 
       const fillSelect = (selectEl, items, selectedValue, valueKey = 'code', labelKey = 'name') => {
         if (!(selectEl instanceof HTMLSelectElement)) return;
