@@ -13,7 +13,7 @@ export type DbUser = {
   directPermissions?: Permission[];
 };
 
-const ROLE_PRIORITY_ORDER: Role[] = ['SUPERADMIN', 'ADMIN', 'ORGANO_ADMIN', 'LIGA', 'ATLETA', 'CLUB', 'ASAMBLEISTA', 'PUBLICO'];
+const ROLE_PRIORITY_ORDER: Role[] = ['SUPERADMIN', 'ADMIN', 'ORGANO_ADMIN', 'LIGA', 'CLUB'];
 
 function sortRolesByPriority(roles: Role[]) {
   const indexMap = new Map<string, number>(ROLE_PRIORITY_ORDER.map((role, index) => [role, index]));

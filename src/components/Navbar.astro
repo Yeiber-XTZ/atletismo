@@ -9,14 +9,8 @@ const canSeeConvocatoria = hasRole(user, ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB']
 const isLoggedIn = Boolean(user);
 const nextPath = `${Astro.url.pathname}${Astro.url.search}`;
 const publicLoginHref = `/login?next=${encodeURIComponent(nextPath)}`;
-const panelHref =
-  !user || user.role === 'PUBLICO'
-    ? '/'
-    : user.role === 'ATLETA'
-      ? '/dashboard/atleta'
-      : '/admin';
-const panelLabel =
-  user?.role === 'PUBLICO' || !user ? 'Mi panel' : 'Panel de control';
+const panelHref = !user ? '/' : '/admin';
+const panelLabel = !user ? 'Mi panel' : 'Panel de control';
 
 const groupMap = {
   liga: {

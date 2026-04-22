@@ -9,9 +9,8 @@ const { settings } = data;
 ---
 <BaseLayout title="Registro | Liga de Atletismo del Chocó" description="Regístrate en la plataforma de la Liga de Atletismo del Chocó.">
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
-  
+
   <main class="pt-[72px]">
-    <!-- Hero Section -->
     <section class="page-hero">
       <div class="container mx-auto px-6">
         <nav class="page-breadcrumb">
@@ -23,24 +22,16 @@ const { settings } = data;
           <span class="page-breadcrumb-current">Registro</span>
         </nav>
         <h1 class="page-title">Crear Cuenta</h1>
-        <p class="page-subtitle">Únete a la comunidad deportiva del Chocó. Regístrate como atleta, club o usuario general.</p>
+        <p class="page-subtitle">Únete a la comunidad deportiva del Chocó. Registra tu club para iniciar el proceso de afiliación.</p>
       </div>
     </section>
 
-    <!-- Register Section -->
     <section class="page-section">
       <div class="container mx-auto px-6">
         <div class="register-wrapper">
           <div class="register-card">
-            <h2 class="section-heading section-heading-center">Selecciona tu tipo de registro</h2>
+            <h2 class="section-heading section-heading-center">Tipo de registro disponible</h2>
             <div class="register-options">
-              <a href="/registro/atleta" class="register-option">
-                <div class="register-option-icon">
-                  <span class="material-symbols-outlined">directions_run</span>
-                </div>
-                <h3 class="register-option-title">Atleta</h3>
-                <p class="register-option-text">Regístrate como deportista para participar en convocatorias y competencias.</p>
-              </a>
               <a href="/registro/club" class="register-option">
                 <div class="register-option-icon">
                   <span class="material-symbols-outlined">groups</span>
@@ -48,19 +39,12 @@ const { settings } = data;
                 <h3 class="register-option-title">Club</h3>
                 <p class="register-option-text">Afilia tu club para inscribir atletas y acceder a recursos exclusivos.</p>
               </a>
-              <a href="/registro/usuario" class="register-option">
-                <div class="register-option-icon">
-                  <span class="material-symbols-outlined">person</span>
-                </div>
-                <h3 class="register-option-title">Usuario General</h3>
-                <p class="register-option-text">Accede a noticias, calendario y contenido público de la Liga.</p>
-              </a>
             </div>
           </div>
         </div>
       </div>
     </section>
   </main>
-  
+
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
 </BaseLayout>

@@ -181,6 +181,7 @@ CREATE TABLE IF NOT EXISTS athletes (
   gender TEXT,
   birthdate DATE,
   club TEXT,
+  photo_url TEXT,
   category TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -464,7 +465,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   title TEXT NOT NULL DEFAULT '',
   message TEXT NOT NULL DEFAULT '',
   level TEXT NOT NULL DEFAULT 'info',
-  target_role TEXT NOT NULL DEFAULT 'PUBLICO',
+  target_role TEXT NOT NULL DEFAULT 'ALL',
   action_href TEXT NOT NULL DEFAULT '',
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -550,3 +551,4 @@ ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS lower_is_better BOOLEAN 
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS source_result_id INTEGER REFERENCES results(id) ON DELETE SET NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rankings_ranking_key_unique ON rankings(ranking_key) WHERE ranking_key IS NOT NULL;
 ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS status_mode TEXT NOT NULL DEFAULT 'auto';
+ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS photo_url TEXT;

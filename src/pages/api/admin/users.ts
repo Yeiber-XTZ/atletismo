@@ -12,11 +12,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'users:manage', { loginPath: '/admin/login' });
   if ('response' in auth) return auth.response;
   const isSuperAdmin = auth.user.role === 'SUPERADMIN';
+  const isAdminRoot = auth.user.role === 'SUPERADMIN' || auth.user.role === 'ADMIN';
+  const isLigaOrOrgano = auth.user.role === 'LIGA' || auth.user.role === 'ORGANO_ADMIN';
+  const delegatedAssemblyPermissions = new Set<(typeof PERMISSIONS)[number]>([
+    'assembly:self_panel',
+    'assembly:attendance:create',
+    'assembly:observations:create',
+    'documents:read_private_asamblea'
+  ]);
 
   const form = await request.formData();
   const intent = String(form.get('intent') ?? '');
 
   if (intent === 'create') {
+    if (!isAdminRoot) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
     const schema = z.object({
       email: z.string().email().max(160),
       password: z.string().min(8).max(200),
@@ -52,6 +61,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   if (intent === 'update') {
+    if (!isAdminRoot) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
     const schema = z.object({
       id: z.coerce.number().int().positive(),
       displayName: z.string().max(120).optional().or(z.literal('')),
@@ -91,6 +101,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   if (intent === 'password') {
+    if (!isAdminRoot) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
     const schema = z.object({
       id: z.coerce.number().int().positive(),
       password: z.string().min(8).max(200)
@@ -111,7 +122,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   if (intent === 'permissions') {
-    if (!isSuperAdmin) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+    if (!isSuperAdmin && !isLigaOrOrgano) {
+      return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+    }
     const id = Number(form.get('id') ?? 0);
     if (!Number.isFinite(id) || id <= 0) {
       return Response.redirect(new URL('/admin?tab=users&error=invalid_schema', request.url), 302);
@@ -126,13 +139,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .map((value) => String(value))
       .filter((value): value is (typeof PERMISSIONS)[number] => (PERMISSIONS as readonly string[]).includes(value));
 
-    await setUserDirectPermissions(id, selected);
+    const effectiveSelected = isSuperAdmin ? selected : selected.filter((value) => delegatedAssemblyPermissions.has(value));
+    if (!isSuperAdmin && targetRole !== 'CLUB') {
+      return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+    }
+
+    await setUserDirectPermissions(id, effectiveSelected);
     await logAudit({
       userId: Number(auth.user.id) || null,
       action: 'user_permissions_set',
       entityType: 'user',
       entityId: String(id),
-      meta: { permissions: selected },
+      meta: { permissions: effectiveSelected },
       request
     });
     return Response.redirect(new URL('/admin?tab=users&saved=1', request.url), 302);

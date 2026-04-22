@@ -61,7 +61,7 @@ export async function setNotificationActive(id: number, isActive: boolean) {
   await db.query(`UPDATE notifications SET is_active=$1, updated_at=NOW() WHERE id=$2`, [isActive, id]);
 }
 
-export async function listNotificationsForRole(role: Role | 'PUBLICO') {
+export async function listNotificationsForRole(role: Role) {
   assertDbReady();
   if (!hasDatabase) return [] as NotificationItem[];
   const res = await db.query(
@@ -75,11 +75,10 @@ export async function listNotificationsForRole(role: Role | 'PUBLICO') {
             created_at as "createdAt"
      FROM notifications
      WHERE is_active = TRUE
-       AND (target_role = 'ALL' OR target_role = $1 OR target_role = 'PUBLICO')
+       AND (target_role = 'ALL' OR target_role = $1)
      ORDER BY created_at DESC
      LIMIT 12`,
     [role]
   );
   return res.rows as NotificationItem[];
 }
-

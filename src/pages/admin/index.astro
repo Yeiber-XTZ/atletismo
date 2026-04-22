@@ -14,6 +14,8 @@ import { listNotifications } from '../../lib/notificaciones';
 import { listAuditLogs } from '../../lib/audit';
 import { listRadicados } from '../../lib/radicados';
 import { listConvocatoriaCategories } from '../../lib/convocatoria-categories';
+import { listAthletes } from '../../lib/athletes-admin';
+import { getClubByOwnerUserId } from '../../lib/clubs';
 
 const user = Astro.locals.user as AuthUser | null;
 const requestedTab = Astro.url.searchParams.get('tab') ?? ((user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') ? 'dashboard' : 'settings');
@@ -54,6 +56,9 @@ const ligaView = ligaViews.has(ligaViewParam) ? ligaViewParam : '';
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
 const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
 const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
+const athleteStatusFilter = Astro.url.searchParams.get('athleteStatus') ?? 'all';
+const athleteQuery = (Astro.url.searchParams.get('athleteQ') ?? '').trim();
+const athleteClubFilterId = Number(Astro.url.searchParams.get('athleteClubId') ?? 0);
 const auditAction = (Astro.url.searchParams.get('auditAction') ?? '').trim();
 const auditEntity = (Astro.url.searchParams.get('auditEntity') ?? '').trim();
 const auditUserId = Number(Astro.url.searchParams.get('auditUserId') ?? 0);
@@ -75,13 +80,54 @@ const convocatoriaCategoryOptions = Array.from(
 
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
+const canDelegateAssemblyPermissions = user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN';
+const delegatedAssemblyPermissions = [
+  'assembly:self_panel',
+  'assembly:attendance:create',
+  'assembly:observations:create',
+  'documents:read_private_asamblea'
+];
+const canManageUsers = hasPermission(user, 'users:manage');
+const canManageApprovals = hasPermission(user, 'approvals:manage');
+const canManageAsambleas = hasPermission(user, 'asambleas:manage');
+const canViewAsambleasPanel = canManageAsambleas || hasPermission(user, 'assembly:self_panel');
+const canManageAllAthletes = hasPermission(user, 'athletes:manage');
+const canManageClubAthletes = hasPermission(user, 'athletes:self_manage');
+const canAccessAthletesTab = canManageAllAthletes || canManageClubAthletes;
+let ownClubId = user?.clubId ? Number(user.clubId) : 0;
+if (!ownClubId && user?.role === 'CLUB' && user?.id) {
+  const ownedClub = await getClubByOwnerUserId(Number(user.id));
+  ownClubId = ownedClub?.id ?? 0;
+}
 if ((contentTab === 'roles' || contentTab === 'permisos') && !isSuperAdmin) {
   return Astro.redirect('/acceso-denegado');
 }
 if (contentTab === 'notificaciones' && !hasPermission(user, 'notificaciones:manage')) {
   return Astro.redirect('/acceso-denegado');
 }
-const users = isAdminRoot ? await listUsers() : [];
+if (contentTab === 'asambleas' && !canViewAsambleasPanel) {
+  return Astro.redirect('/acceso-denegado');
+}
+if (contentTab === 'athletes' && !canAccessAthletesTab) {
+  return Astro.redirect('/acceso-denegado');
+}
+const users = canManageUsers ? await listUsers() : [];
+const usersForUsersTab =
+  user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN'
+    ? users.filter((u) => (u.roles?.[0] ?? '') === 'CLUB')
+    : users;
+const athleteScopeClubId = canManageAllAthletes
+  ? (Number.isFinite(athleteClubFilterId) && athleteClubFilterId > 0 ? athleteClubFilterId : undefined)
+  : (ownClubId > 0 ? ownClubId : undefined);
+const athletes = canAccessAthletesTab
+  ? (!canManageAllAthletes && !athleteScopeClubId
+      ? []
+      : await listAthletes({
+          clubId: athleteScopeClubId,
+          query: athleteQuery,
+          status: athleteStatusFilter
+        }))
+  : [];
 const pqrs = isAdminRoot ? await listPqrs(500) : [];
 const canApprovePostulations = hasPermission(user, 'postulations:approve');
 const postulationsDb = (canApprovePostulations || user?.role === 'CLUB') ? await listPostulaciones() : [];
@@ -89,15 +135,15 @@ const postulations = user?.role === 'CLUB' ? postulationsDb.filter(p => String(p
 const postulationSummary = canApprovePostulations
   ? await summarizePostulaciones()
   : { total: 0, byStatus: [], byConvocatoria: [] };
-const asambleas = isAdminRoot || user?.role === 'ASAMBLEISTA' || user?.role === 'LIGA' ? await listAssemblyMeetings() : [];
-const asambleaAttendanceSummary = isAdminRoot
+const asambleas = canViewAsambleasPanel ? await listAssemblyMeetings() : [];
+const asambleaAttendanceSummary = canManageAsambleas
   ? await summarizeAssemblyAttendance()
   : { total: 0, byStatus: [] };
-const asambleaMeetingsSummary = isAdminRoot ? await summarizeAssemblyMeetings() : [];
+const asambleaMeetingsSummary = canManageAsambleas ? await summarizeAssemblyMeetings() : [];
 const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAnalytics() : null;
 const alerts = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAlerts() : [];
 const notifications = isAdminRoot ? await listNotifications() : [];
-const registrationRadicados = isAdminRoot ? await listRadicados('pending') : [];
+const registrationRadicados = canManageApprovals ? await listRadicados('pending') : [];
 const auditLogResult = isAdminRoot
   ? await listAuditLogs({
       action: auditAction || undefined,
@@ -159,7 +205,7 @@ const postulationStatusClass = (status: string) => {
 };
 
 const logoUrl = data.settings.logoUrl || '/logo.png';
-const assignableRoles = ROLES.filter((role) => role !== 'PUBLICO' && (isSuperAdmin || role !== 'SUPERADMIN'));
+const assignableRoles = ROLES.filter((role) => isSuperAdmin || role !== 'SUPERADMIN');
 const linesFromArray = (items: string[] | undefined) => (items ?? []).join('\n');
 const downloadsToLines = (downloads: Array<{ label: string; href: string }> | undefined) =>
   (downloads ?? []).map((item) => `${item.label}|${item.href}`).join('\n');
@@ -227,6 +273,7 @@ const rawNavItems = [
   { id: 'aprobaciones', label: 'Aprobaciones', icon: 'fact_check' },
   { id: 'auditoria', label: 'Auditoria', icon: 'manage_search' },
   { id: 'clubs', label: 'Clubes', icon: 'groups' },
+  { id: 'athletes', label: 'Atletas', icon: 'directions_run' },
   { id: 'convocatorias', label: 'Convocatorias', icon: 'campaign' },
   { id: 'competencias', label: 'Competencias', icon: 'sports' },
   { id: 'ranking', label: 'Ranking', icon: 'leaderboard' },
@@ -254,6 +301,7 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
   blog: 'blog:manage',
   stats: 'records:manage',
   clubs: 'clubs:manage',
+  athletes: 'athletes:manage',
   competencias: 'competencias:manage',
   convocatorias: 'convocatorias:manage',
   results: 'results:manage',
@@ -263,9 +311,10 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
 
 const navItems = rawNavItems.filter((item) => {
   if (item.id === 'perfil') return true;
+  if (item.id === 'asambleas') return canViewAsambleasPanel;
+  if (item.id === 'athletes') return canAccessAthletesTab;
   const r = user?.role;
   if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents', 'alertas'].includes(item.id)) return true;
-  if (r === 'ASAMBLEISTA' && ['asambleas', 'documents'].includes(item.id)) return true;
   const need = NAV_PERMS[item.id] ?? 'admin:all';
   if (need === 'admin:all') return hasPermission(user, 'admin:all');
   return hasPermission(user, need);
@@ -1401,17 +1450,17 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
-                  {users.map((u) => (
+                  {usersForUsersTab.map((u) => (
                     <tr>
                       <td class="p-3 align-top text-gray-500">{u.id}</td>
                       <td class="p-3 align-top">{u.email}</td>
                       <td class="p-3 align-top">
-                        <input class="admin-input" form={`update-${u.id}`} name="displayName" value={u.displayName ?? ''} placeholder="Nombre" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'} />
+                        <input class="admin-input" form={`update-${u.id}`} name="displayName" value={u.displayName ?? ''} placeholder="Nombre" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'} />
                       </td>
                       <td class="p-3 align-top">
-                        <select class="admin-input" form={`update-${u.id}`} name="role" required disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                        <select class="admin-input" form={`update-${u.id}`} name="role" required disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                           {assignableRoles.map((r) => (
-                            <option value={r} selected={(u.roles?.[0] ?? 'PUBLICO') === r}>
+                            <option value={r} selected={(u.roles?.[0] ?? '') === r}>
                               {r}
                             </option>
                           ))}
@@ -1422,7 +1471,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <div class="text-xs text-gray-500">
                             {u.clubId ? `Actual: #${u.clubId} · ${clubNameById.get(Number(u.clubId)) ?? 'Sin nombre'}` : 'Actual: Sin club'}
                           </div>
-                          <select class="admin-input" form={`update-${u.id}`} name="clubId" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                          <select class="admin-input" form={`update-${u.id}`} name="clubId" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                             <option value="" selected={!u.clubId}>Sin club</option>
                             {clubsWithId.map((club) => (
                               <option value={String(club.id)} selected={Number(u.clubId ?? 0) === Number(club.id)}>
@@ -1434,7 +1483,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       </td>
                       <td class="p-3 align-top">
                         <label class="inline-flex items-center gap-2 text-xs text-gray-600">
-                          <input form={`update-${u.id}`} type="checkbox" name="isActive" value="1" checked={u.isActive} disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'} />
+                          <input form={`update-${u.id}`} type="checkbox" name="isActive" value="1" checked={u.isActive} disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'} />
                           Activo
                         </label>
                       </td>
@@ -1443,7 +1492,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <form id={`update-${u.id}`} method="POST" action="/api/admin/users" class="grid gap-2">
                             <input type="hidden" name="intent" value="update" />
                             <input type="hidden" name="id" value={u.id} />
-                            <button class="admin-btn admin-btn-primary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                            <button class="admin-btn admin-btn-primary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                               <span class="material-symbols-outlined">save</span>
                               Guardar
                             </button>
@@ -1451,20 +1500,23 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <form id={`pw-${u.id}`} method="POST" action="/api/admin/users" class="grid gap-2">
                             <input type="hidden" name="intent" value="password" />
                             <input type="hidden" name="id" value={u.id} />
-                            <input class="admin-input" type="password" name="password" placeholder="Nueva contraseña" required disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'} />
-                            <button class="admin-btn admin-btn-secondary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                            <input class="admin-input" type="password" name="password" placeholder="Nueva contraseña" required disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'} />
+                            <button class="admin-btn admin-btn-secondary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                               <span class="material-symbols-outlined">key</span>
                               Reset
                             </button>
                           </form>
-                          {isSuperAdmin ? (
+                          {isSuperAdmin || (canDelegateAssemblyPermissions && (u.roles?.[0] ?? '') === 'CLUB') ? (
                             <form id={`permissions-${u.id}`} method="POST" action="/api/admin/users" class="grid gap-2">
                               <input type="hidden" name="intent" value="permissions" />
                               <input type="hidden" name="id" value={u.id} />
                               <details class="rounded-lg border border-gray-200 bg-gray-50 p-2">
                                 <summary class="cursor-pointer text-xs font-semibold text-gray-600">Permisos extra</summary>
                                 <div class="mt-2 grid gap-1 max-h-40 overflow-auto pr-1">
-                                  {PERMISSIONS.filter((p) => p !== 'super:all').map((perm) => (
+                                  {(isSuperAdmin
+                                    ? PERMISSIONS.filter((p) => p !== 'super:all')
+                                    : PERMISSIONS.filter((p) => delegatedAssemblyPermissions.includes(p))
+                                  ).map((perm) => (
                                     <label class="inline-flex items-center gap-2 text-xs text-gray-600">
                                       <input type="checkbox" name="permissions" value={perm} checked={(u.directPermissions ?? []).includes(perm)} />
                                       <span>{perm}</span>
@@ -1482,7 +1534,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       </td>
                     </tr>
                   ))}
-                  {users.length === 0 && (
+                  {usersForUsersTab.length === 0 && (
                     <tr>
                       <td class="p-6 text-center text-gray-400" colSpan={7}>
                         No hay usuarios registrados (configura `ADMIN_EMAIL` y `ADMIN_PASSWORD` y corre el seed).
@@ -1494,6 +1546,278 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </div>
 
+        </div>
+      </section>
+    ) : null}
+
+    {contentTab === 'athletes' ? (
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Gestión de Atletas</h4>
+        </div>
+        <div class="admin-card-body space-y-6">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-sm text-gray-500">
+              {canManageAllAthletes
+                ? 'Administra atletas de todos los clubes y filtra por club.'
+                : 'Administra únicamente los atletas de tu club.'}
+            </p>
+            <button type="button" id="toggle-create-athlete" class="admin-btn admin-btn-secondary">
+              <span class="material-symbols-outlined">person_add</span>
+              Registrar atleta
+            </button>
+          </div>
+
+          {!canManageAllAthletes && !ownClubId ? (
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Tu usuario CLUB aún no tiene un club asociado. Solicita la asociación al administrador para poder registrar atletas.
+            </div>
+          ) : null}
+
+          <div id="create-athlete-panel" class="rounded-xl border border-gray-200 bg-gray-50 p-5 hidden">
+            <h5 class="text-sm font-semibold text-gray-700 mb-4">Nuevo atleta</h5>
+            <form method="POST" action="/api/admin/athletes" encType="multipart/form-data" class="grid gap-4 md:grid-cols-12">
+              <input type="hidden" name="intent" value="create" />
+              {!canManageAllAthletes ? <input type="hidden" name="clubId" value={String(ownClubId || '')} /> : null}
+              <div class="md:col-span-3">
+                <label class="admin-label">Nombres</label>
+                <input class="admin-input" name="firstName" required />
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Apellidos</label>
+                <input class="admin-input" name="lastName" required />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Tipo doc.</label>
+                <select class="admin-input" name="documentType">
+                  <option value="CC">CC</option>
+                  <option value="TI">TI</option>
+                  <option value="CE">CE</option>
+                  <option value="PP">PP</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Documento</label>
+                <input class="admin-input" name="document" required />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Sexo</label>
+                <select class="admin-input" name="gender" required>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="X">Otro</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Nacimiento</label>
+                <input class="admin-input" type="date" name="birthdate" required />
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Email</label>
+                <input class="admin-input" type="email" name="email" />
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Municipio</label>
+                <input class="admin-input" name="municipality" required />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Estado</label>
+                <select class="admin-input" name="status">
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </div>
+              {canManageAllAthletes ? (
+                <div class="md:col-span-2">
+                  <label class="admin-label">Club</label>
+                  <select class="admin-input" name="clubId" required>
+                    <option value="">Selecciona club</option>
+                    {clubsWithId.map((club) => (
+                      <option value={String(club.id)}>#{club.id} · {club.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+              <div class="md:col-span-4">
+                <label class="admin-label">Entrenador</label>
+                <input class="admin-input" name="coach" />
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">EPS</label>
+                <input class="admin-input" name="eps" />
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">Contacto emergencia</label>
+                <input class="admin-input" name="emergencyContact" />
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">Foto</label>
+                <input class="admin-input" type="file" name="photoFile" accept="image/*" />
+                <input type="hidden" name="photoUrl" value="" />
+              </div>
+              <div class="md:col-span-12">
+                <label class="admin-label">Pruebas / disciplinas</label>
+                <textarea class="admin-input min-h-[90px]" name="disciplines" placeholder="Una por línea o separadas por coma"></textarea>
+              </div>
+              <div class="md:col-span-12 flex justify-end">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar atleta
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <form method="GET" action="/admin" class="rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-12">
+            <input type="hidden" name="tab" value="athletes" />
+            <div class="md:col-span-5">
+              <label class="admin-label">Buscar</label>
+              <input class="admin-input" name="athleteQ" value={athleteQuery} placeholder="Nombre, documento, email, municipio" />
+            </div>
+            <div class="md:col-span-3">
+              <label class="admin-label">Estado</label>
+              <select class="admin-input" name="athleteStatus">
+                <option value="all" selected={athleteStatusFilter === 'all'}>Todos</option>
+                <option value="active" selected={athleteStatusFilter === 'active'}>Activo</option>
+                <option value="inactive" selected={athleteStatusFilter === 'inactive'}>Inactivo</option>
+              </select>
+            </div>
+            {canManageAllAthletes ? (
+              <div class="md:col-span-3">
+                <label class="admin-label">Club</label>
+                <select class="admin-input" name="athleteClubId">
+                  <option value="" selected={!athleteClubFilterId}>Todos los clubes</option>
+                  {clubsWithId.map((club) => (
+                    <option value={String(club.id)} selected={athleteClubFilterId === club.id}>#{club.id} · {club.name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <input type="hidden" name="athleteClubId" value={String(ownClubId || '')} />
+            )}
+            <div class="md:col-span-1 flex items-end">
+              <button class="admin-btn admin-btn-primary w-full" type="submit">
+                <span class="material-symbols-outlined">filter_alt</span>
+                Filtrar
+              </button>
+            </div>
+          </form>
+
+          <div class="overflow-auto rounded-xl border border-gray-200">
+            <table class="min-w-[1300px] w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                  <th class="text-left p-3 font-medium">Atleta</th>
+                  <th class="text-left p-3 font-medium">Documento</th>
+                  <th class="text-left p-3 font-medium">Club</th>
+                  <th class="text-left p-3 font-medium">Datos</th>
+                  <th class="text-left p-3 font-medium">Disciplinas</th>
+                  <th class="text-left p-3 font-medium">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                {athletes.map((a) => (
+                  <tr>
+                    <td class="p-3 align-top">
+                      <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+                          {a.photoUrl ? (
+                            <img src={a.photoUrl} alt={a.fullName} class="h-full w-full object-cover" />
+                          ) : (
+                            <div class="flex h-full w-full items-center justify-center text-xs text-gray-400">N/A</div>
+                          )}
+                        </div>
+                        <div>
+                          <div class="font-semibold text-gray-800">{a.fullName}</div>
+                          <div class="text-xs text-gray-500">#{a.id} · {a.gender} · {a.birthdate || '-'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-3 align-top">
+                      <div class="text-sm text-gray-700">{a.documentType} {a.document}</div>
+                      <div class="text-xs text-gray-500">{a.email || '-'}</div>
+                    </td>
+                    <td class="p-3 align-top">
+                      {a.clubId ? `#${a.clubId} · ${a.clubName}` : a.clubName || '(sin club)'}
+                    </td>
+                    <td class="p-3 align-top">
+                      <div class="text-xs text-gray-600">Municipio: {a.municipality || '-'}</div>
+                      <div class="text-xs text-gray-600">Coach: {a.coach || '-'}</div>
+                      <div class="text-xs text-gray-600">EPS: {a.eps || '-'}</div>
+                      <div class="text-xs text-gray-600">Emergencia: {a.emergencyContact || '-'}</div>
+                    </td>
+                    <td class="p-3 align-top">
+                      <div class="text-xs text-gray-700 whitespace-pre-wrap">{a.disciplines.join(', ') || '-'}</div>
+                    </td>
+                    <td class="p-3 align-top">
+                      <form method="POST" action="/api/admin/athletes" encType="multipart/form-data" class="grid gap-2">
+                        <input type="hidden" name="intent" value="update" />
+                        <input type="hidden" name="id" value={a.id} />
+                        <div class="grid grid-cols-2 gap-2">
+                          <input class="admin-input" name="firstName" value={a.firstName} required />
+                          <input class="admin-input" name="lastName" value={a.lastName} required />
+                          <select class="admin-input" name="documentType">
+                            <option value="CC" selected={a.documentType === 'CC'}>CC</option>
+                            <option value="TI" selected={a.documentType === 'TI'}>TI</option>
+                            <option value="CE" selected={a.documentType === 'CE'}>CE</option>
+                            <option value="PP" selected={a.documentType === 'PP'}>PP</option>
+                          </select>
+                          <input class="admin-input" name="document" value={a.document} required />
+                          <select class="admin-input" name="gender">
+                            <option value="M" selected={a.gender === 'M'}>M</option>
+                            <option value="F" selected={a.gender === 'F'}>F</option>
+                            <option value="X" selected={a.gender === 'X'}>X</option>
+                          </select>
+                          <input class="admin-input" type="date" name="birthdate" value={a.birthdate} required />
+                          <input class="admin-input" type="email" name="email" value={a.email} placeholder="Email" />
+                          <input class="admin-input" name="municipality" value={a.municipality} placeholder="Municipio" required />
+                          <input class="admin-input" name="coach" value={a.coach} placeholder="Coach" />
+                          <input class="admin-input" name="eps" value={a.eps} placeholder="EPS" />
+                          <input class="admin-input" name="emergencyContact" value={a.emergencyContact} placeholder="Emergencia" />
+                          <input class="admin-input" type="file" name="photoFile" accept="image/*" />
+                          <input type="hidden" name="photoUrl" value={a.photoUrl || ''} />
+                          <select class="admin-input" name="status">
+                            <option value="active" selected={a.status === 'active'}>Activo</option>
+                            <option value="inactive" selected={a.status === 'inactive'}>Inactivo</option>
+                          </select>
+                          {canManageAllAthletes ? (
+                            <select class="admin-input col-span-2" name="clubId" required>
+                              <option value="">Selecciona club</option>
+                              {clubsWithId.map((club) => (
+                                <option value={String(club.id)} selected={Number(a.clubId ?? 0) === club.id}>#{club.id} · {club.name}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input type="hidden" name="clubId" value={String(ownClubId || '')} />
+                          )}
+                          <textarea class="admin-input col-span-2 min-h-[70px]" name="disciplines" placeholder="Disciplinas">{a.disciplines.join('\n')}</textarea>
+                        </div>
+                        <div class="flex gap-2">
+                          <button class="admin-btn admin-btn-primary flex-1" type="submit">
+                            <span class="material-symbols-outlined">save</span>
+                            Guardar
+                          </button>
+                        </div>
+                      </form>
+                      <form method="POST" action="/api/admin/athletes" class="mt-2" onsubmit="return confirm('¿Eliminar atleta? Esta acción no se puede deshacer.');">
+                        <input type="hidden" name="intent" value="delete" />
+                        <input type="hidden" name="id" value={a.id} />
+                        <button class="admin-btn admin-btn-danger w-full" type="submit">
+                          <span class="material-symbols-outlined">delete</span>
+                          Eliminar
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+                {athletes.length === 0 ? (
+                  <tr>
+                    <td class="p-6 text-center text-gray-400" colSpan={6}>No hay atletas registrados con los filtros actuales.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     ) : null}
@@ -1528,8 +1852,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 <div class="md:col-span-2">
                   <label class="admin-label">Rol al aprobar</label>
                   <select class="admin-input" name="role">
-                    <option value="PUBLICO" selected={item.profile === 'usuario'}>PUBLICO</option>
-                    <option value="ATLETA" selected={item.profile === 'atleta'}>ATLETA</option>
                     <option value="CLUB" selected={item.profile === 'club'}>CLUB</option>
                   </select>
                 </div>
@@ -1720,7 +2042,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Asambleas y Asistencia</h4>
         </div>
         <div class="admin-card-body">
-          {user?.role === 'ASAMBLEISTA' ? (
+          {!canManageAsambleas ? (
             <>
               <p class="text-sm text-gray-500 mb-4">A continuación encuentras el listado de asambleas convocadas y sus respectivos órdenes del día.</p>
               <div class="space-y-4">
@@ -1762,7 +2084,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           ) : (
             <>
               <p class="text-sm text-gray-500">
-                Gestiona convocatorias de asamblea, agenda y anexos. Este módulo alimenta el panel del asambleísta.
+                Gestiona convocatorias de asamblea, agenda y anexos. Este módulo alimenta el panel de asambleas.
               </p>
 
               <div class="mt-4 grid gap-3 md:grid-cols-3">
@@ -2329,7 +2651,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Documentos y Noticias</h4>
         </div>
         <div class="admin-card-body">
-          {user?.role === 'CLUB' || user?.role === 'ASAMBLEISTA' ? (
+          {user?.role === 'CLUB' || hasPermission(user, 'documents:read_private_asamblea') ? (
             <>
               <p class="text-sm text-gray-500 mb-4">Aquí encontrarás documentos, circulares y actas importantes para tu gestión.</p>
               <div class="space-y-3">
@@ -3238,6 +3560,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         const createUserToggle = targetEl.closest('#toggle-create-user');
         if (createUserToggle) {
           const panel = root.querySelector('#create-user-panel');
+          if (!panel) return;
+          panel.classList.toggle('hidden');
+          return;
+        }
+
+        const createAthleteToggle = targetEl.closest('#toggle-create-athlete');
+        if (createAthleteToggle) {
+          const panel = root.querySelector('#create-athlete-panel');
           if (!panel) return;
           panel.classList.toggle('hidden');
           return;

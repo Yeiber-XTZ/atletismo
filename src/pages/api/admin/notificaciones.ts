@@ -48,7 +48,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     title: String(form.get('title') ?? ''),
     message: String(form.get('message') ?? ''),
     level: String(form.get('level') ?? 'info'),
-    targetRole: String(form.get('targetRole') ?? 'PUBLICO'),
+    targetRole: String(form.get('targetRole') ?? 'ALL'),
     actionHref: String(form.get('actionHref') ?? '')
   });
   if (!parsed.success) return Response.redirect(new URL('/admin?tab=notificaciones&error=invalid_schema', request.url), 302);

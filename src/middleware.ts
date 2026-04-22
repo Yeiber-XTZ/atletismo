@@ -1,6 +1,6 @@
 import { defineMiddleware } from 'astro:middleware';
 import { getUserFromCookies } from './lib/auth';
-import { hasRole, type Role } from './lib/rbac';
+import { hasPermission, hasRole, type Role } from './lib/rbac';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
@@ -14,7 +14,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isDashboardPage = pathname.startsWith('/dashboard');
   const isDashboardApi = pathname.startsWith('/api/dashboard');
   const isClubArea = pathname.startsWith('/dashboard/club') || pathname.startsWith('/api/dashboard/club');
-  const isAthleteArea = pathname.startsWith('/dashboard/atleta') || pathname.startsWith('/api/dashboard/atleta');
   const isAsambleaArea =
     pathname.startsWith('/dashboard/asamblea') ||
     pathname.startsWith('/api/dashboard/asamblea') ||
@@ -41,7 +40,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   if (isAdminPage || isAdminApi) {
-    const res = deny(['ADMIN', 'ORGANO_ADMIN', 'LIGA', 'CLUB', 'ASAMBLEISTA'], '/admin/login');
+    const res = deny(['ADMIN', 'ORGANO_ADMIN', 'LIGA', 'CLUB'], '/admin/login');
     if (res) return res;
   }
 
@@ -50,17 +49,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (isClubArea) {
       const res = deny(['CLUB']);
       if (res) return res;
-    } else if (isAthleteArea) {
-      const res = deny(['ATLETA']);
-      if (res) return res;
     } else if (pathname.startsWith('/dashboard/liga') || pathname.startsWith('/api/dashboard/liga')) {
       const res = deny(['LIGA', 'ORGANO_ADMIN', 'ADMIN', 'SUPERADMIN']);
       if (res) return res;
     } else if (isAsambleaArea) {
-      const res = deny(['ASAMBLEISTA']);
-      if (res) return res;
+      if (!user) {
+        const loginUrl = new URL('/login', context.url);
+        loginUrl.searchParams.set('next', `${pathname}${context.url.search}`);
+        return Response.redirect(loginUrl, 302);
+      }
+      if (!hasPermission(user, 'assembly:self_panel') && !hasPermission(user, 'asambleas:manage')) {
+        return Response.redirect(new URL('/acceso-denegado', context.url), 302);
+      }
     } else {
-      const res = deny(['SUPERADMIN', 'ADMIN', 'ORGANO_ADMIN', 'LIGA', 'ATLETA', 'CLUB', 'ASAMBLEISTA']);
+      const res = deny(['SUPERADMIN', 'ADMIN', 'ORGANO_ADMIN', 'LIGA', 'CLUB']);
       if (res) return res;
     }
   }

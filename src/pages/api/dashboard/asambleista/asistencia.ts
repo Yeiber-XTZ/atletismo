@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
-import { requireRoles, requireUser } from '../../../../lib/guards';
+import { requireUser } from '../../../../lib/guards';
 import { registerAssemblyAttendance } from '../../../../lib/asambleas';
 import { logAudit } from '../../../../lib/audit';
+import { hasPermission } from '../../../../lib/rbac';
 
 const schema = z.object({
   meetingId: z.coerce.number().int().positive(),
@@ -13,7 +14,9 @@ const schema = z.object({
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const user = await requireUser(cookies);
-    requireRoles(user, ['ASAMBLEISTA']);
+    if (!hasPermission(user, 'assembly:attendance:create') && !hasPermission(user, 'asambleas:manage')) {
+      return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    }
 
     const form = await request.formData();
     const payload = {
@@ -24,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const parsed = schema.safeParse(payload);
     if (!parsed.success) {
-      return Response.redirect(new URL('/dashboard/asambleista?error=invalid_schema', request.url), 302);
+      return Response.redirect(new URL('/admin?tab=asambleas&error=invalid_schema', request.url), 302);
     }
 
     await registerAssemblyAttendance({
@@ -43,12 +46,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
 
-    return Response.redirect(new URL('/dashboard/asambleista?saved=1', request.url), 302);
+    return Response.redirect(new URL('/admin?tab=asambleas&saved=1', request.url), 302);
   } catch (error: any) {
     const status = Number(error?.status || 500);
-    if (status === 401) return Response.redirect(new URL('/login?next=/dashboard/asambleista', request.url), 302);
+    if (status === 401) return Response.redirect(new URL('/login?next=/admin?tab=asambleas', request.url), 302);
     if (status === 403) return Response.redirect(new URL('/acceso-denegado', request.url), 302);
     return new Response('Internal error', { status: 500 });
   }
 };
-
