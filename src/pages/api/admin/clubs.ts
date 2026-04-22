@@ -34,15 +34,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    const { getDb } = await import('../../../lib/db');
-    const db = await getDb();
-    
-    if (!db) {
-      return new Response(JSON.stringify({ success: false, error: 'Error de conexión a la base de datos' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    const { db } = await import('../../../lib/db');
 
     // Verificar que el club existe
     const clubResult = await db.query('SELECT id, name FROM clubs WHERE id = $1', [clubId]);

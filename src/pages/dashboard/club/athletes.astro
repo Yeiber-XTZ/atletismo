@@ -4,7 +4,7 @@ import Navbar from "../../../components/Navbar.astro";
 import FooterKinetic from "../../../components/FooterKinetic.astro";
 import { getHomeData } from "../../../lib/content";
 import { getClubById, getClubByOwnerUserId } from "../../../lib/clubs";
-import { getDb } from "../../../lib/db";
+import { db } from "../../../lib/db";
 
 const data = await getHomeData();
 const { settings } = data;
@@ -24,19 +24,16 @@ const clubId = club?.id ?? (user?.clubId ? Number(user.clubId) : 0);
 let clubAthletes = [];
 if (clubId && club) {
   try {
-    const db = await getDb();
-    if (db) {
-      const result = await db.query(
-        `SELECT a.id, a.first_name || ' ' || a.last_name as name, a.document, a.gender, a.birthdate, a.municipality, a.email, a.coach, a.status, a.created_at, COUNT(DISTINCT ad.id) as disciplines_count
-         FROM athletes a
-         LEFT JOIN athlete_disciplines ad ON a.id = ad.athlete_id
-         LEFT JOIN club_athletes ca ON a.id = ca.athlete_id
-         WHERE a.club = $1 OR ca.club_id = $2
-         GROUP BY a.id ORDER BY a.created_at DESC`,
-        [club.name, clubId]
-      );
-      clubAthletes = result.rows;
-    }
+    const result = await db.query(
+      `SELECT a.id, a.first_name || ' ' || a.last_name as name, a.document, a.gender, a.birthdate, a.municipality, a.email, a.coach, a.status, a.created_at, COUNT(DISTINCT ad.id) as disciplines_count
+       FROM athletes a
+       LEFT JOIN athlete_disciplines ad ON a.id = ad.athlete_id
+       LEFT JOIN club_athletes ca ON a.id = ca.athlete_id
+       WHERE a.club = $1 OR ca.club_id = $2
+       GROUP BY a.id ORDER BY a.created_at DESC`,
+      [club.name, clubId]
+    );
+    clubAthletes = result.rows;
   } catch (err) {
     console.error("Error fetching club athletes:", err);
   }

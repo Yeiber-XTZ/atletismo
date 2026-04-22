@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getDb } from '../../../lib/db';
+import { db } from '../../../lib/db';
 
 const SEARCH_WINDOW_MS = 60_000;
 const SEARCH_MAX_PER_IP = 20;
@@ -37,10 +37,6 @@ export const GET: APIRoute = async ({ request }) => {
       return Response.json({ success: false, error: 'Too many requests' }, { status: 429 });
     }
 
-    const db = await getDb();
-    if (!db) {
-      return Response.json({ success: false, error: 'Database connection failed' }, { status: 500 });
-    }
 
     const result = await db.query(
       `SELECT 

@@ -7,7 +7,7 @@ import { getClubById, getClubByOwnerUserId } from '../../../lib/clubs';
 import { listPostulaciones } from '../../../lib/postulaciones';
 import { listNotificationsForRole } from '../../../lib/notificaciones';
 import { listClubTechnicalStaff } from '../../../lib/club-technical-staff';
-import { getDb } from '../../../lib/db';
+import { db } from '../../../lib/db';
 
 const data = await getHomeData();
 const { settings, documents } = data;
@@ -33,8 +33,6 @@ const docsToShow = Array.isArray(documents) ? documents.slice(0, 5) : [];
 let clubAthletes = [];
 if (clubId && club) {
   try {
-    const db = await getDb();
-    if (db) {
       const result = await db.query(
         `SELECT 
           a.id,
@@ -58,7 +56,6 @@ if (clubId && club) {
         [club.name, clubId]
       );
       clubAthletes = result.rows;
-    }
   } catch (err) {
     console.error('Error fetching club athletes:', err);
   }

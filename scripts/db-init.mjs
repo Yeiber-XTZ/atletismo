@@ -35,7 +35,7 @@ if (!useLocalDB) {
 } else {
   console.log('Usando Postgres local, saltando Docker...');
   // Aplica el schema directamente con psql local
-  run('psql', [process.env.DATABASE_URL, '-f', 'schema.sql']);
+  run('psql', ['--dbname', process.env.DATABASE_URL, '-f', 'schema.sql']);
 }
 
 // Seed default content the first time (uses host DATABASE_URL).
