@@ -17,22 +17,26 @@ function requireEnv(name, fallback) {
 const user = requireEnv('POSTGRES_USER', 'atlestismo');
 const db = requireEnv('POSTGRES_DB', 'atlestismo');
 
-// Ensure containers are up.
-run('docker', ['compose', 'up', '-d', 'db']);
+// Si USE_LOCAL_DB=true, se salta Docker y usa la DB local directamente
+const useLocalDB = process.env.USE_LOCAL_DB === 'true';
 
-// Wait briefly for Postgres to accept connections.
-run('docker', [
-  'compose',
-  'exec',
-  '-T',
-  'db',
-  'sh',
-  '-lc',
-  'until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 0.5; done'
-]);
+if (!useLocalDB) {
+  // Ensure containers are up.
+  run('docker', ['compose', 'up', '-d', 'db']);
 
-// Apply schema.sql (mounted at /schema.sql).
-run('docker', ['compose', 'exec', '-T', 'db', 'psql', '-U', user, '-d', db, '-f', '/schema.sql']);
+  // Wait briefly for Postgres to accept connections.
+  run('docker', [
+    'compose', 'exec', '-T', 'db', 'sh', '-lc',
+    'until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 0.5; done'
+  ]);
+
+  // Apply schema.sql (mounted at /schema.sql).
+  run('docker', ['compose', 'exec', '-T', 'db', 'psql', '-U', user, '-d', db, '-f', '/schema.sql']);
+} else {
+  console.log('Usando Postgres local, saltando Docker...');
+  // Aplica el schema directamente con psql local
+  run('psql', [process.env.DATABASE_URL, '-f', 'schema.sql']);
+}
 
 // Seed default content the first time (uses host DATABASE_URL).
 run('node', ['scripts/db-seed.mjs', '--if-empty']);
