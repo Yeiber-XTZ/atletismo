@@ -11,7 +11,6 @@ import { listAssemblyMeetings, summarizeAssemblyAttendance, summarizeAssemblyMee
 import { getAdminAnalytics } from '../../lib/analytics';
 import { getAdminAlerts } from '../../lib/alerts';
 import { listNotifications } from '../../lib/notificaciones';
-import { listApprovalRequests } from '../../lib/approvals';
 import { listAuditLogs } from '../../lib/audit';
 import { listRadicados } from '../../lib/radicados';
 import { listConvocatoriaCategories } from '../../lib/convocatoria-categories';
@@ -76,9 +75,10 @@ if (contentTab === 'notificaciones' && !hasPermission(user, 'notificaciones:mana
 }
 const users = isAdminRoot ? await listUsers() : [];
 const pqrs = isAdminRoot ? await listPqrs(500) : [];
-const postulationsDb = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA' || user.role === 'CLUB') ? await listPostulaciones() : [];
+const canApprovePostulations = hasPermission(user, 'postulations:approve');
+const postulationsDb = (canApprovePostulations || user?.role === 'CLUB') ? await listPostulaciones() : [];
 const postulations = user?.role === 'CLUB' ? postulationsDb.filter(p => String(p.clubId) === String(user.clubId)) : postulationsDb;
-const postulationSummary = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA')
+const postulationSummary = canApprovePostulations
   ? await summarizePostulaciones()
   : { total: 0, byStatus: [], byConvocatoria: [] };
 const asambleas = isAdminRoot || user?.role === 'ASAMBLEISTA' || user?.role === 'LIGA' ? await listAssemblyMeetings() : [];
@@ -89,7 +89,6 @@ const asambleaMeetingsSummary = isAdminRoot ? await summarizeAssemblyMeetings() 
 const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAnalytics() : null;
 const alerts = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAlerts() : [];
 const notifications = isAdminRoot ? await listNotifications() : [];
-const approvals = isAdminRoot ? await listApprovalRequests() : [];
 const registrationRadicados = isAdminRoot ? await listRadicados('pending') : [];
 const auditLogs = isAdminRoot
   ? await listAuditLogs({
@@ -989,11 +988,8 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       </div>
                       <div>
                         <label class="admin-label">Estado</label>
-                        <select class="admin-input" name="convStatus" required>
-                          <option value="Abierta" selected={conv.status === 'Abierta'}>Abierta</option>
-                          <option value="Próximamente" selected={conv.status === 'Próximamente'}>Próximamente</option>
-                          <option value="Cerrada" selected={conv.status === 'Cerrada'}>Cerrada</option>
-                        </select>
+                        <input class="admin-input" value={conv.status} disabled />
+                        <p class="text-[11px] text-gray-500 mt-1">Solo automático por fechas de apertura y cierre.</p>
                       </div>
                       <div>
                         <label class="admin-label">Apertura</label>
@@ -1951,46 +1947,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {contentTab === 'aprobaciones' ? (
       <section class="admin-card">
         <div class="admin-card-header">
-          <h4 class="admin-card-title">Solicitudes de Aprobacion</h4>
+          <h4 class="admin-card-title">Postulaciones recibidas</h4>
         </div>
         <div class="admin-card-body">
-          <div class="space-y-3">
-            {approvals.map((item) => (
-              <form method="POST" action="/api/admin/approvals" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-8">
-                <input type="hidden" name="id" value={item.id} />
-                <div class="md:col-span-3">
-                  <div class="text-xs text-gray-400 uppercase">Solicitud #{item.id}</div>
-                  <h5 class="font-semibold text-gray-700">{item.module} · {item.action}</h5>
-                  <p class="text-sm text-gray-600">Estado: <strong>{item.status}</strong></p>
-                </div>
-                <div class="md:col-span-3">
-                  <label class="admin-label">Notas de revisión</label>
-                  <input class="admin-input" name="reviewNotes" placeholder="Opcional" />
-                </div>
-                <div class="md:col-span-2 flex items-end justify-end gap-2">
-                  <button class="admin-btn admin-btn-secondary" type="submit" name="decision" value="rejected">
-                    <span class="material-symbols-outlined">close</span>
-                    Rechazar
-                  </button>
-                  <button class="admin-btn admin-btn-primary" type="submit" name="decision" value="approved">
-                    <span class="material-symbols-outlined">check</span>
-                    Aprobar
-                  </button>
-                </div>
-              </form>
-            ))}
-            {approvals.length === 0 ? (
-              <div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
-                No hay solicitudes de aprobación.
-              </div>
-            ) : null}
-          </div>
-
-          <div class="mt-8 border-t border-gray-200 pt-6">
-            <div class="flex items-center justify-between gap-3 mb-4">
-              <h5 class="text-sm font-semibold text-gray-700">Postulaciones recibidas</h5>
-              <p class="text-xs text-gray-400">Aprobado solo puede asignarlo rol LIGA.</p>
-            </div>
+          <div>
 
             <div class="mb-4 grid gap-3 md:grid-cols-3">
               <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -2751,11 +2711,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         </div>
         <div>
           <label class="admin-label">Estado</label>
-          <select class="admin-input" name="convStatus" required>
-            <option value="Abierta" selected>Abierta</option>
-            <option value="Próximamente">Próximamente</option>
-            <option value="Cerrada">Cerrada</option>
-          </select>
+          <input class="admin-input" value="Próximamente (automático)" disabled />
         </div>
         <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
         <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>

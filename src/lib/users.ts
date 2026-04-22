@@ -22,10 +22,21 @@ function sortRolesByPriority(roles: Role[]) {
 
 export async function getUserByEmail(email: string): Promise<DbUser | null> {
   const userRes = await db.query(
-    `SELECT id, email, password_hash as "passwordHash", display_name as "displayName",
-            club_id as "clubId", is_active as "isActive"
-     FROM users
-     WHERE email = $1
+    `SELECT u.id,
+            u.email,
+            u.password_hash as "passwordHash",
+            u.display_name as "displayName",
+            COALESCE(u.club_id, c.id) as "clubId",
+            u.is_active as "isActive"
+     FROM users u
+     LEFT JOIN LATERAL (
+       SELECT id
+       FROM clubs
+       WHERE owner_id = u.id
+       ORDER BY id DESC
+       LIMIT 1
+     ) c ON TRUE
+     WHERE u.email = $1
      LIMIT 1`,
     [email]
   );
@@ -40,10 +51,21 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
 
 export async function getUserById(id: number): Promise<DbUser | null> {
   const userRes = await db.query(
-    `SELECT id, email, password_hash as "passwordHash", display_name as "displayName",
-            club_id as "clubId", is_active as "isActive"
-     FROM users
-     WHERE id = $1
+    `SELECT u.id,
+            u.email,
+            u.password_hash as "passwordHash",
+            u.display_name as "displayName",
+            COALESCE(u.club_id, c.id) as "clubId",
+            u.is_active as "isActive"
+     FROM users u
+     LEFT JOIN LATERAL (
+       SELECT id
+       FROM clubs
+       WHERE owner_id = u.id
+       ORDER BY id DESC
+       LIMIT 1
+     ) c ON TRUE
+     WHERE u.id = $1
      LIMIT 1`,
     [id]
   );
@@ -56,9 +78,20 @@ export async function getUserById(id: number): Promise<DbUser | null> {
 
 export async function listUsers(): Promise<Array<Omit<DbUser, 'passwordHash'>>> {
   const res = await db.query(
-    `SELECT id, email, display_name as "displayName", club_id as "clubId", is_active as "isActive"
-     FROM users
-     ORDER BY id DESC
+    `SELECT u.id,
+            u.email,
+            u.display_name as "displayName",
+            COALESCE(u.club_id, c.id) as "clubId",
+            u.is_active as "isActive"
+     FROM users u
+     LEFT JOIN LATERAL (
+       SELECT id
+       FROM clubs
+       WHERE owner_id = u.id
+       ORDER BY id DESC
+       LIMIT 1
+     ) c ON TRUE
+     ORDER BY u.id DESC
      LIMIT 500`
   );
   const users = res.rows as Array<Omit<DbUser, 'passwordHash'>>;

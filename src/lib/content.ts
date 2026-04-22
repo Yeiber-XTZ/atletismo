@@ -2,6 +2,7 @@ import { db } from './db';
 import { isDbUnavailableError } from './db';
 import { getDatabaseUrl, requireDatabase } from './env';
 import { readStore, writeStore, type Store } from './store';
+import { computeConvocatoriaStatus } from './convocatorias-status';
 
 const hasDatabase = Boolean(getDatabaseUrl());
 let warnedDbOffline = false;
@@ -13,10 +14,62 @@ export async function getHomeData() {
     );
   }
   if (!hasDatabase) {
-    return readStore();
+    const store = await readStore();
+    const updatedConvocatorias = (store.convocatorias ?? []).map((item) => ({
+      ...item,
+      statusMode: 'auto' as const,
+      status: computeConvocatoriaStatus({
+        openDate: item.openDate,
+        closeDate: item.closeDate
+      })
+    }));
+    const changed = updatedConvocatorias.some(
+      (item, index) =>
+        item.status !== store.convocatorias[index]?.status || item.statusMode !== store.convocatorias[index]?.statusMode
+    );
+    if (changed) {
+      store.convocatorias = updatedConvocatorias;
+      await writeStore(store);
+    }
+    return store;
   }
 
   try {
+    try {
+      await db.query(
+      `UPDATE convocatorias
+       SET status = CASE
+         WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
+         WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
+         ELSE 'Próximamente'
+       END,
+       status_mode = 'auto',
+       updated_at = NOW()
+       WHERE status IS DISTINCT FROM CASE
+         WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
+         WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
+         ELSE 'Próximamente'
+       END
+          OR status_mode IS DISTINCT FROM 'auto'`
+      );
+    } catch (error) {
+      console.warn('[content] Convocatorias auto-update (status_mode) fallback.', error);
+      await db.query(
+        `UPDATE convocatorias
+         SET status = CASE
+           WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
+           WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
+           ELSE 'Próximamente'
+         END,
+         updated_at = NOW()
+         WHERE status IS DISTINCT FROM CASE
+           WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
+           WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
+           ELSE 'Próximamente'
+         END`
+      );
+    }
+
     const settingsRes = await db.query('SELECT * FROM site_settings ORDER BY id DESC LIMIT 1');
     const settingsRow = settingsRes.rows[0];
     const storeFallback = await readStore();
@@ -198,34 +251,58 @@ export async function getHomeData() {
     // Convocatorias: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let convocatorias: Store['convocatorias'] = storeFallback.convocatorias;
     try {
-      const convocatoriasRes = await db.query(
-        `SELECT title,
-                category,
-                status,
-                COALESCE(open_date::text, '') as "openDate",
-                COALESCE(close_date::text, '') as "closeDate",
-                location,
-                audience,
-                description,
-                requirements,
-                categories,
-                COALESCE(image_url, '') as "imageUrl"
-         FROM convocatorias
-         ORDER BY COALESCE(open_date, created_at) DESC`
-      );
-      convocatorias = convocatoriasRes.rows.map((r: any) => ({
-        title: r.title,
-        category: r.category ?? '',
-        status: r.status ?? 'Próximamente',
-        openDate: r.openDate ?? '',
-        closeDate: r.closeDate ?? '',
-        location: r.location ?? '',
-        audience: r.audience ?? '',
-        description: r.description ?? '',
-        requirements: Array.isArray(r.requirements) ? r.requirements : [],
-        categories: Array.isArray(r.categories) ? r.categories : [],
-        imageUrl: r.imageUrl || undefined
-      }));
+      let convocatoriasRes;
+      try {
+        convocatoriasRes = await db.query(
+          `SELECT title,
+                  category,
+                  status,
+                  COALESCE(status_mode, 'auto') as "statusMode",
+                  COALESCE(open_date::text, '') as "openDate",
+                  COALESCE(close_date::text, '') as "closeDate",
+                  location,
+                  audience,
+                  description,
+                  requirements,
+                  categories,
+                  COALESCE(image_url, '') as "imageUrl"
+           FROM convocatorias
+           ORDER BY COALESCE(open_date, created_at) DESC`
+        );
+      } catch (error) {
+        console.warn('[content] Convocatorias select (status_mode) fallback.', error);
+        convocatoriasRes = await db.query(
+          `SELECT title,
+                  category,
+                  status,
+                  COALESCE(open_date::text, '') as "openDate",
+                  COALESCE(close_date::text, '') as "closeDate",
+                  location,
+                  audience,
+                  description,
+                  requirements,
+                  categories,
+                  COALESCE(image_url, '') as "imageUrl"
+           FROM convocatorias
+           ORDER BY COALESCE(open_date, created_at) DESC`
+        );
+      }
+      convocatorias = convocatoriasRes.rows.map((r: any) => {
+        return {
+          title: r.title,
+          category: r.category ?? '',
+          openDate: r.openDate ?? '',
+          status: computeConvocatoriaStatus({ openDate: r.openDate, closeDate: r.closeDate }),
+          statusMode: 'auto',
+          closeDate: r.closeDate ?? '',
+          location: r.location ?? '',
+          audience: r.audience ?? '',
+          description: r.description ?? '',
+          requirements: Array.isArray(r.requirements) ? r.requirements : [],
+          categories: Array.isArray(r.categories) ? r.categories : [],
+          imageUrl: r.imageUrl || undefined
+        };
+      });
     } catch (error) {
       console.warn('[content] Convocatorias table unavailable, falling back to local store.', error);
     }

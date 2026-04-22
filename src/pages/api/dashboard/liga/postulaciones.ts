@@ -42,11 +42,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
 
-    return Response.redirect(new URL('/admin?tab=convocatorias&saved=1', request.url), 302);
+    return Response.redirect(new URL('/admin?tab=aprobaciones&saved=1', request.url), 302);
   } catch (error: any) {
     const status = Number(error?.status || 500);
     if (status === 401) return Response.redirect(new URL('/login?next=/admin', request.url), 302);
-    if (status === 403) return Response.redirect(new URL('/admin?tab=convocatorias&error=forbidden_status', request.url), 302);
+    if (status === 403) return Response.redirect(new URL('/admin?tab=aprobaciones&error=forbidden_status', request.url), 302);
     return new Response('Internal error', { status: 500 });
   }
 };

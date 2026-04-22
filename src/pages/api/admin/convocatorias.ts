@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { upsertConvocatorias } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { computeConvocatoriaStatus } from '../../../lib/convocatorias-status';
 
 const urlOrPath = z.string().regex(/^(?:\/|https?:\/\/).+/).optional().or(z.literal(''));
 
@@ -12,6 +13,7 @@ const schema = z
       title: z.string().min(2).max(160),
       category: z.string().min(1).max(60),
       status: z.string().min(2).max(40),
+      statusMode: z.literal('auto').default('auto'),
       openDate: z.string().min(0).max(40),
       closeDate: z.string().min(0).max(40),
       location: z.string().min(1).max(120),
@@ -26,7 +28,9 @@ const schema = z
   .max(200);
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'convocatorias:manage', { loginPath: '/admin/login' });
+  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'convocatorias:manage', {
+    loginPath: '/admin/login'
+  });
   if ('response' in auth) return auth.response;
 
   const form = await request.formData();
@@ -42,7 +46,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } else {
     const titles = form.getAll('convTitle').map((value) => String(value).trim());
     const categories = form.getAll('convCategory').map((value) => String(value).trim());
-    const statuses = form.getAll('convStatus').map((value) => String(value).trim());
     const openDates = form.getAll('convOpenDate').map((value) => String(value).trim());
     const closeDates = form.getAll('convCloseDate').map((value) => String(value).trim());
     const locations = form.getAll('convLocation').map((value) => String(value).trim());
@@ -67,7 +70,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .map((title, index) => ({
         title,
         category: categories[index] ?? '',
-        status: statuses[index] ?? '',
+        statusMode: 'auto' as const,
+        status: computeConvocatoriaStatus({
+          openDate: openDates[index] ?? '',
+          closeDate: closeDates[index] ?? ''
+        }),
         openDate: openDates[index] ?? '',
         closeDate: closeDates[index] ?? '',
         location: locations[index] ?? '',
@@ -91,7 +98,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return Response.redirect(new URL('/admin?tab=convocatorias&error=invalid_schema', request.url), 302);
   }
 
-  const normalized = parsed.data.map((c) => ({ ...c, imageUrl: c.imageUrl || undefined }));
+  const normalized = parsed.data.map((c) => ({
+    ...c,
+    statusMode: 'auto' as const,
+    status: computeConvocatoriaStatus({ openDate: c.openDate, closeDate: c.closeDate }),
+    imageUrl: c.imageUrl || undefined
+  }));
   await upsertConvocatorias(normalized);
   return Response.redirect(new URL('/admin?tab=convocatorias&saved=1', request.url), 302);
 };

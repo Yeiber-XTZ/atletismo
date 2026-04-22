@@ -292,6 +292,7 @@ CREATE TABLE IF NOT EXISTS convocatorias (
   title TEXT NOT NULL,
   category TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'Próximamente',
+  status_mode TEXT NOT NULL DEFAULT 'auto',
   open_date DATE,
   close_date DATE,
   location TEXT NOT NULL DEFAULT '',
@@ -510,3 +511,4 @@ ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS score_numeric NUMERIC(12
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS lower_is_better BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS source_result_id INTEGER REFERENCES results(id) ON DELETE SET NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rankings_ranking_key_unique ON rankings(ranking_key) WHERE ranking_key IS NOT NULL;
+ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS status_mode TEXT NOT NULL DEFAULT 'auto';

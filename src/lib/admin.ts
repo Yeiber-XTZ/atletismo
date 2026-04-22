@@ -2,6 +2,7 @@ import { db } from './db';
 import { readStore, writeStore, type Store } from './store';
 import { getDatabaseUrl, requireDatabase } from './env';
 import { onResultInserted } from './rankings';
+import { computeConvocatoriaStatus } from './convocatorias-status';
 
 const hasDatabase = Boolean(getDatabaseUrl());
 
@@ -239,25 +240,31 @@ export async function upsertClubs(input: Store['clubs']) {
 
 export async function upsertConvocatorias(input: Store['convocatorias']) {
   assertDbReady();
+  const normalizedInput = input.map((item) => ({
+    ...item,
+    statusMode: 'auto' as const,
+    status: computeConvocatoriaStatus({ openDate: item.openDate, closeDate: item.closeDate })
+  }));
   if (!hasDatabase) {
     const store = await readStore();
-    store.convocatorias = input;
+    store.convocatorias = normalizedInput;
     await writeStore(store);
     return;
   }
 
   try {
-    await syncOrderedTableById('convocatorias', input.length, async (rowId, client) => {
-      const c = input[rowId - 1];
+    await syncOrderedTableById('convocatorias', normalizedInput.length, async (rowId, client) => {
+      const c = normalizedInput[rowId - 1];
       await client.query(
         `INSERT INTO convocatorias
-          (id, title, category, status, open_date, close_date, location, audience, description, requirements, categories, image_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+          (id, title, category, status, status_mode, open_date, close_date, location, audience, description, requirements, categories, image_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          ON CONFLICT (id)
          DO UPDATE SET
            title = EXCLUDED.title,
            category = EXCLUDED.category,
            status = EXCLUDED.status,
+           status_mode = EXCLUDED.status_mode,
            open_date = EXCLUDED.open_date,
            close_date = EXCLUDED.close_date,
            location = EXCLUDED.location,
@@ -272,6 +279,7 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
           c.title,
           c.category ?? '',
           c.status ?? 'Proximamente',
+          c.statusMode ?? 'auto',
           c.openDate ? c.openDate : null,
           c.closeDate ? c.closeDate : null,
           c.location ?? '',
@@ -286,7 +294,7 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
   } catch (error) {
     console.warn('[admin] upsertConvocatorias failed, falling back to local store.', error);
     const store = await readStore();
-    store.convocatorias = input;
+    store.convocatorias = normalizedInput;
     await writeStore(store);
   }
 }
@@ -908,4 +916,3 @@ async function getOrCreateAthlete(fullName: string) {
   ]);
   return created.rows[0].id as number;
 }
-

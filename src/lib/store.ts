@@ -175,6 +175,7 @@ export type Store = {
     title: string;
     category: string;
     status: 'Abierta' | 'Próximamente' | 'Cerrada' | string;
+    statusMode?: 'auto' | 'manual' | string;
     openDate: string;
     closeDate: string;
     location: string;
