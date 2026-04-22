@@ -1,0 +1,48 @@
+# Dependencias locales
+node_modules/
+.pnpm-store/
+
+# Build artifacts
+dist/
+
+# Archivos de entorno (se inyectan en Cloud Run como secrets)
+.env
+.env.*
+!.env.example
+
+# Docker
+docker-compose.yml
+.dockerignore
+Dockerfile
+
+# Uploads locales (Cloud Run es stateless, los archivos van a GCS)
+data/uploads/
+
+# Archivos de desarrollo
+.astro/
+*.log
+npm-debug.log*
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archivos temporales del proyecto
+test-out.ts
+tmp-admin.tsx
+extract.js
+find_bracket.js
+
+#archivos md
+*.md
