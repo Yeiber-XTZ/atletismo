@@ -90,7 +90,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       emergencyContact: String(form.get('emergencyContact') ?? ''),
       photoUrl: String(form.get('photoUrl') ?? ''),
       status: String(form.get('status') ?? 'active'),
-      disciplines: String(form.get('disciplines') ?? ''),
+      disciplines: form.getAll('disciplines').map((value) => String(value ?? '').trim()).join('\n'),
       clubId: form.get('clubId')
     });
     if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
@@ -164,7 +164,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       emergencyContact: String(form.get('emergencyContact') ?? ''),
       photoUrl: String(form.get('photoUrl') ?? ''),
       status: String(form.get('status') ?? 'active'),
-      disciplines: String(form.get('disciplines') ?? ''),
+      disciplines: form.getAll('disciplines').map((value) => String(value ?? '').trim()).join('\n'),
       clubId: form.get('clubId')
     });
     if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);

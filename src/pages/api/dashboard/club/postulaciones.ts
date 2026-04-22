@@ -1,7 +1,12 @@
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
 import { requireRoles, requireUser, assertClubOwnership } from '../../../../lib/guards';
-import { createPostulacion, existsPostulacionDuplicada, PostulationStatus } from '../../../../lib/postulaciones';
+import {
+  createPostulacion,
+  existsPostulacionDuplicada,
+  countPostulacionesAtletaEnConvocatoria,
+  PostulationStatus
+} from '../../../../lib/postulaciones';
 import { logAudit } from '../../../../lib/audit';
 import { getHomeData } from '../../../../lib/content';
 import { slugify } from '../../../../lib/slug';
@@ -96,6 +101,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const convocatoriaEvents = Array.isArray((convocatoria as any).events)
       ? (convocatoria as any).events.map((item: string) => String(item).trim()).filter(Boolean)
       : [];
+    const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any).maxEventsPerAthlete ?? 1) || 1);
 
     if (convocatoriaDisciplines.length > 0 && !convocatoriaDisciplines.includes(selectedEvent.disciplineName)) {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=discipline_disabled`, request.url), 302);
@@ -120,10 +126,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const duplicated = await existsPostulacionDuplicada({
       clubId: parsed.data.clubId,
       convocatoriaSlug: parsed.data.convocatoriaSlug,
-      athleteName
+      athleteName,
+      eventName: selectedEvent.name
     });
     if (duplicated) {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=duplicate`, request.url), 302);
+    }
+
+    const currentCount = await countPostulacionesAtletaEnConvocatoria({
+      clubId: parsed.data.clubId,
+      convocatoriaSlug: parsed.data.convocatoriaSlug,
+      athleteId: parsed.data.athleteId,
+      athleteName
+    });
+    if (currentCount >= maxEventsPerAthlete) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=max_events_reached`, request.url), 302);
     }
 
     const supportFileUrl =

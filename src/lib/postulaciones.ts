@@ -188,18 +188,30 @@ export async function existsPostulacionDuplicada(input: {
   clubId: number;
   convocatoriaSlug: string;
   athleteName: string;
+  eventName?: string;
 }) {
   assertDbReady();
   const athlete = normalizeText(input.athleteName);
   const slug = normalizeText(input.convocatoriaSlug);
+  const eventName = normalizeText(input.eventName ?? '');
 
   if (!hasDatabase) {
     const list = await listPostulaciones({
       clubId: input.clubId,
       convocatoriaSlug: input.convocatoriaSlug
     });
-    return list.some((p) => normalizeText(p.athleteName) === athlete);
+    return list.some((p) => {
+      if (normalizeText(p.athleteName) !== athlete) return false;
+      if (!eventName) return true;
+      return normalizeText(p.eventName ?? '') === eventName;
+    });
   }
+
+  const params: unknown[] = [input.clubId, slug, athlete];
+  const eventWhere = eventName
+    ? ` AND lower(COALESCE(event_name, '')) = $4`
+    : '';
+  if (eventName) params.push(eventName);
 
   const res = await db.query(
     `SELECT id
@@ -207,10 +219,48 @@ export async function existsPostulacionDuplicada(input: {
      WHERE club_id = $1
        AND lower(convocatoria_slug) = $2
        AND lower(athlete_name) = $3
+       ${eventWhere}
      LIMIT 1`,
-    [input.clubId, slug, athlete]
+    params
   );
   return Boolean(res.rows[0]);
+}
+
+export async function countPostulacionesAtletaEnConvocatoria(input: {
+  clubId: number;
+  convocatoriaSlug: string;
+  athleteId?: number;
+  athleteName: string;
+}) {
+  assertDbReady();
+  const slug = normalizeText(input.convocatoriaSlug);
+  const athlete = normalizeText(input.athleteName);
+
+  if (!hasDatabase) {
+    const list = await listPostulaciones({ clubId: input.clubId, convocatoriaSlug: input.convocatoriaSlug });
+    return list.filter((p) => normalizeText(p.athleteName) === athlete).length;
+  }
+
+  const hasAthleteId = Number.isFinite(Number(input.athleteId)) && Number(input.athleteId) > 0;
+  const res = hasAthleteId
+    ? await db.query(
+        `SELECT COUNT(*)::int AS count
+         FROM postulations
+         WHERE club_id = $1
+           AND lower(convocatoria_slug) = $2
+           AND athlete_id = $3`,
+        [input.clubId, slug, Number(input.athleteId)]
+      )
+    : await db.query(
+        `SELECT COUNT(*)::int AS count
+         FROM postulations
+         WHERE club_id = $1
+           AND lower(convocatoria_slug) = $2
+           AND lower(athlete_name) = $3`,
+        [input.clubId, slug, athlete]
+      );
+
+  return Number(res.rows[0]?.count ?? 0);
 }
 
 export async function updatePostulacionStatus(id: string, status: PostulationStatus, notes?: string) {

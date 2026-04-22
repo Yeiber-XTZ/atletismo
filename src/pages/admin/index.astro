@@ -222,6 +222,7 @@ const geoDepartments = geoCatalog.departments ?? [];
 const geoMunicipalities = geoCatalog.municipalities ?? [];
 const athleticsDisciplineNames = (athleticsCatalog.disciplines ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
 const athleticsEventNames = (athleticsCatalog.events ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
+const athleticsEventsCatalog = athleticsCatalog.events ?? [];
 const laLigaContent = data.publicSite?.laLiga;
 const laLigaPrinciplesRows = (laLigaContent?.principles?.length ? laLigaContent.principles : [{ icon: 'star', title: '', desc: '' }]);
 const laLigaGovernanceRows = (laLigaContent?.governanceItems?.length ? laLigaContent.governanceItems : [{ label: '', title: '' }]);
@@ -1058,6 +1059,18 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <input class="admin-input" name="convCloseDate" type="date" value={conv.closeDate} />
                       </div>
                       <div>
+                        <label class="admin-label">Maximo pruebas por deportista</label>
+                        <input
+                          class="admin-input"
+                          name="convMaxEventsPerAthlete"
+                          type="number"
+                          min="1"
+                          max="30"
+                          value={String(Math.max(1, Number((conv as any).maxEventsPerAthlete ?? 1) || 1))}
+                          required
+                        />
+                      </div>
+                      <div>
                         <label class="admin-label">Ubicación</label>
                         <input class="admin-input" name="convLocation" value={conv.location} required />
                       </div>
@@ -1077,13 +1090,48 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <label class="admin-label">Categorías (una línea por categoría)</label>
                         <textarea class="admin-input min-h-[90px]" name="convCategories">{linesFromArray(conv.categories)}</textarea>
                       </div>
-                      <div>
-                        <label class="admin-label">Disciplinas habilitadas (una línea por disciplina)</label>
-                        <textarea class="admin-input min-h-[90px]" name="convDisciplines" placeholder={athleticsDisciplineNames.join('\n')}>{linesFromArray((conv as any).disciplines)}</textarea>
-                      </div>
-                      <div class="md:col-span-2">
-                        <label class="admin-label">Pruebas habilitadas (una línea por prueba)</label>
-                        <textarea class="admin-input min-h-[90px]" name="convEvents" placeholder={athleticsEventNames.join('\n')}>{linesFromArray((conv as any).events)}</textarea>
+                      <div class="md:col-span-3 rounded-lg border border-gray-200 bg-white p-3 js-conv-catalog-v3">
+                        <label class="admin-label">Disciplina habilitada</label>
+                        <select class="admin-input mt-2 js-conv-discipline-select-v3">
+                          <option value="">Selecciona disciplina</option>
+                          {athleticsDisciplineNames.map((disciplineName) => (
+                            <option
+                              value={disciplineName}
+                              selected={String((Array.isArray((conv as any).disciplines) ? (conv as any).disciplines[0] : '') ?? '') === disciplineName}
+                            >
+                              {disciplineName}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div class="mt-4 flex flex-wrap items-center gap-2">
+                          <button type="button" class="admin-btn admin-btn-primary js-conv-select-visible-events-v3">
+                            Seleccionar visibles
+                          </button>
+                          <button type="button" class="admin-btn admin-btn-secondary js-conv-clear-visible-events-v3">
+                            Limpiar visibles
+                          </button>
+                        </div>
+
+                        <label class="admin-label mt-4">Pruebas habilitadas</label>
+                        <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
+                          <div class="grid gap-2 sm:grid-cols-2">
+                            {athleticsEventsCatalog.map((eventItem) => (
+                              <label class="inline-flex items-center gap-2 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700">
+                                <input
+                                  class="js-conv-event-check-v3"
+                                  type="checkbox"
+                                  value={eventItem.name}
+                                  data-discipline={eventItem.disciplineName}
+                                />
+                                <span>{eventItem.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <textarea class="sr-only js-conv-disciplines-hidden-v3" name="convDisciplines">{linesFromArray((conv as any).disciplines)}</textarea>
+                        <textarea class="sr-only js-conv-events-hidden-v3" name="convEvents">{linesFromArray((conv as any).events)}</textarea>
                       </div>
                       <div>
                         <label class="admin-label">Imagen</label>
@@ -1556,7 +1604,29 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </div>
               <div class="md:col-span-12">
                 <label class="admin-label">Pruebas / disciplinas</label>
-                <textarea class="admin-input min-h-[90px]" name="disciplines" placeholder="Una por línea o separadas por coma"></textarea>
+                <div class="rounded-xl border border-gray-300 bg-gray-50 js-discipline-picker">
+                  <button
+                    type="button"
+                    class="js-discipline-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                    aria-expanded="false"
+                  >
+                    <span>Selección disciplinas</span>
+                    <span class="js-discipline-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                  </button>
+                  <div class="js-discipline-panel hidden max-h-36 overflow-auto border-t border-gray-300 p-2">
+                    <div class="grid gap-1">
+                      {athleticsDisciplineNames
+                        .slice()
+                        .sort((a, b) => a.localeCompare(b, 'es-CO'))
+                        .map((disciplineName) => (
+                          <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-800 hover:bg-white">
+                            <input type="checkbox" name="disciplines" value={disciplineName} />
+                            <span>{disciplineName}</span>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="md:col-span-12 flex justify-end">
                 <button class="admin-btn admin-btn-primary" type="submit">
@@ -1701,7 +1771,34 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           ) : (
                             <input type="hidden" name="clubId" value={String(ownClubId || '')} />
                           )}
-                          <textarea class="admin-input col-span-2 min-h-[70px]" name="disciplines" placeholder="Disciplinas">{a.disciplines.join('\n')}</textarea>
+                          <div class="col-span-2 rounded-xl border border-gray-300 bg-gray-50 js-discipline-picker">
+                            <button
+                              type="button"
+                              class="js-discipline-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                              aria-expanded="false"
+                            >
+                              <span>Selección disciplinas</span>
+                              <span class="js-discipline-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                            </button>
+                            <div class="js-discipline-panel hidden max-h-36 overflow-auto border-t border-gray-300 p-2">
+                              <div class="grid gap-1">
+                                {athleticsDisciplineNames
+                                  .slice()
+                                  .sort((x, y) => x.localeCompare(y, 'es-CO'))
+                                  .map((disciplineName) => (
+                                    <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-800 hover:bg-white">
+                                      <input
+                                        type="checkbox"
+                                        name="disciplines"
+                                        value={disciplineName}
+                                        checked={a.disciplines.includes(disciplineName)}
+                                      />
+                                      <span>{disciplineName}</span>
+                                    </label>
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                         <div class="flex gap-2">
                           <button class="admin-btn admin-btn-primary flex-1" type="submit">
@@ -3084,13 +3181,42 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         </div>
         <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
         <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
+        <div><label class="admin-label">Maximo pruebas por deportista</label><input class="admin-input" name="convMaxEventsPerAthlete" type="number" min="1" max="30" value="1" required /></div>
         <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
         <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required /></div>
         <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
         <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
         <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
-        <div><label class="admin-label">Disciplinas habilitadas</label><textarea class="admin-input min-h-[90px]" name="convDisciplines" placeholder={athleticsDisciplineNames.join('\n')}></textarea></div>
-        <div class="md:col-span-2"><label class="admin-label">Pruebas habilitadas</label><textarea class="admin-input min-h-[90px]" name="convEvents" placeholder={athleticsEventNames.join('\n')}></textarea></div>
+        <div class="md:col-span-3 rounded-lg border border-gray-200 bg-white p-3 js-conv-catalog-v3">
+          <label class="admin-label">Disciplina habilitada</label>
+          <select class="admin-input mt-2 js-conv-discipline-select-v3">
+            <option value="">Selecciona disciplina</option>
+            {athleticsDisciplineNames.map((disciplineName) => (
+              <option value={disciplineName}>{disciplineName}</option>
+            ))}
+          </select>
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <button type="button" class="admin-btn admin-btn-primary js-conv-select-visible-events-v3">
+              Seleccionar visibles
+            </button>
+            <button type="button" class="admin-btn admin-btn-secondary js-conv-clear-visible-events-v3">
+              Limpiar visibles
+            </button>
+          </div>
+          <label class="admin-label mt-4">Pruebas habilitadas</label>
+          <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
+            <div class="grid gap-2 sm:grid-cols-2">
+              {athleticsEventsCatalog.map((eventItem) => (
+                <label class="inline-flex items-center gap-2 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700">
+                  <input class="js-conv-event-check-v3" type="checkbox" value={eventItem.name} data-discipline={eventItem.disciplineName} />
+                  <span>{eventItem.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <textarea class="sr-only js-conv-disciplines-hidden-v3" name="convDisciplines"></textarea>
+          <textarea class="sr-only js-conv-events-hidden-v3" name="convEvents"></textarea>
+        </div>
         <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
         <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
       </div>
@@ -3267,6 +3393,119 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         }
       });
 
+      const syncConvCatalogHidden = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const disciplineChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-discipline-check'));
+        const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check'));
+        const disciplinesHidden = catalogRoot.querySelector('.js-conv-disciplines-hidden');
+        const eventsHidden = catalogRoot.querySelector('.js-conv-events-hidden');
+        if (!(disciplinesHidden instanceof HTMLTextAreaElement) || !(eventsHidden instanceof HTMLTextAreaElement)) return;
+
+        const selectedDisciplines = disciplineChecks
+          .filter((el) => el instanceof HTMLInputElement && el.checked)
+          .map((el) => el instanceof HTMLInputElement ? el.value : '')
+          .filter(Boolean);
+        const selectedEvents = eventChecks
+          .filter((el) => el instanceof HTMLInputElement && el.checked)
+          .map((el) => el instanceof HTMLInputElement ? el.value : '')
+          .filter(Boolean);
+
+        disciplinesHidden.value = selectedDisciplines.join('\n');
+        eventsHidden.value = selectedEvents.join('\n');
+      };
+
+      const getConvSelectedDisciplines = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return new Set();
+        const disciplineChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-discipline-check'));
+        return new Set(
+          disciplineChecks
+            .filter((el) => el instanceof HTMLInputElement && el.checked)
+            .map((el) => (el instanceof HTMLInputElement ? String(el.value || '').trim() : ''))
+            .filter(Boolean)
+        );
+      };
+
+      const updateConvDisciplineQuickButtons = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const selectedDisciplineSet = getConvSelectedDisciplines(catalogRoot);
+        const quickButtons = Array.from(catalogRoot.querySelectorAll('.js-conv-select-discipline-events'));
+        quickButtons.forEach((btn) => {
+          if (!(btn instanceof HTMLElement)) return;
+          const discipline = String(btn.getAttribute('data-discipline') || '').trim();
+          const enabled = selectedDisciplineSet.has(discipline);
+          btn.hidden = !enabled;
+          if (btn instanceof HTMLButtonElement) btn.disabled = !enabled;
+        });
+      };
+
+      const applyConvCatalogDisciplineFilter = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check'));
+        const selectedDisciplineSet = getConvSelectedDisciplines(catalogRoot);
+
+        eventChecks.forEach((el) => {
+          if (!(el instanceof HTMLInputElement)) return;
+          const disciplineName = String(el.getAttribute('data-discipline') || '').trim();
+          const eventRow = (el.closest('label') || el.parentElement);
+          const visible = selectedDisciplineSet.size > 0 && selectedDisciplineSet.has(disciplineName);
+          el.disabled = !visible;
+          el.dataset.hiddenByDiscipline = visible ? '0' : '1';
+          if (eventRow instanceof HTMLElement) eventRow.hidden = !visible;
+          if (!visible) el.checked = false;
+        });
+
+        updateConvDisciplineQuickButtons(catalogRoot);
+        syncConvCatalogHidden(catalogRoot);
+      };
+
+      const initConvCatalog = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const disciplinesHidden = catalogRoot.querySelector('.js-conv-disciplines-hidden');
+        const eventsHidden = catalogRoot.querySelector('.js-conv-events-hidden');
+        const disciplineChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-discipline-check'));
+        const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check'));
+        if (!(disciplinesHidden instanceof HTMLTextAreaElement) || !(eventsHidden instanceof HTMLTextAreaElement)) return;
+
+        const selectedDisciplines = new Set(
+          String(disciplinesHidden.value || '')
+            .split(/\r?\n/)
+            .map((item) => item.trim())
+            .filter(Boolean)
+        );
+        const selectedEvents = new Set(
+          String(eventsHidden.value || '')
+            .split(/\r?\n/)
+            .map((item) => item.trim())
+            .filter(Boolean)
+        );
+
+        disciplineChecks.forEach((el) => {
+          if (!(el instanceof HTMLInputElement)) return;
+          el.checked = selectedDisciplines.has(el.value);
+        });
+        eventChecks.forEach((el) => {
+          if (!(el instanceof HTMLInputElement)) return;
+          el.checked = selectedEvents.has(el.value);
+        });
+        applyConvCatalogDisciplineFilter(catalogRoot);
+      };
+
+      const refreshAllConvCatalogs = () => {
+        root.querySelectorAll('.js-conv-catalog').forEach((catalogRoot) => initConvCatalog(catalogRoot));
+      };
+
+      refreshAllConvCatalogs();
+      setTimeout(() => refreshAllConvCatalogs(), 0);
+
+      root.addEventListener('change', (event) => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        if (!target) return;
+        if (target.classList.contains('js-conv-discipline-check') || target.classList.contains('js-conv-event-check')) {
+          const catalogRoot = target.closest('.js-conv-catalog');
+          if (catalogRoot) applyConvCatalogDisciplineFilter(catalogRoot);
+        }
+      });
+
       root.addEventListener('click', (event) => {
         const targetEl = event.target instanceof HTMLElement ? event.target : null;
         if (!targetEl) return;
@@ -3353,6 +3592,66 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           if (!template || !container) return;
           const fragment = template.content.cloneNode(true);
           container.appendChild(fragment);
+          refreshAllConvCatalogs();
+          return;
+        }
+
+        const selectAllDisciplineBtn = targetEl.closest('.js-conv-select-discipline-events');
+        if (selectAllDisciplineBtn instanceof HTMLElement) {
+          if (selectAllDisciplineBtn instanceof HTMLButtonElement && selectAllDisciplineBtn.disabled) return;
+          const discipline = String(selectAllDisciplineBtn.getAttribute('data-discipline') ?? '').trim();
+          if (!discipline) return;
+          const catalogRoot = selectAllDisciplineBtn.closest('.js-conv-catalog');
+          if (!catalogRoot) return;
+          const disciplineChecks = catalogRoot.querySelectorAll('.js-conv-discipline-check');
+          disciplineChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            if (el.value === discipline) el.checked = true;
+          });
+          const eventChecks = catalogRoot.querySelectorAll('.js-conv-event-check');
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            if (String(el.getAttribute('data-discipline') ?? '') === discipline) el.checked = true;
+          });
+          applyConvCatalogDisciplineFilter(catalogRoot);
+          return;
+        }
+
+        const selectVisibleEventsBtn = targetEl.closest('.js-conv-select-visible-events');
+        if (selectVisibleEventsBtn instanceof HTMLElement) {
+          const catalogRoot = selectVisibleEventsBtn.closest('.js-conv-catalog');
+          if (!catalogRoot) return;
+          applyConvCatalogDisciplineFilter(catalogRoot);
+          const eventChecks = catalogRoot.querySelectorAll('.js-conv-event-check');
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            const eventRow = (el.closest('label') || el.parentElement);
+            const isVisible = el.dataset.hiddenByDiscipline !== '1' && !(eventRow instanceof HTMLElement && eventRow.hidden);
+            if (isVisible) el.checked = true;
+          });
+          syncConvCatalogHidden(catalogRoot);
+          return;
+        }
+
+        const clearVisibleEventsBtn = targetEl.closest('.js-conv-clear-visible-events');
+        if (clearVisibleEventsBtn instanceof HTMLElement) {
+          const catalogRoot = clearVisibleEventsBtn.closest('.js-conv-catalog');
+          if (!catalogRoot) return;
+          applyConvCatalogDisciplineFilter(catalogRoot);
+          const eventChecks = catalogRoot.querySelectorAll('.js-conv-event-check');
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            const eventRow = (el.closest('label') || el.parentElement);
+            const isVisible = el.dataset.hiddenByDiscipline !== '1' && !(eventRow instanceof HTMLElement && eventRow.hidden);
+            if (isVisible) el.checked = false;
+          });
+          syncConvCatalogHidden(catalogRoot);
+          return;
+        }
+
+        if (targetEl.closest('.js-conv-discipline-check')) {
+          const catalogRoot = targetEl.closest('.js-conv-catalog');
+          if (catalogRoot) applyConvCatalogDisciplineFilter(catalogRoot);
           return;
         }
 
@@ -3366,5 +3665,215 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         item.remove();
       });
     </script>
+    <script is:inline>
+      (() => {
+        const norm = (value) => String(value || '').trim().toLowerCase();
+
+        const bindCatalog = (catalogRoot) => {
+          if (!(catalogRoot instanceof HTMLElement)) return;
+          if (catalogRoot.dataset.convCatalogV2Bound === '1') return;
+          catalogRoot.dataset.convCatalogV2Bound = '1';
+
+          const disciplineSelect = catalogRoot.querySelector('.js-conv-discipline-select-v3');
+          const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check-v3'));
+          const selectVisibleBtn = catalogRoot.querySelector('.js-conv-select-visible-events-v3');
+          const clearVisibleBtn = catalogRoot.querySelector('.js-conv-clear-visible-events-v3');
+          const disciplinesHidden = catalogRoot.querySelector('.js-conv-disciplines-hidden-v3');
+          const eventsHidden = catalogRoot.querySelector('.js-conv-events-hidden-v3');
+
+          if (
+            !(disciplineSelect instanceof HTMLSelectElement) ||
+            !(disciplinesHidden instanceof HTMLTextAreaElement) ||
+            !(eventsHidden instanceof HTMLTextAreaElement)
+          ) return;
+
+          const syncHidden = () => {
+            const selectedDiscipline = String(disciplineSelect.value || '').trim();
+            const selectedEvents = eventChecks
+              .filter((el) => el instanceof HTMLInputElement && el.checked)
+              .map((el) => (el instanceof HTMLInputElement ? String(el.value || '').trim() : ''))
+              .filter(Boolean);
+            disciplinesHidden.value = selectedDiscipline ? selectedDiscipline : '';
+            eventsHidden.value = selectedEvents.join('\n');
+          };
+
+          const refresh = () => {
+            const selectedDiscipline = norm(disciplineSelect.value);
+
+            eventChecks.forEach((el) => {
+              if (!(el instanceof HTMLInputElement)) return;
+              const row = el.closest('label') || el.parentElement;
+              const discipline = norm(el.getAttribute('data-discipline'));
+              const visible = Boolean(selectedDiscipline) && discipline === selectedDiscipline;
+              el.disabled = !visible;
+              if (row instanceof HTMLElement) {
+                row.style.display = visible ? '' : 'none';
+                row.setAttribute('aria-hidden', visible ? 'false' : 'true');
+              }
+              if (!visible) el.checked = false;
+            });
+
+            syncHidden();
+          };
+
+          const initFromHidden = () => {
+            const selectedDiscipline = String(disciplinesHidden.value || '')
+              .split(/\r?\n/)
+              .map((item) => String(item || '').trim())
+              .find(Boolean) || '';
+            const selectedEvents = new Set(
+              String(eventsHidden.value || '')
+                .split(/\r?\n/)
+                .map((item) => norm(item))
+                .filter(Boolean)
+            );
+
+            disciplineSelect.value = selectedDiscipline;
+            eventChecks.forEach((el) => {
+              if (!(el instanceof HTMLInputElement)) return;
+              el.checked = selectedEvents.has(norm(el.value));
+            });
+            refresh();
+          };
+
+          disciplineSelect.addEventListener('change', (event) => {
+            event.stopPropagation();
+            refresh();
+          });
+
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            el.addEventListener('change', (event) => {
+              event.stopPropagation();
+              syncHidden();
+            });
+            el.addEventListener('click', (event) => event.stopPropagation());
+          });
+
+          if (selectVisibleBtn instanceof HTMLButtonElement) {
+            selectVisibleBtn.addEventListener('click', (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              refresh();
+              eventChecks.forEach((ev) => {
+                if (!(ev instanceof HTMLInputElement)) return;
+                if (!ev.disabled) ev.checked = true;
+              });
+              syncHidden();
+            });
+          }
+
+          if (clearVisibleBtn instanceof HTMLButtonElement) {
+            clearVisibleBtn.addEventListener('click', (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              refresh();
+              eventChecks.forEach((ev) => {
+                if (!(ev instanceof HTMLInputElement)) return;
+                if (!ev.disabled) ev.checked = false;
+              });
+              syncHidden();
+            });
+          }
+
+          initFromHidden();
+        };
+
+        const bindAll = () => {
+          document.querySelectorAll('.js-conv-catalog-v3').forEach((item) => bindCatalog(item));
+        };
+
+        bindAll();
+        setTimeout(bindAll, 0);
+
+        const observer = new MutationObserver(() => bindAll());
+        observer.observe(document.body, { childList: true, subtree: true });
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const bindAthleteToggle = () => {
+          const btn = document.getElementById('toggle-create-athlete');
+          const panel = document.getElementById('create-athlete-panel');
+          if (!(btn instanceof HTMLButtonElement) || !(panel instanceof HTMLElement)) return;
+          if (btn.dataset.boundAthleteToggle === '1') return;
+          btn.dataset.boundAthleteToggle = '1';
+          btn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            panel.classList.toggle('hidden');
+          });
+        };
+
+        bindAthleteToggle();
+        setTimeout(bindAthleteToggle, 0);
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const syncCount = (root) => {
+          if (!(root instanceof HTMLElement)) return;
+          const countEl = root.querySelector('.js-discipline-count');
+          if (!(countEl instanceof HTMLElement)) return;
+          const checked = root.querySelectorAll('input[name="disciplines"]:checked').length;
+          countEl.textContent = String(checked);
+        };
+
+        const closePanel = (root) => {
+          const panel = root.querySelector('.js-discipline-panel');
+          const toggle = root.querySelector('.js-discipline-toggle');
+          if (panel instanceof HTMLElement) panel.classList.add('hidden');
+          if (toggle instanceof HTMLButtonElement) toggle.setAttribute('aria-expanded', 'false');
+        };
+
+        const openPanel = (root) => {
+          const panel = root.querySelector('.js-discipline-panel');
+          const toggle = root.querySelector('.js-discipline-toggle');
+          if (panel instanceof HTMLElement) panel.classList.remove('hidden');
+          if (toggle instanceof HTMLButtonElement) toggle.setAttribute('aria-expanded', 'true');
+        };
+
+        const bindPicker = (root) => {
+          if (!(root instanceof HTMLElement)) return;
+          if (root.dataset.boundDisciplinesPicker === '1') return;
+          root.dataset.boundDisciplinesPicker = '1';
+
+          const toggle = root.querySelector('.js-discipline-toggle');
+          const panel = root.querySelector('.js-discipline-panel');
+          if (!(toggle instanceof HTMLButtonElement) || !(panel instanceof HTMLElement)) return;
+
+          toggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const isOpen = !panel.classList.contains('hidden');
+            if (isOpen) closePanel(root);
+            else openPanel(root);
+          });
+
+          root.querySelectorAll('input[name="disciplines"]').forEach((input) => {
+            input.addEventListener('change', () => syncCount(root));
+          });
+
+          syncCount(root);
+        };
+
+        const bindAll = () => {
+          document.querySelectorAll('.js-discipline-picker').forEach((root) => bindPicker(root));
+        };
+
+        document.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          document.querySelectorAll('.js-discipline-picker').forEach((root) => {
+            if (!(root instanceof HTMLElement)) return;
+            if (!root.contains(target)) closePanel(root);
+          });
+        });
+
+        bindAll();
+        setTimeout(bindAll, 0);
+      })();
+    </script>
   </AdminShell>
 </BaseLayout>
+

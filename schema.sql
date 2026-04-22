@@ -294,6 +294,7 @@ CREATE TABLE IF NOT EXISTS convocatorias (
   category TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'Próximamente',
   status_mode TEXT NOT NULL DEFAULT 'auto',
+  max_events_per_athlete INTEGER NOT NULL DEFAULT 1,
   open_date DATE,
   close_date DATE,
   location TEXT NOT NULL DEFAULT '',
@@ -576,6 +577,7 @@ ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS lower_is_better BOOLEAN 
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS source_result_id INTEGER REFERENCES results(id) ON DELETE SET NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rankings_ranking_key_unique ON rankings(ranking_key) WHERE ranking_key IS NOT NULL;
 ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS status_mode TEXT NOT NULL DEFAULT 'auto';
+ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS max_events_per_athlete INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS photo_url TEXT;
 ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS sex_code TEXT REFERENCES catalog_sexes(code) ON DELETE SET NULL;
 ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS country_iso2 TEXT REFERENCES catalog_countries(iso2) ON DELETE SET NULL;

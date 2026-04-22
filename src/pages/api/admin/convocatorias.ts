@@ -14,6 +14,7 @@ const schema = z
       category: z.string().min(1).max(60),
       status: z.string().min(2).max(40),
       statusMode: z.literal('auto').default('auto'),
+      maxEventsPerAthlete: z.coerce.number().int().min(1).max(30).default(1),
       openDate: z.string().min(0).max(40),
       closeDate: z.string().min(0).max(40),
       location: z.string().min(1).max(120),
@@ -50,6 +51,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const categories = form.getAll('convCategory').map((value) => String(value).trim());
     const openDates = form.getAll('convOpenDate').map((value) => String(value).trim());
     const closeDates = form.getAll('convCloseDate').map((value) => String(value).trim());
+    const maxEventsPerAthleteRaw = form.getAll('convMaxEventsPerAthlete').map((value) => String(value).trim());
     const locations = form.getAll('convLocation').map((value) => String(value).trim());
     const audiences = form.getAll('convAudience').map((value) => String(value).trim());
     const descriptions = form.getAll('convDescription').map((value) => String(value).trim());
@@ -79,6 +81,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           openDate: openDates[index] ?? '',
           closeDate: closeDates[index] ?? ''
         }),
+        maxEventsPerAthlete: Math.max(1, Number(maxEventsPerAthleteRaw[index] ?? 1) || 1),
         openDate: openDates[index] ?? '',
         closeDate: closeDates[index] ?? '',
         location: locations[index] ?? '',

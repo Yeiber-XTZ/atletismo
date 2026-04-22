@@ -25,7 +25,9 @@ if (!effectiveClubId && user?.role === 'CLUB' && user?.id) {
 
 const postulationErrorMessage =
   error === 'duplicate'
-    ? 'Ese atleta ya fue postulado por tu club en esta convocatoria.'
+    ? 'Ese atleta ya fue postulado en esa misma prueba para esta convocatoria.'
+    : error === 'max_events_reached'
+      ? 'El atleta ya alcanzó el maximo de pruebas permitidas por esta convocatoria.'
     : error === 'athlete_not_found'
       ? 'El atleta seleccionado no pertenece a tu club.'
       : error === 'invalid_event'
@@ -59,6 +61,7 @@ const convocatoriaEvents = Array.isArray((convocatoria as any)?.events)
   : [];
 const fallbackAthleticsEvents = convocatoriaEvents.length === 0 ? (await listAthleticsCatalogs()).events.map((item) => item.name) : [];
 const eventOptions = convocatoriaEvents.length > 0 ? convocatoriaEvents : fallbackAthleticsEvents;
+const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsPerAthlete ?? 1) || 1);
 ---
 <BaseLayout
   title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Choco`}
@@ -126,6 +129,10 @@ const eventOptions = convocatoriaEvents.length > 0 ? convocatoriaEvents : fallba
                   <span class="material-symbols-outlined text-base">event_busy</span>
                   Cierre: <strong class="text-[#0f172a]">{convocatoria.closeDate}</strong>
                 </div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-base">rule</span>
+                  Maximo pruebas por deportista: <strong class="text-[#0f172a]">{maxEventsPerAthlete}</strong>
+                </div>
               </div>
 
               <div class="mt-8 flex flex-col gap-3">
@@ -160,6 +167,7 @@ const eventOptions = convocatoriaEvents.length > 0 ? convocatoriaEvents : fallba
                           <option value={eventName}>{eventName}</option>
                         ))}
                       </select>
+                      <p class="text-xs text-[var(--text-muted)]">Esta convocatoria permite hasta {maxEventsPerAthlete} prueba(s) por deportista.</p>
                       <label class="form-label">Soporte documental (opcional)</label>
                       <input class="form-input" type="file" name="supportFile" accept=".pdf,.jpg,.jpeg,.png,.webp" />
                       <label class="form-label">Observaciones</label>

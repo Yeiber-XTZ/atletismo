@@ -257,14 +257,15 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
       const c = normalizedInput[rowId - 1];
       await client.query(
         `INSERT INTO convocatorias
-          (id, title, category, status, status_mode, open_date, close_date, location, audience, description, requirements, categories, disciplines, events, image_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+          (id, title, category, status, status_mode, max_events_per_athlete, open_date, close_date, location, audience, description, requirements, categories, disciplines, events, image_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          ON CONFLICT (id)
          DO UPDATE SET
            title = EXCLUDED.title,
            category = EXCLUDED.category,
            status = EXCLUDED.status,
            status_mode = EXCLUDED.status_mode,
+           max_events_per_athlete = EXCLUDED.max_events_per_athlete,
            open_date = EXCLUDED.open_date,
            close_date = EXCLUDED.close_date,
            location = EXCLUDED.location,
@@ -282,6 +283,7 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
           c.category ?? '',
           c.status ?? 'Proximamente',
           c.statusMode ?? 'auto',
+          Math.max(1, Number((c as any).maxEventsPerAthlete ?? 1) || 1),
           c.openDate ? c.openDate : null,
           c.closeDate ? c.closeDate : null,
           c.location ?? '',
