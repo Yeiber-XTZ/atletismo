@@ -264,6 +264,12 @@ function calculateAge(birthdate: string) {
                 </div>
                 <p class="text-sm text-on-surface-variant">{p.athleteName}</p>
                 <p class="text-xs text-on-surface-variant">{p.id}</p>
+                {p.supportFileUrl ? (
+                  <a class="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline" href={p.supportFileUrl}>
+                    <span class="material-symbols-outlined text-base">attach_file</span>
+                    Ver soporte enviado
+                  </a>
+                ) : null}
               </div>
             ))}
             {myPostulaciones.length === 0 ? (

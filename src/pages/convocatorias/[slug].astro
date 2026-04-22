@@ -23,6 +23,8 @@ if (!effectiveClubId && user?.role === 'CLUB' && user?.id) {
 const postulationErrorMessage =
   error === 'duplicate'
     ? 'Ese atleta ya fue postulado por tu club en esta convocatoria.'
+    : error === 'not_open'
+      ? 'La convocatoria aún no está habilitada para postulaciones.'
     : error === 'closed'
       ? 'La convocatoria está cerrada y ya no admite nuevas postulaciones.'
       : error === 'not_found'
@@ -117,12 +119,14 @@ if (!convocatoria) {
 
                 {user?.role === 'CLUB' ? (
                   effectiveClubId ? (
-                    <form method="POST" action="/api/dashboard/club/postulaciones" class="grid gap-3">
+                    <form method="POST" action="/api/dashboard/club/postulaciones" encType="multipart/form-data" class="grid gap-3">
                       <input type="hidden" name="clubId" value={String(effectiveClubId)} />
                       <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
                       <input type="hidden" name="convocatoriaSlug" value={slug} />
                       <label class="form-label">Nombre del atleta a postular *</label>
                       <input class="form-input" name="athleteName" placeholder="Nombre completo del atleta" required />
+                      <label class="form-label">Soporte documental (opcional)</label>
+                      <input class="form-input" type="file" name="supportFile" accept=".pdf,.jpg,.jpeg,.png,.webp" />
                       <label class="form-label">Observaciones</label>
                       <textarea class="form-input min-h-[90px]" name="notes" placeholder="Opcional"></textarea>
                       <button type="submit" class="btn-primary">

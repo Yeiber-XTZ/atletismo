@@ -151,7 +151,8 @@ export function canApprovePostulation(user: AuthUser) {
 
 export function canSetPostulationStatus(user: AuthUser, nextStatus: string) {
   const role = normalizeRole(user.role);
-  if (String(nextStatus).toLowerCase() === 'aprobado') {
+  const normalized = String(nextStatus).toLowerCase();
+  if (normalized === 'aprobado' || normalized === 'seleccionada') {
     return role === 'LIGA' || role === 'ORGANO_ADMIN' || role === 'SUPERADMIN';
   }
   return role === 'LIGA' || role === 'ORGANO_ADMIN' || role === 'ADMIN' || role === 'SUPERADMIN';

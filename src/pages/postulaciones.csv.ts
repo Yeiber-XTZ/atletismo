@@ -34,7 +34,9 @@ export const GET: APIRoute = async ({ cookies, request }) => {
       'athlete_name',
       'convocatoria_title',
       'convocatoria_slug',
+      'submitted_by_user_id',
       'status',
+      'support_file_url',
       'notes',
       'created_at',
       'updated_at'
@@ -49,7 +51,9 @@ export const GET: APIRoute = async ({ cookies, request }) => {
           row.athleteName,
           row.convocatoriaTitle,
           row.convocatoriaSlug,
+          row.submittedByUserId ?? '',
           row.status,
+          row.supportFileUrl ?? '',
           row.notes ?? '',
           row.createdAt,
           row.updatedAt

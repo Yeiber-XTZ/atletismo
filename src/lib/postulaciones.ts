@@ -20,7 +20,9 @@ export const PostulationSchema = z.object({
   athleteName: z.string().min(2).max(120),
   convocatoriaTitle: z.string().min(2).max(180),
   convocatoriaSlug: z.string().min(1).max(220),
+  submittedByUserId: z.number().int().positive().optional(),
   status: PostulationStatus,
+  supportFileUrl: z.string().max(600).optional(),
   notes: z.string().max(2000).optional().default(''),
   createdAt: z.string(),
   updatedAt: z.string()
@@ -75,7 +77,9 @@ export async function listPostulaciones(filters?: Filters): Promise<Postulation[
             athlete_name as "athleteName",
             convocatoria_title as "convocatoriaTitle",
             convocatoria_slug as "convocatoriaSlug",
+            submitted_by_user_id as "submittedByUserId",
             status,
+            support_file_url as "supportFileUrl",
             notes,
             created_at as "createdAt",
             updated_at as "updatedAt"
@@ -105,15 +109,17 @@ export async function createPostulacion(input: Omit<Postulation, 'id' | 'created
   }
 
   await db.query(
-    `INSERT INTO postulations (id, club_id, athlete_name, convocatoria_title, convocatoria_slug, status, notes, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    `INSERT INTO postulations (id, club_id, athlete_name, convocatoria_title, convocatoria_slug, submitted_by_user_id, status, support_file_url, notes, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
     [
       item.id,
       item.clubId,
       item.athleteName,
       item.convocatoriaTitle,
       item.convocatoriaSlug,
+      item.submittedByUserId ?? null,
       item.status,
+      item.supportFileUrl ?? null,
       item.notes ?? '',
       item.createdAt,
       item.updatedAt
@@ -180,7 +186,9 @@ export async function updatePostulacionStatus(id: string, status: PostulationSta
                athlete_name as "athleteName",
                convocatoria_title as "convocatoriaTitle",
                convocatoria_slug as "convocatoriaSlug",
+               submitted_by_user_id as "submittedByUserId",
                status,
+               support_file_url as "supportFileUrl",
                notes,
                created_at as "createdAt",
                updated_at as "updatedAt"`,

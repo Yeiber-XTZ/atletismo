@@ -922,7 +922,11 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       </div>
                       <div>
                         <label class="admin-label">Estado</label>
-                        <input class="admin-input" name="convStatus" value={conv.status} required />
+                        <select class="admin-input" name="convStatus" required>
+                          <option value="Abierta" selected={conv.status === 'Abierta'}>Abierta</option>
+                          <option value="Próximamente" selected={conv.status === 'Próximamente'}>Próximamente</option>
+                          <option value="Cerrada" selected={conv.status === 'Cerrada'}>Cerrada</option>
+                        </select>
                       </div>
                       <div>
                         <label class="admin-label">Apertura</label>
@@ -2001,6 +2005,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     <div class="font-semibold text-gray-700">{p.id}</div>
                     <div class="text-sm text-gray-600">{p.convocatoriaTitle}</div>
                     <div class="text-xs text-gray-500">Club #{p.clubId} · {p.athleteName}</div>
+                    {p.supportFileUrl ? (
+                      <a class="mt-1 inline-flex items-center gap-1 text-xs text-indigo-700 hover:underline" href={p.supportFileUrl} target="_blank" rel="noopener noreferrer">
+                        <span class="material-symbols-outlined text-base">attach_file</span>
+                        Ver soporte adjunto
+                      </a>
+                    ) : (
+                      <div class="text-xs text-gray-400 mt-1">Sin soporte adjunto</div>
+                    )}
                     <div class={`mt-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${postulationStatusClass(p.status)}`}>
                       {p.status}
                     </div>
@@ -2660,7 +2672,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
         <div><label class="admin-label">Título</label><input class="admin-input" name="convTitle" required /></div>
         <div><label class="admin-label">Categoría</label><input class="admin-input" name="convCategory" required /></div>
-        <div><label class="admin-label">Estado</label><input class="admin-input" name="convStatus" value="Abierta" required /></div>
+        <div>
+          <label class="admin-label">Estado</label>
+          <select class="admin-input" name="convStatus" required>
+            <option value="Abierta" selected>Abierta</option>
+            <option value="Próximamente">Próximamente</option>
+            <option value="Cerrada">Cerrada</option>
+          </select>
+        </div>
         <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
         <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
         <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>

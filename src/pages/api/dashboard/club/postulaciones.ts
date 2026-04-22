@@ -6,6 +6,7 @@ import { logAudit } from '../../../../lib/audit';
 import { getHomeData } from '../../../../lib/content';
 import { slugify } from '../../../../lib/slug';
 import { getClubByOwnerUserId } from '../../../../lib/clubs';
+import { saveFileUpload } from '../../../../lib/file-upload';
 
 const schema = z.object({
   clubId: z.coerce.number().int().positive(),
@@ -21,6 +22,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     requireRoles(user, ['CLUB']);
 
     const form = await request.formData();
+    const supportFile = form.get('supportFile');
     const ownedClub = !user.clubId && user.id ? await getClubByOwnerUserId(Number(user.id)) : null;
     const fallbackClubId = user.clubId ? Number(user.clubId) : ownedClub?.id ?? 0;
     const payload = {
@@ -48,10 +50,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const now = new Date();
+    const openDate = convocatoria.openDate ? new Date(`${convocatoria.openDate}T00:00:00`) : null;
     const closeDate = convocatoria.closeDate ? new Date(`${convocatoria.closeDate}T23:59:59`) : null;
     const statusLower = String(convocatoria.status ?? '').toLowerCase();
+    const isOpenByStatus = statusLower.includes('abiert');
+    const notStartedByDate = openDate ? now.getTime() < openDate.getTime() : false;
     const closedByStatus = statusLower.includes('cerrad');
     const closedByDate = closeDate ? now.getTime() > closeDate.getTime() : false;
+    if (!isOpenByStatus || notStartedByDate) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=not_open`, request.url), 302);
+    }
     if (closedByStatus || closedByDate) {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=closed`, request.url), 302);
     }
@@ -65,12 +73,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=duplicate`, request.url), 302);
     }
 
+    const supportFileUrl =
+      supportFile instanceof File && supportFile.size > 0
+        ? await saveFileUpload(supportFile, Number(user.id) || null, { isPrivate: true })
+        : undefined;
+
     const created = await createPostulacion({
       clubId: parsed.data.clubId,
       athleteName: parsed.data.athleteName,
       convocatoriaTitle: parsed.data.convocatoriaTitle,
       convocatoriaSlug: parsed.data.convocatoriaSlug,
+      submittedByUserId: Number(user.id) || undefined,
       status: PostulationStatus.enum.Postulada,
+      supportFileUrl,
       notes: parsed.data.notes || ''
     });
 
@@ -79,7 +94,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       action: 'postulation_created',
       entityType: 'postulation',
       entityId: created.id,
-      meta: { convocatoriaSlug: created.convocatoriaSlug, clubId: created.clubId },
+      meta: { convocatoriaSlug: created.convocatoriaSlug, clubId: created.clubId, supportFile: Boolean(supportFileUrl) },
       request
     });
 

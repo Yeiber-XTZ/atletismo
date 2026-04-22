@@ -313,10 +313,12 @@ CREATE TABLE IF NOT EXISTS competencias (
 CREATE TABLE IF NOT EXISTS postulations (
   id TEXT PRIMARY KEY,
   club_id INTEGER NOT NULL,
+  submitted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
   athlete_name TEXT NOT NULL DEFAULT '',
   convocatoria_title TEXT NOT NULL DEFAULT '',
   convocatoria_slug TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'Postulada',
+  support_file_url TEXT,
   notes TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -325,6 +327,7 @@ CREATE TABLE IF NOT EXISTS postulations (
 CREATE INDEX IF NOT EXISTS idx_postulations_club_id ON postulations(club_id);
 CREATE INDEX IF NOT EXISTS idx_postulations_status ON postulations(status);
 CREATE INDEX IF NOT EXISTS idx_postulations_created_at ON postulations(created_at);
+CREATE INDEX IF NOT EXISTS idx_postulations_submitted_by ON postulations(submitted_by_user_id);
 
 -- Clubs
 CREATE TABLE IF NOT EXISTS clubs (
@@ -488,6 +491,8 @@ ALTER TABLE IF EXISTS radicados ADD COLUMN IF NOT EXISTS reviewed_by BIGINT REFE
 ALTER TABLE IF EXISTS radicados ADD COLUMN IF NOT EXISTS review_notes TEXT NOT NULL DEFAULT '';
 ALTER TABLE IF EXISTS radicados ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
 ALTER TABLE IF EXISTS radicados ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE IF EXISTS postulations ADD COLUMN IF NOT EXISTS submitted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS postulations ADD COLUMN IF NOT EXISTS support_file_url TEXT;
 
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS ranking_key TEXT;
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS municipality TEXT NOT NULL DEFAULT '';

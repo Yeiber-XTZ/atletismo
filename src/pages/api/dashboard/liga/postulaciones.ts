@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return new Response('Invalid payload', { status: 400 });
     }
 
-    // Regla de negocio: solo LIGA/ORGANO_ADMIN (o SUPERADMIN) puede cambiar a "Aprobado"
+    // Regla de negocio: solo LIGA/ORGANO_ADMIN (o SUPERADMIN) puede marcar estado final ("Aprobado"/"Seleccionada")
     assertPostulationStatusChange(user, parsed.data.status);
 
     const updated = await updatePostulacionStatus(parsed.data.id, parsed.data.status, parsed.data.notes || undefined);
