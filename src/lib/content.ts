@@ -302,6 +302,8 @@ export async function getHomeData() {
                   description,
                   requirements,
                   categories,
+                  COALESCE(disciplines, '[]'::jsonb) as disciplines,
+                  COALESCE(events, '[]'::jsonb) as events,
                   COALESCE(image_url, '') as "imageUrl"
            FROM convocatorias
            ORDER BY COALESCE(open_date, created_at) DESC`
@@ -323,6 +325,8 @@ export async function getHomeData() {
                   description,
                   requirements,
                   categories,
+                  '[]'::jsonb as disciplines,
+                  '[]'::jsonb as events,
                   COALESCE(image_url, '') as "imageUrl"
            FROM convocatorias
            ORDER BY COALESCE(open_date, created_at) DESC`
@@ -341,6 +345,8 @@ export async function getHomeData() {
           description: r.description ?? '',
           requirements: Array.isArray(r.requirements) ? r.requirements : [],
           categories: Array.isArray(r.categories) ? r.categories : [],
+          disciplines: Array.isArray(r.disciplines) ? r.disciplines : [],
+          events: Array.isArray(r.events) ? r.events : [],
           imageUrl: r.imageUrl || undefined
         };
       });

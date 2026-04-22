@@ -6,6 +6,8 @@ import { getHomeData } from '../../lib/content';
 import { slugify } from '../../lib/slug';
 import { getClubByOwnerUserId } from '../../lib/clubs';
 import { hasPermission } from '../../lib/rbac';
+import { listAthletes } from '../../lib/athletes-admin';
+import { listAthleticsCatalogs } from '../../lib/catalogs';
 
 const data = await getHomeData();
 const { settings, convocatorias } = data;
@@ -24,23 +26,43 @@ if (!effectiveClubId && user?.role === 'CLUB' && user?.id) {
 const postulationErrorMessage =
   error === 'duplicate'
     ? 'Ese atleta ya fue postulado por tu club en esta convocatoria.'
-    : error === 'not_open'
-      ? 'La convocatoria aún no está habilitada para postulaciones.'
-    : error === 'closed'
-      ? 'La convocatoria está cerrada y ya no admite nuevas postulaciones.'
-      : error === 'not_found'
-        ? 'La convocatoria no fue encontrada.'
-        : error
-          ? 'No se pudo enviar la postulación. Verifica los datos.'
-          : '';
+    : error === 'athlete_not_found'
+      ? 'El atleta seleccionado no pertenece a tu club.'
+      : error === 'invalid_event'
+        ? 'Debes seleccionar una prueba valida.'
+        : error === 'discipline_disabled'
+          ? 'La disciplina del atleta no esta habilitada en esta convocatoria.'
+          : error === 'event_disabled'
+            ? 'La prueba seleccionada no esta habilitada en esta convocatoria.'
+            : error === 'athlete_discipline_mismatch'
+              ? 'El atleta no tiene registrada la disciplina de la prueba seleccionada.'
+              : error === 'not_open'
+                ? 'La convocatoria aun no esta habilitada para postulaciones.'
+                : error === 'closed'
+                  ? 'La convocatoria esta cerrada y ya no admite nuevas postulaciones.'
+                  : error === 'not_found'
+                    ? 'La convocatoria no fue encontrada.'
+                    : error
+                      ? 'No se pudo enviar la postulacion. Verifica los datos.'
+                      : '';
 
 if (!convocatoria) {
   Astro.response.status = 404;
 }
+
+const clubAthletes = user?.role === 'CLUB' && effectiveClubId
+  ? await listAthletes({ clubId: effectiveClubId, status: 'active' })
+  : [];
+
+const convocatoriaEvents = Array.isArray((convocatoria as any)?.events)
+  ? (convocatoria as any).events.map((item: string) => String(item).trim()).filter(Boolean)
+  : [];
+const fallbackAthleticsEvents = convocatoriaEvents.length === 0 ? (await listAthleticsCatalogs()).events.map((item) => item.name) : [];
+const eventOptions = convocatoriaEvents.length > 0 ? convocatoriaEvents : fallbackAthleticsEvents;
 ---
 <BaseLayout
-  title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Chocó`}
-  description="Detalle de convocatoria y requisitos de postulación."
+  title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Choco`}
+  description="Detalle de convocatoria y requisitos de postulacion."
 >
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
@@ -76,7 +98,7 @@ if (!convocatoria) {
                 ))}
               </ul>
 
-              <h2 class="section-heading mt-10">Categorías</h2>
+              <h2 class="section-heading mt-10">Categorias</h2>
               <div class="flex flex-wrap gap-2">
                 {convocatoria.categories.map((c) => (
                   <span class="rounded-full bg-[#f1f5f9] px-3 py-1 text-sm font-semibold text-[#334155]">{c}</span>
@@ -109,7 +131,7 @@ if (!convocatoria) {
               <div class="mt-8 flex flex-col gap-3">
                 {postulated ? (
                   <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    Postulación enviada correctamente.
+                    Postulacion enviada correctamente.
                   </div>
                 ) : null}
                 {error ? (
@@ -124,8 +146,20 @@ if (!convocatoria) {
                       <input type="hidden" name="clubId" value={String(effectiveClubId)} />
                       <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
                       <input type="hidden" name="convocatoriaSlug" value={slug} />
-                      <label class="form-label">Nombre del atleta a postular *</label>
-                      <input class="form-input" name="athleteName" placeholder="Nombre completo del atleta" required />
+                      <label class="form-label">Atleta *</label>
+                      <select class="form-input" name="athleteId" required>
+                        <option value="">Selecciona atleta</option>
+                        {clubAthletes.map((athlete) => (
+                          <option value={String(athlete.id)}>{athlete.fullName} - {athlete.documentType} {athlete.document}</option>
+                        ))}
+                      </select>
+                      <label class="form-label">Prueba *</label>
+                      <select class="form-input" name="eventName" required>
+                        <option value="">Selecciona prueba</option>
+                        {eventOptions.map((eventName) => (
+                          <option value={eventName}>{eventName}</option>
+                        ))}
+                      </select>
                       <label class="form-label">Soporte documental (opcional)</label>
                       <input class="form-input" type="file" name="supportFile" accept=".pdf,.jpg,.jpeg,.png,.webp" />
                       <label class="form-label">Observaciones</label>
@@ -158,21 +192,20 @@ if (!convocatoria) {
                     Puedes consultar el estado de esta convocatoria desde tu <a href="/admin?tab=convocatorias" class="font-semibold underline">panel</a>.
                   </div>
                 ) : (
-                  /* Visitante anónimo */
                   <>
                     <p class="text-sm text-[var(--text-secondary)]">Los clubes afiliados pueden postular atletas a esta convocatoria.</p>
                     <a href={`/login?next=${encodeURIComponent(`/convocatorias/${slug}`)}`} class="btn-primary">
                       <span class="material-symbols-outlined">login</span>
-                      Iniciar sesión
+                      Iniciar sesion
                     </a>
                     <a href="/registro/club" class="btn-secondary">
                       <span class="material-symbols-outlined">person_add</span>
-                      Registro Atleta
+                      Registro Club
                     </a>
                   </>
                 )}
               </div>
-              <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulación se consulta en el panel del club.</p>
+              <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulacion se consulta en el panel del club.</p>
             </aside>
           </div>
         ) : (

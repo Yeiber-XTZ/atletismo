@@ -183,6 +183,8 @@ export type Store = {
     description: string;
     requirements: string[];
     categories: string[];
+    disciplines?: string[];
+    events?: string[];
     imageUrl?: string;
   }>;
   competencias: Array<{

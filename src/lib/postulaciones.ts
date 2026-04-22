@@ -17,7 +17,10 @@ export type PostulationStatus = z.infer<typeof PostulationStatus>;
 export const PostulationSchema = z.object({
   id: z.string().min(6),
   clubId: z.number().int().positive(),
+  athleteId: z.number().int().positive().optional(),
   athleteName: z.string().min(2).max(120),
+  discipline: z.string().max(120).optional().default(''),
+  eventName: z.string().max(180).optional().default(''),
   convocatoriaTitle: z.string().min(2).max(180),
   convocatoriaSlug: z.string().min(1).max(220),
   submittedByUserId: z.number().int().positive().optional(),
@@ -71,23 +74,51 @@ export async function listPostulaciones(filters?: Filters): Promise<Postulation[
   }
 
   const whereSql = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  const res = await db.query(
-    `SELECT id,
-            club_id as "clubId",
-            athlete_name as "athleteName",
-            convocatoria_title as "convocatoriaTitle",
-            convocatoria_slug as "convocatoriaSlug",
-            submitted_by_user_id as "submittedByUserId",
-            status,
-            support_file_url as "supportFileUrl",
-            notes,
-            created_at as "createdAt",
-            updated_at as "updatedAt"
-     FROM postulations
-     ${whereSql}
-     ORDER BY created_at DESC`,
-    params
-  );
+  let res;
+  try {
+    res = await db.query(
+      `SELECT id,
+              club_id as "clubId",
+              athlete_id as "athleteId",
+              athlete_name as "athleteName",
+              discipline,
+              event_name as "eventName",
+              convocatoria_title as "convocatoriaTitle",
+              convocatoria_slug as "convocatoriaSlug",
+              submitted_by_user_id as "submittedByUserId",
+              status,
+              support_file_url as "supportFileUrl",
+              notes,
+              created_at as "createdAt",
+              updated_at as "updatedAt"
+       FROM postulations
+       ${whereSql}
+       ORDER BY created_at DESC`,
+      params
+    );
+  } catch (error: any) {
+    if (String(error?.code ?? '') !== '42703') throw error;
+    res = await db.query(
+      `SELECT id,
+              club_id as "clubId",
+              NULL::int as "athleteId",
+              athlete_name as "athleteName",
+              '' as discipline,
+              '' as "eventName",
+              convocatoria_title as "convocatoriaTitle",
+              convocatoria_slug as "convocatoriaSlug",
+              submitted_by_user_id as "submittedByUserId",
+              status,
+              support_file_url as "supportFileUrl",
+              notes,
+              created_at as "createdAt",
+              updated_at as "updatedAt"
+       FROM postulations
+       ${whereSql}
+       ORDER BY created_at DESC`,
+      params
+    );
+  }
   return res.rows as Postulation[];
 }
 
@@ -108,23 +139,47 @@ export async function createPostulacion(input: Omit<Postulation, 'id' | 'created
     return item;
   }
 
-  await db.query(
-    `INSERT INTO postulations (id, club_id, athlete_name, convocatoria_title, convocatoria_slug, submitted_by_user_id, status, support_file_url, notes, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-    [
-      item.id,
-      item.clubId,
-      item.athleteName,
-      item.convocatoriaTitle,
-      item.convocatoriaSlug,
-      item.submittedByUserId ?? null,
-      item.status,
-      item.supportFileUrl ?? null,
-      item.notes ?? '',
-      item.createdAt,
-      item.updatedAt
-    ]
-  );
+  try {
+    await db.query(
+      `INSERT INTO postulations (id, club_id, athlete_id, athlete_name, discipline, event_name, convocatoria_title, convocatoria_slug, submitted_by_user_id, status, support_file_url, notes, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [
+        item.id,
+        item.clubId,
+        item.athleteId ?? null,
+        item.athleteName,
+        item.discipline ?? '',
+        item.eventName ?? '',
+        item.convocatoriaTitle,
+        item.convocatoriaSlug,
+        item.submittedByUserId ?? null,
+        item.status,
+        item.supportFileUrl ?? null,
+        item.notes ?? '',
+        item.createdAt,
+        item.updatedAt
+      ]
+    );
+  } catch (error: any) {
+    if (String(error?.code ?? '') !== '42703') throw error;
+    await db.query(
+      `INSERT INTO postulations (id, club_id, athlete_name, convocatoria_title, convocatoria_slug, submitted_by_user_id, status, support_file_url, notes, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [
+        item.id,
+        item.clubId,
+        item.athleteName,
+        item.convocatoriaTitle,
+        item.convocatoriaSlug,
+        item.submittedByUserId ?? null,
+        item.status,
+        item.supportFileUrl ?? null,
+        item.notes ?? '',
+        item.createdAt,
+        item.updatedAt
+      ]
+    );
+  }
 
   return item;
 }
@@ -175,25 +230,55 @@ export async function updatePostulacionStatus(id: string, status: PostulationSta
     return list[idx];
   }
 
-  const res = await db.query(
-    `UPDATE postulations
-     SET status = $1,
-         notes = COALESCE($2, notes),
-         updated_at = NOW()
-     WHERE id = $3
-     RETURNING id,
-               club_id as "clubId",
-               athlete_name as "athleteName",
-               convocatoria_title as "convocatoriaTitle",
-               convocatoria_slug as "convocatoriaSlug",
-               submitted_by_user_id as "submittedByUserId",
-               status,
-               support_file_url as "supportFileUrl",
-               notes,
-               created_at as "createdAt",
-               updated_at as "updatedAt"`,
-    [status, notes ?? null, id]
-  );
+  let res;
+  try {
+    res = await db.query(
+      `UPDATE postulations
+       SET status = $1,
+           notes = COALESCE($2, notes),
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING id,
+                 club_id as "clubId",
+                 athlete_id as "athleteId",
+                 athlete_name as "athleteName",
+                 discipline,
+                 event_name as "eventName",
+                 convocatoria_title as "convocatoriaTitle",
+                 convocatoria_slug as "convocatoriaSlug",
+                 submitted_by_user_id as "submittedByUserId",
+                 status,
+                 support_file_url as "supportFileUrl",
+                 notes,
+                 created_at as "createdAt",
+                 updated_at as "updatedAt"`,
+      [status, notes ?? null, id]
+    );
+  } catch (error: any) {
+    if (String(error?.code ?? '') !== '42703') throw error;
+    res = await db.query(
+      `UPDATE postulations
+       SET status = $1,
+           notes = COALESCE($2, notes),
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING id,
+                 club_id as "clubId",
+                 NULL::int as "athleteId",
+                 athlete_name as "athleteName",
+                 '' as discipline,
+                 '' as "eventName",
+                 convocatoria_title as "convocatoriaTitle",
+                 convocatoria_slug as "convocatoriaSlug",
+                 submitted_by_user_id as "submittedByUserId",
+                 status,
+                 support_file_url as "supportFileUrl",
+                 notes,
+                 created_at as "createdAt",
+                 updated_at as "updatedAt"`,
+      [status, notes ?? null, id]
+    );
+  }
 
   return (res.rows[0] as Postulation | undefined) ?? null;
 }

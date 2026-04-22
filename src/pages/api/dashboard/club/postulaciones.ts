@@ -7,10 +7,13 @@ import { getHomeData } from '../../../../lib/content';
 import { slugify } from '../../../../lib/slug';
 import { getClubByOwnerUserId } from '../../../../lib/clubs';
 import { saveFileUpload } from '../../../../lib/file-upload';
+import { db } from '../../../../lib/db';
+import { findAthleticsEventByName } from '../../../../lib/catalogs';
 
 const schema = z.object({
   clubId: z.coerce.number().int().positive(),
-  athleteName: z.string().min(2).max(120),
+  athleteId: z.coerce.number().int().positive(),
+  eventName: z.string().trim().min(2).max(180),
   convocatoriaTitle: z.string().min(2).max(180),
   convocatoriaSlug: z.string().min(1).max(220),
   notes: z.string().max(2000).optional().or(z.literal(''))
@@ -27,7 +30,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const fallbackClubId = user.clubId ? Number(user.clubId) : ownedClub?.id ?? 0;
     const payload = {
       clubId: Number(form.get('clubId') ?? fallbackClubId),
-      athleteName: String(form.get('athleteName') ?? ''),
+      athleteId: Number(form.get('athleteId') ?? 0),
+      eventName: String(form.get('eventName') ?? ''),
       convocatoriaTitle: String(form.get('convocatoriaTitle') ?? ''),
       convocatoriaSlug: String(form.get('convocatoriaSlug') ?? ''),
       notes: String(form.get('notes') ?? '')
@@ -42,6 +46,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.convocatoriaSlug)}?error=no_club`, request.url), 302);
     }
     assertClubOwnership({ ...user, clubId: fallbackClubId }, parsed.data.clubId);
+
+    const athleteRes = await db.query(
+      `SELECT a.id,
+              a.first_name,
+              a.last_name
+       FROM athletes a
+       LEFT JOIN club_athletes ca ON ca.athlete_id = a.id AND ca.status = 'active'
+       WHERE a.id = $1
+         AND COALESCE(a.club_id, ca.club_id) = $2
+       LIMIT 1`,
+      [parsed.data.athleteId, parsed.data.clubId]
+    );
+    const athleteRow = athleteRes.rows[0] as any;
+    if (!athleteRow) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=athlete_not_found`, request.url), 302);
+    }
+    const athleteName = `${String(athleteRow.first_name ?? '').trim()} ${String(athleteRow.last_name ?? '').trim()}`.trim();
 
     const content = await getHomeData();
     const convocatoria = (content.convocatorias ?? []).find((c) => slugify(c.title) === parsed.data.convocatoriaSlug);
@@ -64,10 +85,42 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=closed`, request.url), 302);
     }
 
+    const selectedEvent = await findAthleticsEventByName(parsed.data.eventName);
+    if (!selectedEvent) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=invalid_event`, request.url), 302);
+    }
+
+    const convocatoriaDisciplines = Array.isArray((convocatoria as any).disciplines)
+      ? (convocatoria as any).disciplines.map((item: string) => String(item).trim()).filter(Boolean)
+      : [];
+    const convocatoriaEvents = Array.isArray((convocatoria as any).events)
+      ? (convocatoria as any).events.map((item: string) => String(item).trim()).filter(Boolean)
+      : [];
+
+    if (convocatoriaDisciplines.length > 0 && !convocatoriaDisciplines.includes(selectedEvent.disciplineName)) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=discipline_disabled`, request.url), 302);
+    }
+    if (convocatoriaEvents.length > 0 && !convocatoriaEvents.includes(selectedEvent.name)) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=event_disabled`, request.url), 302);
+    }
+
+    const athleteDisciplinesRes = await db.query(
+      `SELECT discipline
+       FROM athlete_disciplines
+       WHERE athlete_id = $1`,
+      [parsed.data.athleteId]
+    );
+    const athleteDisciplines = new Set(
+      athleteDisciplinesRes.rows.map((row: any) => String(row.discipline ?? '').trim()).filter(Boolean)
+    );
+    if (!athleteDisciplines.has(selectedEvent.disciplineName)) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=athlete_discipline_mismatch`, request.url), 302);
+    }
+
     const duplicated = await existsPostulacionDuplicada({
       clubId: parsed.data.clubId,
       convocatoriaSlug: parsed.data.convocatoriaSlug,
-      athleteName: parsed.data.athleteName
+      athleteName
     });
     if (duplicated) {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=duplicate`, request.url), 302);
@@ -80,7 +133,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const created = await createPostulacion({
       clubId: parsed.data.clubId,
-      athleteName: parsed.data.athleteName,
+      athleteId: parsed.data.athleteId,
+      athleteName,
+      discipline: selectedEvent.disciplineName,
+      eventName: selectedEvent.name,
       convocatoriaTitle: parsed.data.convocatoriaTitle,
       convocatoriaSlug: parsed.data.convocatoriaSlug,
       submittedByUserId: Number(user.id) || undefined,

@@ -16,6 +16,7 @@ import { listRadicados } from '../../lib/radicados';
 import { listConvocatoriaCategories } from '../../lib/convocatoria-categories';
 import { listAthletes } from '../../lib/athletes-admin';
 import { getClubByOwnerUserId } from '../../lib/clubs';
+import { listAthleticsCatalogs, listGeoCatalogs, listSexCatalog } from '../../lib/catalogs';
 
 const user = Astro.locals.user as AuthUser | null;
 const requestedTab = Astro.url.searchParams.get('tab') ?? ((user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') ? 'dashboard' : 'settings');
@@ -58,6 +59,9 @@ const auditEntity = (Astro.url.searchParams.get('auditEntity') ?? '').trim();
 const auditUserId = Number(Astro.url.searchParams.get('auditUserId') ?? 0);
 
 const data = await getAdminData();
+const sexCatalog = await listSexCatalog();
+const geoCatalog = await listGeoCatalogs();
+const athleticsCatalog = await listAthleticsCatalogs();
 const managedConvocatoriaCategories = await listConvocatoriaCategories();
 const docs = await listDocuments();
 const marks: Array<{ id: number; athlete: string; discipline: string; value: string; unit: string; recordDate: string }> = [];
@@ -213,6 +217,11 @@ const clubsWithId = (data.clubs ?? [])
   .map((club: any) => ({ ...club, id: Number(club.id) }))
   .sort((a: any, b: any) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'es-CO'));
 const clubNameById = new Map<number, string>(clubsWithId.map((club: any) => [Number(club.id), String(club.name ?? '')]));
+const geoCountries = geoCatalog.countries ?? [];
+const geoDepartments = geoCatalog.departments ?? [];
+const geoMunicipalities = geoCatalog.municipalities ?? [];
+const athleticsDisciplineNames = (athleticsCatalog.disciplines ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
+const athleticsEventNames = (athleticsCatalog.events ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
 const laLigaContent = data.publicSite?.laLiga;
 const laLigaPrinciplesRows = (laLigaContent?.principles?.length ? laLigaContent.principles : [{ icon: 'star', title: '', desc: '' }]);
 const laLigaGovernanceRows = (laLigaContent?.governanceItems?.length ? laLigaContent.governanceItems : [{ label: '', title: '' }]);
@@ -1069,6 +1078,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <textarea class="admin-input min-h-[90px]" name="convCategories">{linesFromArray(conv.categories)}</textarea>
                       </div>
                       <div>
+                        <label class="admin-label">Disciplinas habilitadas (una línea por disciplina)</label>
+                        <textarea class="admin-input min-h-[90px]" name="convDisciplines" placeholder={athleticsDisciplineNames.join('\n')}>{linesFromArray((conv as any).disciplines)}</textarea>
+                      </div>
+                      <div class="md:col-span-2">
+                        <label class="admin-label">Pruebas habilitadas (una línea por prueba)</label>
+                        <textarea class="admin-input min-h-[90px]" name="convEvents" placeholder={athleticsEventNames.join('\n')}>{linesFromArray((conv as any).events)}</textarea>
+                      </div>
+                      <div>
                         <label class="admin-label">Imagen</label>
                         <input class="admin-input" type="file" name="convImageFile" accept="image/*" />
                         <input type="hidden" name="convImageUrl" value={conv.imageUrl ?? ''} />
@@ -1466,10 +1483,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </div>
               <div class="md:col-span-2">
                 <label class="admin-label">Sexo</label>
-                <select class="admin-input" name="gender" required>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                  <option value="X">Otro</option>
+                <select class="admin-input" name="sexCode" required>
+                  {sexCatalog.map((sex) => (
+                    <option value={sex.code}>{sex.name}</option>
+                  ))}
                 </select>
               </div>
               <div class="md:col-span-2">
@@ -1481,8 +1498,26 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 <input class="admin-input" type="email" name="email" />
               </div>
               <div class="md:col-span-3">
+                <label class="admin-label">País</label>
+                <select class="admin-input js-geo-country" name="countryIso2" data-geo-scope="create">
+                  <option value="">Selecciona país</option>
+                  {geoCountries.map((country) => (
+                    <option value={country.iso2} selected={country.iso2 === 'CO'}>{country.shortName}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Departamento</label>
+                <select class="admin-input js-geo-department" name="departmentCode" data-geo-scope="create">
+                  <option value="">Selecciona departamento</option>
+                </select>
+              </div>
+              <div class="md:col-span-3">
                 <label class="admin-label">Municipio</label>
-                <input class="admin-input" name="municipality" required />
+                <select class="admin-input js-geo-municipality" name="municipalityCode" data-geo-scope="create">
+                  <option value="">Selecciona municipio</option>
+                </select>
+                <input type="hidden" name="municipality" class="js-geo-municipality-name" data-geo-scope="create" />
               </div>
               <div class="md:col-span-2">
                 <label class="admin-label">Estado</label>
@@ -1605,7 +1640,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       {a.clubId ? `#${a.clubId} · ${a.clubName}` : a.clubName || '(sin club)'}
                     </td>
                     <td class="p-3 align-top">
-                      <div class="text-xs text-gray-600">Municipio: {a.municipality || '-'}</div>
+                      <div class="text-xs text-gray-600">Municipio: {a.municipalityName || a.municipality || '-'}</div>
                       <div class="text-xs text-gray-600">Coach: {a.coach || '-'}</div>
                       <div class="text-xs text-gray-600">EPS: {a.eps || '-'}</div>
                       <div class="text-xs text-gray-600">Emergencia: {a.emergencyContact || '-'}</div>
@@ -1627,14 +1662,26 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                             <option value="PP" selected={a.documentType === 'PP'}>PP</option>
                           </select>
                           <input class="admin-input" name="document" value={a.document} required />
-                          <select class="admin-input" name="gender">
-                            <option value="M" selected={a.gender === 'M'}>M</option>
-                            <option value="F" selected={a.gender === 'F'}>F</option>
-                            <option value="X" selected={a.gender === 'X'}>X</option>
+                          <select class="admin-input" name="sexCode">
+                            {sexCatalog.map((sex) => (
+                              <option value={sex.code} selected={a.sexCode === sex.code || a.gender === sex.code}>{sex.name}</option>
+                            ))}
                           </select>
                           <input class="admin-input" type="date" name="birthdate" value={a.birthdate} required />
                           <input class="admin-input" type="email" name="email" value={a.email} placeholder="Email" />
-                          <input class="admin-input" name="municipality" value={a.municipality} placeholder="Municipio" required />
+                          <select class="admin-input js-geo-country" name="countryIso2" data-geo-scope={`edit-${a.id}`}>
+                            <option value="">Selecciona país</option>
+                            {geoCountries.map((country) => (
+                              <option value={country.iso2} selected={a.countryIso2 === country.iso2}>{country.shortName}</option>
+                            ))}
+                          </select>
+                          <select class="admin-input js-geo-department" name="departmentCode" data-geo-scope={`edit-${a.id}`} data-selected={a.departmentCode}>
+                            <option value="">Selecciona departamento</option>
+                          </select>
+                          <select class="admin-input js-geo-municipality" name="municipalityCode" data-geo-scope={`edit-${a.id}`} data-selected={a.municipalityCode}>
+                            <option value="">Selecciona municipio</option>
+                          </select>
+                          <input type="hidden" name="municipality" value={a.municipalityName || a.municipality} class="js-geo-municipality-name" data-geo-scope={`edit-${a.id}`} />
                           <input class="admin-input" name="coach" value={a.coach} placeholder="Coach" />
                           <input class="admin-input" name="eps" value={a.eps} placeholder="EPS" />
                           <input class="admin-input" name="emergencyContact" value={a.emergencyContact} placeholder="Emergencia" />
@@ -3042,6 +3089,8 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
         <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
         <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
+        <div><label class="admin-label">Disciplinas habilitadas</label><textarea class="admin-input min-h-[90px]" name="convDisciplines" placeholder={athleticsDisciplineNames.join('\n')}></textarea></div>
+        <div class="md:col-span-2"><label class="admin-label">Pruebas habilitadas</label><textarea class="admin-input min-h-[90px]" name="convEvents" placeholder={athleticsEventNames.join('\n')}></textarea></div>
         <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
         <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
       </div>
@@ -3139,6 +3188,85 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
 
     <script is:inline>
       const root = document;
+      const GEO_DEPARTMENTS = {JSON.stringify(geoDepartments)};
+      const GEO_MUNICIPALITIES = {JSON.stringify(geoMunicipalities)};
+
+      const fillSelect = (selectEl, items, selectedValue, valueKey = 'code', labelKey = 'name') => {
+        if (!(selectEl instanceof HTMLSelectElement)) return;
+        const firstOption = selectEl.querySelector('option');
+        const placeholder = firstOption ? firstOption.textContent || '' : 'Selecciona';
+        selectEl.innerHTML = '';
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = placeholder;
+        selectEl.appendChild(ph);
+        for (const item of items) {
+          const opt = document.createElement('option');
+          opt.value = String(item?.[valueKey] ?? '');
+          opt.textContent = String(item?.[labelKey] ?? '');
+          if (selectedValue && opt.value === String(selectedValue)) opt.selected = true;
+          selectEl.appendChild(opt);
+        }
+      };
+
+      const initGeoScope = (scope) => {
+        const country = root.querySelector(`.js-geo-country[data-geo-scope=\"${scope}\"]`);
+        const department = root.querySelector(`.js-geo-department[data-geo-scope=\"${scope}\"]`);
+        const municipality = root.querySelector(`.js-geo-municipality[data-geo-scope=\"${scope}\"]`);
+        const municipalityNameInput = root.querySelector(`.js-geo-municipality-name[data-geo-scope=\"${scope}\"]`);
+        if (!(country instanceof HTMLSelectElement) || !(department instanceof HTMLSelectElement) || !(municipality instanceof HTMLSelectElement)) return;
+
+        const selectedDepartment = department.getAttribute('data-selected') || department.value || '';
+        const selectedMunicipality = municipality.getAttribute('data-selected') || municipality.value || '';
+        const countryCode = country.value || 'CO';
+        if (!country.value) country.value = countryCode;
+        const deps = GEO_DEPARTMENTS.filter((item) => String(item.countryIso2 || '') === countryCode);
+        fillSelect(department, deps, selectedDepartment);
+        const depCode = department.value || selectedDepartment;
+        const muns = GEO_MUNICIPALITIES.filter((item) => String(item.departmentCode || '') === depCode);
+        fillSelect(municipality, muns, selectedMunicipality);
+
+        if (municipalityNameInput instanceof HTMLInputElement) {
+          municipalityNameInput.value = municipality.value ? (municipality.options[municipality.selectedIndex]?.text || '') : '';
+        }
+      };
+
+      const syncMunicipalityName = (scope) => {
+        const municipality = root.querySelector(`.js-geo-municipality[data-geo-scope=\"${scope}\"]`);
+        const municipalityNameInput = root.querySelector(`.js-geo-municipality-name[data-geo-scope=\"${scope}\"]`);
+        if (!(municipality instanceof HTMLSelectElement) || !(municipalityNameInput instanceof HTMLInputElement)) return;
+        municipalityNameInput.value = municipality.value ? (municipality.options[municipality.selectedIndex]?.text || '') : '';
+      };
+
+      root.querySelectorAll('.js-geo-country').forEach((el) => {
+        const scope = el.getAttribute('data-geo-scope');
+        if (scope) initGeoScope(scope);
+      });
+
+      root.addEventListener('change', (event) => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        if (!target) return;
+        if (target.classList.contains('js-geo-country')) {
+          const scope = target.getAttribute('data-geo-scope');
+          if (scope) initGeoScope(scope);
+          return;
+        }
+        if (target.classList.contains('js-geo-department')) {
+          const scope = target.getAttribute('data-geo-scope');
+          if (!scope) return;
+          const municipality = root.querySelector(`.js-geo-municipality[data-geo-scope=\"${scope}\"]`);
+          if (!(municipality instanceof HTMLSelectElement)) return;
+          const muns = GEO_MUNICIPALITIES.filter((item) => String(item.departmentCode || '') === String((target as HTMLSelectElement).value || ''));
+          fillSelect(municipality, muns, '');
+          syncMunicipalityName(scope);
+          return;
+        }
+        if (target.classList.contains('js-geo-municipality')) {
+          const scope = target.getAttribute('data-geo-scope');
+          if (scope) syncMunicipalityName(scope);
+        }
+      });
+
       root.addEventListener('click', (event) => {
         const targetEl = event.target instanceof HTMLElement ? event.target : null;
         if (!targetEl) return;
