@@ -1,6 +1,23 @@
 [
   {
     "profile": "club",
+    "name": "arenas360",
+    "email": "arenas360@gmail.com",
+    "radicado": "REG-20260421-E8DD5D",
+    "createdAt": "2026-04-21T23:58:32.984Z",
+    "data": {
+      "phone": "+573105179422",
+      "municipality": "QUIBDO",
+      "nit": "113321241344",
+      "legalRepresentative": "Andres Mena",
+      "recognitionDoc": "http://localhost:4321/registro/club",
+      "documents": "Estados contables",
+      "logoFileUrl": "/files/2",
+      "passwordHash": "scrypt$16384$8$1$_onB6xpr0H-9kqSugfZ53w$uw-dBuibKYq5lJgA8qJSVnXWeFBvxS3zEgpzmC0FdnwwpPhIbbu-z2iSftVlGMgnH1qpRo2FBXxz5c4xyN9WqA"
+    }
+  },
+  {
+    "profile": "club",
     "name": "Afrotech",
     "email": "franklin2blandon@gmail.com",
     "radicado": "REG-20260421-D6D6B0",

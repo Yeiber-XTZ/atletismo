@@ -116,8 +116,11 @@ export async function updateUserProfile(userId: number, patch: { displayName?: s
   );
 }
 
-export async function createUser(input: { email: string; password: string; role: Role; displayName?: string; clubId?: number | null }) {
-  const passwordHash = hashPassword(input.password);
+export async function createUser(input: { email: string; password?: string; passwordHash?: string; role: Role; displayName?: string; clubId?: number | null }) {
+  const passwordHash = input.passwordHash ?? (input.password ? hashPassword(input.password) : '');
+  if (!passwordHash) {
+    throw new Error('Password is required to create user');
+  }
   const created = await db.query(
     `INSERT INTO users (email, password_hash, display_name, club_id)
      VALUES ($1,$2,$3,$4)

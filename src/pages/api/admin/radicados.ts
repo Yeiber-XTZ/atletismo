@@ -10,7 +10,6 @@ const schema = z.object({
   id: z.coerce.number().int().positive(),
   decision: z.enum(['approved', 'rejected']),
   role: z.enum(['PUBLICO', 'ATLETA', 'CLUB', 'ASAMBLEISTA']).optional(),
-  tempPassword: z.string().min(8).max(80).optional().or(z.literal('')),
   reviewNotes: z.string().max(2000).optional().or(z.literal(''))
 });
 
@@ -29,7 +28,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     id: form.get('id'),
     decision: String(form.get('decision') ?? ''),
     role: String(form.get('role') ?? ''),
-    tempPassword: String(form.get('tempPassword') ?? ''),
     reviewNotes: String(form.get('reviewNotes') ?? '')
   });
 
@@ -46,13 +44,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const exists = await getUserByEmail(radicado.email);
     if (!exists) {
       const chosenRole = parsed.data.role || ROLE_BY_PROFILE[radicado.profile] || 'PUBLICO';
-      const tempPassword = String(parsed.data.tempPassword ?? '').trim();
-      if (!tempPassword) {
-        return Response.redirect(new URL('/admin?tab=users&error=missing_password', request.url), 302);
-      }
+      const passwordHash = String((radicado.payload?.passwordHash as string) ?? '').trim();
+      if (!passwordHash) return Response.redirect(new URL('/admin?tab=users&error=missing_password', request.url), 302);
       await createUser({
         email: radicado.email,
-        password: tempPassword,
+        passwordHash,
         role: chosenRole,
         displayName: radicado.name
       });

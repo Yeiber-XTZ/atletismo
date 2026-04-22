@@ -6,6 +6,10 @@ import { getHomeData } from '../../lib/content';
 
 const data = await getHomeData();
 const { settings } = data;
+const success = Astro.url.searchParams.get('success');
+const error = Astro.url.searchParams.get('error');
+const radicado = Astro.url.searchParams.get('radicado');
+const errorMessage = Astro.url.searchParams.get('message');
 ---
 <BaseLayout title="Registro Club | Liga de Atletismo del Chocó" description="Solicitud de afiliación/registro de club ante la Liga.">
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
@@ -43,7 +47,7 @@ const { settings } = data;
             </div>
             <div>
               <label class="form-label">Teléfono *</label>
-              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" />
+              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+\\-\\s()]{7,20}$" inputmode="tel" />
             </div>
             <div>
               <label class="form-label">Municipio *</label>
@@ -51,7 +55,7 @@ const { settings } = data;
             </div>
             <div>
               <label class="form-label">NIT (si aplica)</label>
-              <input class="form-input" type="text" name="nit" placeholder="NIT" />
+              <input class="form-input" type="text" name="nit" placeholder="NIT" pattern="^[0-9-]{5,20}$" inputmode="numeric" />
             </div>
             <div class="md:col-span-2">
               <label class="form-label">Representante legal *</label>
@@ -69,6 +73,10 @@ const { settings } = data;
               <label class="form-label">Documentos anexos (lista/URLs)</label>
               <textarea class="form-input form-textarea" name="documents" placeholder="Estatutos, acta, certificados, etc."></textarea>
             </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Contraseña *</label>
+              <input class="form-input" type="password" name="password" required minlength="8" maxlength="200" placeholder="Mínimo 8 caracteres" />
+            </div>
           </div>
 
           <div class="mt-8 flex items-center justify-end">
@@ -83,4 +91,78 @@ const { settings } = data;
   </main>
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
+  <div id="registroFlags" data-success={success ?? ''} data-error={error ?? ''} data-radicado={radicado ?? ''} data-error-message={errorMessage ?? ''} hidden></div>
+
+  <dialog id="registroModal" class="rounded-xl p-0 w-[min(92vw,460px)] backdrop:bg-black/40">
+    <div class="p-5 bg-white border border-gray-200 rounded-xl">
+      <h3 id="registroModalTitle" class="text-lg font-bold text-on-surface">Registro</h3>
+      <p id="registroModalMessage" class="mt-2 text-sm text-[var(--text-secondary)]"></p>
+      <div class="mt-4 flex justify-end">
+        <button id="registroModalClose" class="btn-primary" type="button">Entendido</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const modal = document.getElementById('registroModal');
+    const modalTitle = document.getElementById('registroModalTitle');
+    const modalMessage = document.getElementById('registroModalMessage');
+    const closeBtn = document.getElementById('registroModalClose');
+    const form = document.querySelector('form[action="/api/registro"]');
+
+    const showModal = (title, message) => {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      if (modal && typeof modal.showModal === 'function') modal.showModal();
+      else window.alert(`${title}: ${message}`);
+    };
+
+    closeBtn?.addEventListener('click', () => modal?.close());
+
+    form?.addEventListener('submit', (event) => {
+      const phone = (form.querySelector('input[name="phone"]')?.value || '').trim();
+      const email = (form.querySelector('input[name="email"]')?.value || '').trim();
+      const nit = (form.querySelector('input[name="nit"]')?.value || '').trim();
+      const password = (form.querySelector('input[name="password"]')?.value || '');
+
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+        event.preventDefault();
+        showModal('Dato inválido', 'El correo debe tener formato válido (ejemplo@correo.com).');
+        return;
+      }
+      if (!/^[0-9+\\-\\s()]{7,20}$/.test(phone)) {
+        event.preventDefault();
+        showModal('Dato inválido', 'El teléfono solo puede contener números y símbolos válidos (+ - ( )).');
+        return;
+      }
+      if (nit && !/^[0-9-]{5,20}$/.test(nit)) {
+        event.preventDefault();
+        showModal('Dato inválido', 'El NIT solo puede contener números y guiones.');
+        return;
+      }
+      if (password.length < 8) {
+        event.preventDefault();
+        showModal('Dato inválido', 'La contraseña debe tener al menos 8 caracteres.');
+      }
+    });
+
+    form?.addEventListener('invalid', (event) => {
+      event.preventDefault();
+      const target = event.target;
+      const label = target?.closest('div')?.querySelector('label')?.textContent?.replace('*', '').trim() || 'campo';
+      showModal('Dato inválido', `Revisa el campo "${label}" y vuelve a intentarlo.`);
+    }, true);
+
+    const flags = document.getElementById('registroFlags');
+    const successValue = flags?.dataset?.success || '';
+    const errorValue = flags?.dataset?.error || '';
+    const radicadoValue = flags?.dataset?.radicado || '';
+    const errorMessageValue = flags?.dataset?.errorMessage || '';
+
+    if (successValue && radicadoValue) {
+      showModal('Registro enviado', `Tu solicitud fue enviada correctamente. Radicado: ${radicadoValue}.`);
+    } else if (errorValue) {
+      showModal('No se pudo enviar', errorMessageValue || 'Revisa los datos del formulario e inténtalo nuevamente.');
+    }
+  </script>
 </BaseLayout>

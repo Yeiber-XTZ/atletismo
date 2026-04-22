@@ -26,7 +26,8 @@ const tabAliases: Record<string, string> = {
   analytics: 'dashboard',
   calendar: 'competencias',
   calendario: 'competencias',
-  permissions: 'permisos'
+  permissions: 'permisos',
+  radicados: 'solicitudes'
 };
 const navAliases: Record<string, string> = {
   home: 'settings',
@@ -37,7 +38,8 @@ const navAliases: Record<string, string> = {
   analytics: 'dashboard',
   calendar: 'competencias',
   calendario: 'competencias',
-  permissions: 'permisos'
+  permissions: 'permisos',
+  radicados: 'solicitudes'
 };
 const activeTab = navAliases[requestedTab] ?? requestedTab;
 const contentTab = tabAliases[requestedTab] ?? requestedTab;
@@ -176,6 +178,7 @@ const rawNavItems = [
   { id: 'settings', label: 'Configuración', icon: 'settings' },
   { id: 'liga-publica', label: 'Liga pública', icon: 'public' },
   { id: 'users', label: 'Usuarios', icon: 'manage_accounts' },
+  { id: 'solicitudes', label: 'Solicitudes', icon: 'assignment' },
   { id: 'roles', label: 'Roles', icon: 'badge' },
   { id: 'permisos', label: 'Permisos', icon: 'verified_user' },
   { id: 'pqrs', label: 'PQRS', icon: 'support_agent' },
@@ -199,6 +202,7 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
   'liga-publica': 'site:manage',
   dashboard: 'records:manage',
   users: 'users:manage',
+  solicitudes: 'approvals:manage',
   roles: 'super:all',
   permisos: 'super:all',
   pqrs: 'pqrs:manage',
@@ -1263,62 +1267,66 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </div>
 
-          <div>
-            <div class="flex items-center justify-between gap-3 mb-4">
-              <h5 class="text-sm font-semibold text-gray-700">Radicados de registro pendientes</h5>
-              <p class="text-xs text-gray-400">Aprobar crea la cuenta con el rol seleccionado.</p>
-            </div>
+        </div>
+      </section>
+    ) : null}
 
-            <div class="space-y-3">
-              {registrationRadicados.map((item) => (
-                <form method="POST" action="/api/admin/radicados" class="rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3 md:grid-cols-10">
-                  <input type="hidden" name="id" value={item.id} />
-                  <div class="md:col-span-3">
-                    <div class="text-xs uppercase tracking-wide text-gray-400">Radicado</div>
-                    <div class="font-semibold text-gray-700">{item.radicado}</div>
-                    <div class="text-xs text-gray-500 mt-1">{new Date(item.createdAt).toLocaleString('es-CO')}</div>
-                    <div class="text-xs mt-2 inline-flex rounded-full bg-white border border-gray-200 px-2 py-0.5 text-gray-700">
-                      Perfil: {item.profile}
-                    </div>
+    {contentTab === 'solicitudes' ? (
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Solicitudes de Registro</h4>
+        </div>
+        <div class="admin-card-body space-y-4">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <strong>¿Qué es un radicado?</strong> Es el número único de seguimiento de cada solicitud de registro.
+          </div>
+
+          <div class="space-y-3">
+            {registrationRadicados.map((item) => (
+              <form method="POST" action="/api/admin/radicados" class="rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3 md:grid-cols-10">
+                <input type="hidden" name="id" value={item.id} />
+                <div class="md:col-span-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-400">Radicado</div>
+                  <div class="font-semibold text-gray-700">{item.radicado}</div>
+                  <div class="text-xs text-gray-500 mt-1">{new Date(item.createdAt).toLocaleString('es-CO')}</div>
+                  <div class="text-xs mt-2 inline-flex rounded-full bg-white border border-gray-200 px-2 py-0.5 text-gray-700">
+                    Perfil: {item.profile}
                   </div>
-                  <div class="md:col-span-3">
-                    <div class="text-xs uppercase tracking-wide text-gray-400">Solicitante</div>
-                    <div class="font-medium text-gray-700">{item.name}</div>
-                    <div class="text-sm text-gray-600">{item.email}</div>
-                  </div>
-                  <div class="md:col-span-2">
-                    <label class="admin-label">Rol al aprobar</label>
-                    <select class="admin-input" name="role">
-                      <option value="PUBLICO" selected={item.profile !== 'club'}>PUBLICO</option>
-                      <option value="CLUB" selected={item.profile === 'club'}>CLUB</option>
-                    </select>
-                  </div>
-                  <div class="md:col-span-2">
-                    <label class="admin-label">Clave temporal (aprobar)</label>
-                    <input class="admin-input" type="password" name="tempPassword" placeholder="Min 8 caracteres" />
-                  </div>
-                  <div class="md:col-span-8">
-                    <label class="admin-label">Notas de revision</label>
-                    <input class="admin-input" name="reviewNotes" placeholder="Opcional" />
-                  </div>
-                  <div class="md:col-span-2 flex items-end justify-end gap-2">
-                    <button class="admin-btn admin-btn-secondary" type="submit" name="decision" value="rejected">
-                      <span class="material-symbols-outlined">close</span>
-                      Rechazar
-                    </button>
-                    <button class="admin-btn admin-btn-primary" type="submit" name="decision" value="approved">
-                      <span class="material-symbols-outlined">check</span>
-                      Aprobar
-                    </button>
-                  </div>
-                </form>
-              ))}
-              {registrationRadicados.length === 0 ? (
-                <div class="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">
-                  No hay radicados pendientes.
                 </div>
-              ) : null}
-            </div>
+                <div class="md:col-span-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-400">Solicitante</div>
+                  <div class="font-medium text-gray-700">{item.name}</div>
+                  <div class="text-sm text-gray-600">{item.email}</div>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="admin-label">Rol al aprobar</label>
+                  <select class="admin-input" name="role">
+                    <option value="PUBLICO" selected={item.profile === 'usuario'}>PUBLICO</option>
+                    <option value="ATLETA" selected={item.profile === 'atleta'}>ATLETA</option>
+                    <option value="CLUB" selected={item.profile === 'club'}>CLUB</option>
+                  </select>
+                </div>
+                <div class="md:col-span-10">
+                  <label class="admin-label">Notas de revision</label>
+                  <input class="admin-input" name="reviewNotes" placeholder="Opcional" />
+                </div>
+                <div class="md:col-span-2 flex items-end justify-end gap-2">
+                  <button class="admin-btn admin-btn-secondary" type="submit" name="decision" value="rejected">
+                    <span class="material-symbols-outlined">close</span>
+                    Rechazar
+                  </button>
+                  <button class="admin-btn admin-btn-primary" type="submit" name="decision" value="approved">
+                    <span class="material-symbols-outlined">check</span>
+                    Aprobar
+                  </button>
+                </div>
+              </form>
+            ))}
+            {registrationRadicados.length === 0 ? (
+              <div class="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">
+                No hay solicitudes pendientes.
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

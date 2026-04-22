@@ -6,6 +6,10 @@ import { getHomeData } from '../../lib/content';
 
 const data = await getHomeData();
 const { settings } = data;
+const success = Astro.url.searchParams.get('success');
+const error = Astro.url.searchParams.get('error');
+const radicado = Astro.url.searchParams.get('radicado');
+const errorMessage = Astro.url.searchParams.get('message');
 ---
 <BaseLayout title="Registro Atleta | Liga de Atletismo del Chocó" description="Registro de atleta para procesos y convocatorias de la Liga.">
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
@@ -90,7 +94,6 @@ const { settings } = data;
                     <option value="">Selecciona...</option>
                     <option value="CC">Cédula de Ciudadanía</option>
                     <option value="TI">Tarjeta de Identidad</option>
-                    <option value="PASAPORTE">Pasaporte</option>
                     <option value="CE">Cédula de Extranjería</option>
                   </select>
                 </div>
@@ -105,6 +108,7 @@ const { settings } = data;
                     required 
                     placeholder="Sin puntos ni comas"
                     inputmode="numeric"
+                    pattern="^[0-9-]{6,30}$"
                   />
                 </div>
 
@@ -268,6 +272,19 @@ const { settings } = data;
                     placeholder="Ej: 100m 11.22s (2026-03-28), 200m 23.45s (2026-03-15)"
                   ></textarea>
                 </div>
+                <div class="md:col-span-2">
+                  <label class="form-label">Contraseña *</label>
+                  <input
+                    class="form-input"
+                    type="password"
+                    name="password"
+                    id="password"
+                    required
+                    minlength="8"
+                    maxlength="200"
+                    placeholder="Mínimo 8 caracteres"
+                  />
+                </div>
               </div>
             </fieldset>
 
@@ -304,6 +321,17 @@ const { settings } = data;
   </main>
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
+  <div id="registroFlags" data-success={success ?? ''} data-error={error ?? ''} data-radicado={radicado ?? ''} data-error-message={errorMessage ?? ''} hidden></div>
+
+  <dialog id="registroModal" class="rounded-xl p-0 w-[min(92vw,460px)] backdrop:bg-black/40">
+    <div class="p-5 bg-white border border-gray-200 rounded-xl">
+      <h3 id="registroModalTitle" class="text-lg font-bold text-on-surface">Registro</h3>
+      <p id="registroModalMessage" class="mt-2 text-sm text-[var(--text-secondary)]"></p>
+      <div class="mt-4 flex justify-end">
+        <button id="registroModalClose" class="btn-primary" type="button">Entendido</button>
+      </div>
+    </div>
+  </dialog>
 
   <style>
     .btn-sm {
@@ -313,6 +341,63 @@ const { settings } = data;
   </style>
 
   <script>
+    const modal = document.getElementById('registroModal');
+    const modalTitle = document.getElementById('registroModalTitle');
+    const modalMessage = document.getElementById('registroModalMessage');
+    const closeBtn = document.getElementById('registroModalClose');
+    const form = document.querySelector('form[action="/api/registro"]');
+
+    const showModal = (title, message) => {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      if (modal && typeof modal.showModal === 'function') modal.showModal();
+      else window.alert(`${title}: ${message}`);
+    };
+
+    closeBtn?.addEventListener('click', () => modal?.close());
+
+    form?.addEventListener('submit', (event) => {
+      const email = (form.querySelector('input[name="email"]')?.value || '').trim();
+      const doc = (form.querySelector('input[name="document"]')?.value || '').trim();
+      const password = (form.querySelector('input[name="password"]')?.value || '');
+      const consent = form.querySelector('input[name="consent"]')?.checked;
+      const disciplines = Array.from(form.querySelectorAll('input[name="discipline_name[]"]'))
+        .map((input) => (input?.value || '').trim())
+        .filter(Boolean);
+
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+        event.preventDefault();
+        showModal('Dato inválido', 'El correo debe tener formato válido (ejemplo@correo.com).');
+        return;
+      }
+      if (!/^[0-9-]{6,30}$/.test(doc)) {
+        event.preventDefault();
+        showModal('Dato inválido', 'El número de documento solo puede contener números y guiones.');
+        return;
+      }
+      if (password.length < 8) {
+        event.preventDefault();
+        showModal('Dato inválido', 'La contraseña debe tener al menos 8 caracteres.');
+        return;
+      }
+      if (!consent) {
+        event.preventDefault();
+        showModal('Dato inválido', 'Debes aceptar el tratamiento de datos personales.');
+        return;
+      }
+      if (disciplines.length === 0) {
+        event.preventDefault();
+        showModal('Dato inválido', 'Debes registrar al menos una prueba/especialidad.');
+      }
+    });
+
+    form?.addEventListener('invalid', (event) => {
+      event.preventDefault();
+      const target = event.target;
+      const label = target?.closest('div')?.querySelector('label')?.textContent?.replace('*', '').trim() || 'campo';
+      showModal('Dato inválido', `Revisa el campo "${label}" y vuelve a intentarlo.`);
+    }, true);
+
     // Funciones para manejar disciplinas dinámicas
     function addDiscipline() {
       const container = document.getElementById('disciplinesContainer');
@@ -361,10 +446,10 @@ const { settings } = data;
 
     // Función para buscar atleta por documento
     async function searchAthlete() {
-      const document = document.getElementById('searchDocument').value.trim();
+      const searchDoc = document.getElementById('searchDocument').value.trim();
       const statusDiv = document.getElementById('searchStatus');
 
-      if (!document) {
+      if (!searchDoc) {
         statusDiv.innerHTML = '<span class="text-red-600">Por favor ingresa un número de documento</span>';
         return;
       }
@@ -372,7 +457,7 @@ const { settings } = data;
       statusDiv.innerHTML = '<span class="text-gray-600">Buscando...</span>';
 
       try {
-        const response = await fetch(`/api/athletes/search?document=${encodeURIComponent(document)}`);
+        const response = await fetch(`/api/athletes/search?document=${encodeURIComponent(searchDoc)}`);
         const result = await response.json();
 
         if (result.success && result.athlete) {
@@ -382,12 +467,9 @@ const { settings } = data;
           document.getElementById('birthdate').value = athlete.birthdate || '';
           document.getElementById('sex').value = athlete.sex || '';
           document.getElementById('municipality').value = athlete.municipality || '';
-          document.getElementById('email').value = athlete.email || '';
           document.getElementById('club').value = athlete.club || '';
           document.getElementById('coach').value = athlete.coach || '';
-          document.getElementById('eps').value = athlete.eps || '';
-          document.getElementById('emergency').value = athlete.emergency || '';
-          document.getElementById('document').value = document;
+          document.getElementById('document').value = searchDoc;
           
           statusDiv.innerHTML = '<span class="text-green-600">✓ Atleta encontrado. Campos completados automáticamente. Por favor verifica y actualiza si es necesario.</span>';
           
@@ -405,6 +487,16 @@ const { settings } = data;
     // Inicializar
     document.addEventListener('DOMContentLoaded', () => {
       updateDeleteButtons();
+      const flags = document.getElementById('registroFlags');
+      const successValue = flags?.dataset?.success || '';
+      const errorValue = flags?.dataset?.error || '';
+      const radicadoValue = flags?.dataset?.radicado || '';
+      const errorMessageValue = flags?.dataset?.errorMessage || '';
+      if (successValue && radicadoValue) {
+        showModal('Registro enviado', `Tu solicitud fue enviada correctamente. Radicado: ${radicadoValue}.`);
+      } else if (errorValue) {
+        showModal('No se pudo enviar', errorMessageValue || 'Revisa los datos del formulario e inténtalo nuevamente.');
+      }
     });
   </script>
 </BaseLayout>
