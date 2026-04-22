@@ -12,7 +12,6 @@ INSERT INTO roles (name, description) VALUES
   ('LIGA', 'Gestion deportiva e institucional'),
   ('ATLETA', 'Perfil de atleta'),
   ('CLUB', 'Gestion del club e inscripciones'),
-  ('ASAMBLEISTA', 'Participacion en asambleas y acceso privado'),
   ('PUBLICO', 'Acceso publico')
 ON CONFLICT (name) DO UPDATE
 SET description = EXCLUDED.description;
@@ -85,6 +84,7 @@ WITH desired(role_name, permission_name) AS (
 
   UNION ALL SELECT 'ORGANO_ADMIN','clubs:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','clubs:approve'
+  UNION ALL SELECT 'ORGANO_ADMIN','users:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','calendar:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','convocatorias:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','competencias:manage'
@@ -99,6 +99,7 @@ WITH desired(role_name, permission_name) AS (
 
   UNION ALL SELECT 'LIGA','clubs:manage'
   UNION ALL SELECT 'LIGA','clubs:approve'
+  UNION ALL SELECT 'LIGA','users:manage'
   UNION ALL SELECT 'LIGA','calendar:manage'
   UNION ALL SELECT 'LIGA','convocatorias:manage'
   UNION ALL SELECT 'LIGA','competencias:manage'
@@ -116,12 +117,6 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ATLETA','postulations:self_read'
 
   UNION ALL SELECT 'CLUB','club:self_manage'
-
-  UNION ALL SELECT 'ASAMBLEISTA','documents:read_private'
-  UNION ALL SELECT 'ASAMBLEISTA','documents:read_private_asamblea'
-  UNION ALL SELECT 'ASAMBLEISTA','assembly:self_panel'
-  UNION ALL SELECT 'ASAMBLEISTA','assembly:attendance:create'
-  UNION ALL SELECT 'ASAMBLEISTA','assembly:observations:create'
 ),
 managed_roles AS (
   SELECT unnest(ARRAY[
@@ -131,7 +126,6 @@ managed_roles AS (
     'LIGA',
     'ATLETA',
     'CLUB',
-    'ASAMBLEISTA',
     'PUBLICO'
   ]::text[]) AS role_name
 )
@@ -176,6 +170,7 @@ WITH desired(role_name, permission_name) AS (
 
   UNION ALL SELECT 'ORGANO_ADMIN','clubs:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','clubs:approve'
+  UNION ALL SELECT 'ORGANO_ADMIN','users:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','calendar:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','convocatorias:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','competencias:manage'
@@ -190,6 +185,7 @@ WITH desired(role_name, permission_name) AS (
 
   UNION ALL SELECT 'LIGA','clubs:manage'
   UNION ALL SELECT 'LIGA','clubs:approve'
+  UNION ALL SELECT 'LIGA','users:manage'
   UNION ALL SELECT 'LIGA','calendar:manage'
   UNION ALL SELECT 'LIGA','convocatorias:manage'
   UNION ALL SELECT 'LIGA','competencias:manage'
@@ -207,12 +203,6 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ATLETA','postulations:self_read'
 
   UNION ALL SELECT 'CLUB','club:self_manage'
-
-  UNION ALL SELECT 'ASAMBLEISTA','documents:read_private'
-  UNION ALL SELECT 'ASAMBLEISTA','documents:read_private_asamblea'
-  UNION ALL SELECT 'ASAMBLEISTA','assembly:self_panel'
-  UNION ALL SELECT 'ASAMBLEISTA','assembly:attendance:create'
-  UNION ALL SELECT 'ASAMBLEISTA','assembly:observations:create'
 )
 INSERT INTO role_permissions (role_name, permission_name)
 SELECT DISTINCT d.role_name, d.permission_name
@@ -220,5 +210,26 @@ FROM desired d
 JOIN roles r ON r.name = d.role_name
 JOIN permissions p ON p.name = d.permission_name
 ON CONFLICT (role_name, permission_name) DO NOTHING;
+
+-- Final cleanup (deprecated roles no longer used by the system)
+UPDATE notifications
+SET target_role = 'ALL'
+WHERE target_role = 'PUBLICO';
+
+DELETE FROM user_roles
+WHERE role_name IN ('ATLETA', 'PUBLICO');
+
+DELETE FROM role_permissions
+WHERE role_name IN ('ATLETA', 'PUBLICO')
+   OR permission_name IN ('athlete:self_manage', 'athlete:self_read', 'postulations:self_read');
+
+DELETE FROM user_permissions
+WHERE permission_name IN ('athlete:self_manage', 'athlete:self_read', 'postulations:self_read');
+
+DELETE FROM roles
+WHERE name IN ('ATLETA', 'PUBLICO', 'ASAMBLEISTA');
+
+DELETE FROM permissions
+WHERE name IN ('athlete:self_manage', 'athlete:self_read', 'postulations:self_read');
 
 COMMIT;

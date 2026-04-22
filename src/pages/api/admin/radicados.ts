@@ -10,13 +10,11 @@ import { db } from '../../../lib/db';
 const schema = z.object({
   id: z.coerce.number().int().positive(),
   decision: z.enum(['approved', 'rejected']),
-  role: z.enum(['PUBLICO', 'ATLETA', 'CLUB', 'ASAMBLEISTA']).optional(),
+  role: z.enum(['CLUB']).optional(),
   reviewNotes: z.string().max(2000).optional().or(z.literal(''))
 });
 
 const ROLE_BY_PROFILE: Record<string, Role> = {
-  atleta: 'ATLETA',
-  usuario: 'PUBLICO',
   club: 'CLUB'
 };
 
@@ -87,7 +85,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (parsed.data.decision === 'approved') {
     const exists = await getUserByEmail(radicado.email);
-    const chosenRole = parsed.data.role || ROLE_BY_PROFILE[radicado.profile] || 'PUBLICO';
+    const chosenRole = parsed.data.role || ROLE_BY_PROFILE[radicado.profile] || 'CLUB';
     let approvedUserId = exists?.id ?? 0;
 
     if (!exists) {
