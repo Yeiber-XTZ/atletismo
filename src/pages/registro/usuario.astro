@@ -90,17 +90,62 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     closeBtn?.addEventListener('click', () => modal?.close());
 
-    form?.addEventListener('submit', (event) => {
-      const email = (form.querySelector('input[name="email"]')?.value || '').trim();
-      const password = (form.querySelector('input[name="password"]')?.value || '');
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
-        event.preventDefault();
-        showModal('Dato inválido', 'El correo debe tener formato válido (ejemplo@correo.com).');
-        return;
+    const getErrorNode = (input) => {
+      if (!input) return null;
+      let node = input.parentElement?.querySelector('[data-inline-error]');
+      if (!node) {
+        node = document.createElement('p');
+        node.setAttribute('data-inline-error', '1');
+        node.className = 'mt-1 text-xs text-red-600';
+        input.parentElement?.appendChild(node);
       }
-      if (password.length < 8) {
+      return node;
+    };
+
+    const setFieldError = (input, message) => {
+      const node = getErrorNode(input);
+      if (!node) return;
+      node.textContent = message;
+      input.classList.add('border-red-400');
+    };
+
+    const clearFieldError = (input) => {
+      const node = getErrorNode(input);
+      if (node) node.textContent = '';
+      input?.classList.remove('border-red-400');
+    };
+
+    const emailInput = form?.querySelector('input[name="email"]');
+    const passwordInput = form?.querySelector('input[name="password"]');
+
+    const validateEmail = () => {
+      const value = (emailInput?.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        setFieldError(emailInput, 'Ingresa un correo válido (ejemplo@correo.com).');
+        return false;
+      }
+      clearFieldError(emailInput);
+      return true;
+    };
+
+    const validatePassword = () => {
+      const value = passwordInput?.value || '';
+      if (value.length < 8) {
+        setFieldError(passwordInput, 'La contraseña debe tener al menos 8 caracteres.');
+        return false;
+      }
+      clearFieldError(passwordInput);
+      return true;
+    };
+
+    emailInput?.addEventListener('input', validateEmail);
+    passwordInput?.addEventListener('input', validatePassword);
+
+    form?.addEventListener('submit', (event) => {
+      const isValid = [validateEmail(), validatePassword()].every(Boolean);
+      if (!isValid) {
         event.preventDefault();
-        showModal('Dato inválido', 'La contraseña debe tener al menos 8 caracteres.');
+        showModal('Dato inválido', 'Corrige los campos marcados en rojo para continuar.');
       }
     });
 

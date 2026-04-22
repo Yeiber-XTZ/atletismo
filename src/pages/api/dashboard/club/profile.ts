@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { requireUser, requireRoles, assertClubOwnership } from '../../../../lib/guards';
-import { updateClubById } from '../../../../lib/clubs';
+import { requireUser, requireRoles } from '../../../../lib/guards';
+import { getClubByOwnerUserId, updateClubById } from '../../../../lib/clubs';
 import { saveFileUpload, saveFileUploadRecord } from '../../../../lib/file-upload';
 import { logAudit } from '../../../../lib/audit';
 import { ClubProfileSchema } from '../../../../lib/validation/club-profile';
@@ -24,7 +24,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return new Response('Invalid payload', { status: 400 });
   }
 
-  assertClubOwnership(user, parsed.data.clubId);
+  const ownedClub = !user.clubId && user.id ? await getClubByOwnerUserId(Number(user.id)) : null;
+  const effectiveClubId = user.clubId ? Number(user.clubId) : ownedClub?.id ?? 0;
+  if (!effectiveClubId || parsed.data.clubId !== effectiveClubId) {
+    return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+  }
 
   const imageFile = form.get('imageFile');
   const legalDocumentFile = form.get('legalDocumentFile');

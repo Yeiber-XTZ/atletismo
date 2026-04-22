@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
-import { assertClubOwnership, requireRoles, requireUser } from '../../../../lib/guards';
+import { requireRoles, requireUser } from '../../../../lib/guards';
 import { createClubTechnicalStaff, deleteClubTechnicalStaffById } from '../../../../lib/club-technical-staff';
 import { logAudit } from '../../../../lib/audit';
+import { getClubByOwnerUserId } from '../../../../lib/clubs';
 
 const createSchema = z.object({
   clubId: z.coerce.number().int().positive(),
@@ -24,6 +25,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const form = await request.formData();
     const action = String(form.get('action') ?? 'create');
+    const ownedClub = !user.clubId && user.id ? await getClubByOwnerUserId(Number(user.id)) : null;
+    const effectiveClubId = user.clubId ? Number(user.clubId) : ownedClub?.id ?? 0;
 
     if (action === 'delete') {
       const parsedDelete = deleteSchema.safeParse({
@@ -34,7 +37,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         return Response.redirect(new URL('/dashboard/club?error=staff_delete_invalid', request.url), 302);
       }
 
-      assertClubOwnership(user, parsedDelete.data.clubId);
+      if (!effectiveClubId || parsedDelete.data.clubId !== effectiveClubId) {
+        const err = new Error('Forbidden');
+        (err as any).status = 403;
+        throw err;
+      }
       await deleteClubTechnicalStaffById(parsedDelete.data);
       await logAudit({
         userId: Number(user.id) || null,
@@ -60,7 +67,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return Response.redirect(new URL('/dashboard/club?error=staff_invalid', request.url), 302);
     }
 
-    assertClubOwnership(user, parsedCreate.data.clubId);
+    if (!effectiveClubId || parsedCreate.data.clubId !== effectiveClubId) {
+      const err = new Error('Forbidden');
+      (err as any).status = 403;
+      throw err;
+    }
     const created = await createClubTechnicalStaff(parsedCreate.data);
     await logAudit({
       userId: Number(user.id) || null,

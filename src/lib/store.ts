@@ -198,6 +198,7 @@ export type Store = {
     }>;
   }>;
   clubs: Array<{
+    id?: number;
     name: string;
     municipality: string;
     athletes: number;

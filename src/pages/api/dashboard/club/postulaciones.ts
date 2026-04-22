@@ -5,6 +5,7 @@ import { createPostulacion, existsPostulacionDuplicada, PostulationStatus } from
 import { logAudit } from '../../../../lib/audit';
 import { getHomeData } from '../../../../lib/content';
 import { slugify } from '../../../../lib/slug';
+import { getClubByOwnerUserId } from '../../../../lib/clubs';
 
 const schema = z.object({
   clubId: z.coerce.number().int().positive(),
@@ -20,7 +21,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     requireRoles(user, ['CLUB']);
 
     const form = await request.formData();
-    const fallbackClubId = user.clubId ? Number(user.clubId) : 0;
+    const ownedClub = !user.clubId && user.id ? await getClubByOwnerUserId(Number(user.id)) : null;
+    const fallbackClubId = user.clubId ? Number(user.clubId) : ownedClub?.id ?? 0;
     const payload = {
       clubId: Number(form.get('clubId') ?? fallbackClubId),
       athleteName: String(form.get('athleteName') ?? ''),
@@ -34,7 +36,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.convocatoriaSlug)}?error=invalid_postulation`, request.url), 302);
     }
 
-    assertClubOwnership(user, parsed.data.clubId);
+    if (!fallbackClubId) {
+      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.convocatoriaSlug)}?error=no_club`, request.url), 302);
+    }
+    assertClubOwnership({ ...user, clubId: fallbackClubId }, parsed.data.clubId);
 
     const content = await getHomeData();
     const convocatoria = (content.convocatorias ?? []).find((c) => slugify(c.title) === parsed.data.convocatoriaSlug);

@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar.astro';
 import FooterKinetic from '../../components/FooterKinetic.astro';
 import { getHomeData } from '../../lib/content';
 import { slugify } from '../../lib/slug';
+import { getClubByOwnerUserId } from '../../lib/clubs';
 
 const data = await getHomeData();
 const { settings, convocatorias } = data;
@@ -13,6 +14,11 @@ const convocatoria = (convocatorias ?? []).find((c) => slugify(c.title) === slug
 const user = Astro.locals.user;
 const postulated = Astro.url.searchParams.get('postulated');
 const error = Astro.url.searchParams.get('error');
+let effectiveClubId = user?.clubId ? Number(user.clubId) : 0;
+if (!effectiveClubId && user?.role === 'CLUB' && user?.id) {
+  const ownedClub = await getClubByOwnerUserId(Number(user.id));
+  effectiveClubId = ownedClub?.id ?? 0;
+}
 
 const postulationErrorMessage =
   error === 'duplicate'
@@ -110,9 +116,9 @@ if (!convocatoria) {
                 ) : null}
 
                 {user?.role === 'CLUB' ? (
-                  user?.clubId ? (
+                  effectiveClubId ? (
                     <form method="POST" action="/api/dashboard/club/postulaciones" class="grid gap-3">
-                      <input type="hidden" name="clubId" value={String(user.clubId)} />
+                      <input type="hidden" name="clubId" value={String(effectiveClubId)} />
                       <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
                       <input type="hidden" name="convocatoriaSlug" value={slug} />
                       <label class="form-label">Nombre del atleta a postular *</label>

@@ -153,6 +153,11 @@ const rolePermissionData = isSuperAdmin
 const rolesMeta = rolePermissionData.roles;
 const permissionsMeta = rolePermissionData.permissions;
 const rolePermissionMatrix = rolePermissionData.matrix;
+const clubsWithId = (data.clubs ?? [])
+  .filter((club: any) => Number.isFinite(Number(club?.id)))
+  .map((club: any) => ({ ...club, id: Number(club.id) }))
+  .sort((a: any, b: any) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'es-CO'));
+const clubNameById = new Map<number, string>(clubsWithId.map((club: any) => [Number(club.id), String(club.name ?? '')]));
 const laLigaContent = data.publicSite?.laLiga;
 const laLigaPrinciplesRows = (laLigaContent?.principles?.length ? laLigaContent.principles : [{ icon: 'star', title: '', desc: '' }]);
 const laLigaGovernanceRows = (laLigaContent?.governanceItems?.length ? laLigaContent.governanceItems : [{ label: '', title: '' }]);
@@ -1149,8 +1154,15 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 </select>
               </div>
               <div class="md:col-span-1">
-                <label class="admin-label">Club ID</label>
-                <input class="admin-input" name="clubId" placeholder="(opcional)" />
+                <label class="admin-label">Club</label>
+                <select class="admin-input" name="clubId">
+                  <option value="">Sin club (opcional)</option>
+                  {clubsWithId.map((club) => (
+                    <option value={String(club.id)}>
+                      #{club.id} · {club.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div class="md:col-span-2">
                 <label class="admin-label">Contraseña</label>
@@ -1180,7 +1192,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     <th class="text-left p-3 font-medium">Email</th>
                     <th class="text-left p-3 font-medium">Nombre</th>
                     <th class="text-left p-3 font-medium">Rol</th>
-                    <th class="text-left p-3 font-medium">Club ID</th>
+                    <th class="text-left p-3 font-medium">Club</th>
                     <th class="text-left p-3 font-medium">Activo</th>
                     <th class="text-left p-3 font-medium">Acciones</th>
                   </tr>
@@ -1203,7 +1215,19 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         </select>
                       </td>
                       <td class="p-3 align-top">
-                        <input class="admin-input" form={`update-${u.id}`} name="clubId" value={u.clubId ?? ''} placeholder="(vacío)" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'} />
+                        <div class="space-y-2">
+                          <div class="text-xs text-gray-500">
+                            {u.clubId ? `Actual: #${u.clubId} · ${clubNameById.get(Number(u.clubId)) ?? 'Sin nombre'}` : 'Actual: Sin club'}
+                          </div>
+                          <select class="admin-input" form={`update-${u.id}`} name="clubId" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                            <option value="" selected={!u.clubId}>Sin club</option>
+                            {clubsWithId.map((club) => (
+                              <option value={String(club.id)} selected={Number(u.clubId ?? 0) === Number(club.id)}>
+                                #{club.id} · {club.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </td>
                       <td class="p-3 align-top">
                         <label class="inline-flex items-center gap-2 text-xs text-gray-600">
@@ -1277,9 +1301,9 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Solicitudes de Registro</h4>
         </div>
         <div class="admin-card-body space-y-4">
-          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-            <strong>¿Qué es un radicado?</strong> Es el número único de seguimiento de cada solicitud de registro.
-          </div>
+          <p class="text-sm text-gray-500">
+            Gestiona las solicitudes de registro pendientes: revisa datos, asigna rol y aprueba o rechaza.
+          </p>
 
           <div class="space-y-3">
             {registrationRadicados.map((item) => (

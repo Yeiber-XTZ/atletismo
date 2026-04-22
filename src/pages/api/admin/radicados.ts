@@ -5,6 +5,7 @@ import { createUser, getUserByEmail } from '../../../lib/users';
 import { getRadicadoById, reviewRadicado } from '../../../lib/radicados';
 import { logAudit } from '../../../lib/audit';
 import type { Role } from '../../../lib/rbac';
+import { db } from '../../../lib/db';
 
 const schema = z.object({
   id: z.coerce.number().int().positive(),
@@ -19,6 +20,50 @@ const ROLE_BY_PROFILE: Record<string, Role> = {
   club: 'CLUB'
 };
 
+async function ensureClubLinkedForUser(input: {
+  userId: number;
+  clubName: string;
+  email: string;
+  payload: Record<string, string>;
+}) {
+  const clubName = String(input.clubName ?? '').trim();
+  if (!clubName) return null;
+
+  const municipality = String(input.payload?.municipality ?? '').trim();
+  const contactPhone = String(input.payload?.phone ?? '').trim();
+  const logoUrl = String(input.payload?.logoFileUrl ?? '').trim();
+  const coach = String(input.payload?.legalRepresentative ?? '').trim();
+
+  const upsert = await db.query(
+    `INSERT INTO clubs (name, municipality, status, owner_id, coach, contact_email, contact_phone, logo_url)
+     VALUES ($1, $2, 'En revisión', $3, $4, $5, $6, $7)
+     ON CONFLICT (name)
+     DO UPDATE SET
+       owner_id = COALESCE(clubs.owner_id, EXCLUDED.owner_id),
+       municipality = CASE
+         WHEN COALESCE(clubs.municipality, '') = '' THEN EXCLUDED.municipality
+         ELSE clubs.municipality
+       END,
+       coach = CASE
+         WHEN COALESCE(clubs.coach, '') = '' THEN EXCLUDED.coach
+         ELSE clubs.coach
+       END,
+       contact_email = COALESCE(clubs.contact_email, EXCLUDED.contact_email),
+       contact_phone = COALESCE(clubs.contact_phone, EXCLUDED.contact_phone),
+       logo_url = COALESCE(clubs.logo_url, EXCLUDED.logo_url),
+       updated_at = NOW()
+     RETURNING id`,
+    [clubName, municipality, input.userId, coach, input.email, contactPhone || null, logoUrl || null]
+  );
+
+  const clubId = Number(upsert.rows[0]?.id ?? 0);
+  if (clubId > 0) {
+    await db.query(`UPDATE users SET club_id = $1, updated_at = NOW() WHERE id = $2`, [clubId, input.userId]);
+    return clubId;
+  }
+  return null;
+}
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'approvals:manage', { loginPath: '/admin/login' });
   if ('response' in auth) return auth.response;
@@ -32,25 +77,37 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   });
 
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=users&error=invalid_schema', request.url), 302);
+    return Response.redirect(new URL('/admin?tab=solicitudes&error=invalid_schema', request.url), 302);
   }
 
   const radicado = await getRadicadoById(parsed.data.id);
   if (!radicado || radicado.status !== 'pending') {
-    return Response.redirect(new URL('/admin?tab=users&error=not_found', request.url), 302);
+    return Response.redirect(new URL('/admin?tab=solicitudes&error=not_found', request.url), 302);
   }
 
   if (parsed.data.decision === 'approved') {
     const exists = await getUserByEmail(radicado.email);
+    const chosenRole = parsed.data.role || ROLE_BY_PROFILE[radicado.profile] || 'PUBLICO';
+    let approvedUserId = exists?.id ?? 0;
+
     if (!exists) {
-      const chosenRole = parsed.data.role || ROLE_BY_PROFILE[radicado.profile] || 'PUBLICO';
       const passwordHash = String((radicado.payload?.passwordHash as string) ?? '').trim();
-      if (!passwordHash) return Response.redirect(new URL('/admin?tab=users&error=missing_password', request.url), 302);
-      await createUser({
+      if (!passwordHash) return Response.redirect(new URL('/admin?tab=solicitudes&error=missing_password', request.url), 302);
+      approvedUserId = await createUser({
         email: radicado.email,
         passwordHash,
         role: chosenRole,
         displayName: radicado.name
+      });
+    }
+
+    const shouldLinkClub = radicado.profile === 'club' || chosenRole === 'CLUB' || Boolean(exists?.roles?.includes('CLUB'));
+    if (approvedUserId > 0 && shouldLinkClub) {
+      await ensureClubLinkedForUser({
+        userId: approvedUserId,
+        clubName: radicado.name,
+        email: radicado.email,
+        payload: radicado.payload ?? {}
       });
     }
   }
@@ -72,5 +129,5 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/admin?tab=users&saved=1', request.url), 302);
+  return Response.redirect(new URL('/admin?tab=solicitudes&saved=1', request.url), 302);
 };

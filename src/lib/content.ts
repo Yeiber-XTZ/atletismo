@@ -263,7 +263,8 @@ export async function getHomeData() {
     let clubs: Store['clubs'] = storeFallback.clubs;
     try {
       const clubsRes = await db.query(
-        `SELECT name,
+        `SELECT id,
+                name,
                 municipality,
                 status,
                 coach,
@@ -274,6 +275,7 @@ export async function getHomeData() {
          ORDER BY name ASC`
       );
       clubs = clubsRes.rows.map((r: any) => ({
+        id: Number(r.id),
         name: r.name,
         municipality: r.municipality,
         status: r.status,
