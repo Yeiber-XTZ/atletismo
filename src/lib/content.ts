@@ -6,6 +6,31 @@ import { computeConvocatoriaStatus } from './convocatorias-status';
 
 const hasDatabase = Boolean(getDatabaseUrl());
 let warnedDbOffline = false;
+let cachedHasConvocatoriasStatusMode: boolean | null = null;
+
+function isMissingColumnError(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  return (error as { code?: string }).code === '42703';
+}
+
+async function hasColumn(tableName: string, columnName: string) {
+  const res = await db.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND table_name = $1
+       AND column_name = $2
+     LIMIT 1`,
+    [tableName, columnName]
+  );
+  return res.rowCount > 0;
+}
+
+async function hasConvocatoriasStatusModeColumn() {
+  if (cachedHasConvocatoriasStatusMode !== null) return cachedHasConvocatoriasStatusMode;
+  cachedHasConvocatoriasStatusMode = await hasColumn('convocatorias', 'status_mode');
+  return cachedHasConvocatoriasStatusMode;
+}
 
 export async function getHomeData() {
   if (requireDatabase() && !hasDatabase) {
@@ -35,6 +60,14 @@ export async function getHomeData() {
   }
 
   try {
+    if (cachedHasConvocatoriasStatusMode === null) {
+      try {
+        await hasConvocatoriasStatusModeColumn();
+      } catch {
+        cachedHasConvocatoriasStatusMode = null;
+      }
+    }
+
     try {
       await db.query(
       `UPDATE convocatorias
@@ -53,7 +86,11 @@ export async function getHomeData() {
           OR status_mode IS DISTINCT FROM 'auto'`
       );
     } catch (error) {
-      console.warn('[content] Convocatorias auto-update (status_mode) fallback.', error);
+      if (isMissingColumnError(error)) {
+        cachedHasConvocatoriasStatusMode = false;
+      } else {
+        console.warn('[content] Convocatorias auto-update (status_mode) fallback.', error);
+      }
       await db.query(
         `UPDATE convocatorias
          SET status = CASE
@@ -270,7 +307,11 @@ export async function getHomeData() {
            ORDER BY COALESCE(open_date, created_at) DESC`
         );
       } catch (error) {
-        console.warn('[content] Convocatorias select (status_mode) fallback.', error);
+        if (isMissingColumnError(error)) {
+          cachedHasConvocatoriasStatusMode = false;
+        } else {
+          console.warn('[content] Convocatorias select (status_mode) fallback.', error);
+        }
         convocatoriasRes = await db.query(
           `SELECT title,
                   category,

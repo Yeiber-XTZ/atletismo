@@ -22,12 +22,11 @@ function safeNext(next: string | undefined) {
 }
 
 function canAccessAdminByRole(role: Role) {
-  return role === 'SUPERADMIN' || role === 'ADMIN' || role === 'ORGANO_ADMIN' || role === 'LIGA' || role === 'CLUB' || role === 'ASAMBLEISTA';
+  return role === 'SUPERADMIN' || role === 'ADMIN' || role === 'ORGANO_ADMIN' || role === 'LIGA' || role === 'CLUB';
 }
 
 function defaultRedirectForRole(role: Role) {
   if (role === 'SUPERADMIN') return '/admin?tab=dashboard';
-  if (role === 'ATLETA') return '/dashboard/atleta';
   if (canAccessAdminByRole(role)) return '/admin';
   return '/';
 }
@@ -124,7 +123,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
     }
 
-    const role = (user.roles?.[0] ?? 'PUBLICO') as Role;
+    const role = user.roles?.[0] as Role | undefined;
+    if (!role) {
+      await logAudit({ userId: user.id, action: 'login_failed_no_role', meta: { email: parsed.data.email }, request });
+      return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
+    }
     let sessionClubId = user.clubId ?? null;
     if (role === 'CLUB') {
       sessionClubId = await ensureClubLinkedAtLogin({
@@ -145,12 +148,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const nextPath = safeNext(parsed.data.next);
     if (nextPath) {
-      if (role === 'ATLETA') {
-        const isAthletePath = nextPath === '/dashboard/atleta' || nextPath.startsWith('/dashboard/atleta/');
-        if (!isAthletePath) {
-          return Response.redirect(new URL(defaultRedirectForRole(role), request.url), 302);
-        }
-      }
       if (nextPath.startsWith('/admin') && !canAccessAdminByRole(role)) {
         return Response.redirect(new URL(defaultRedirectForRole(role), request.url), 302);
       }

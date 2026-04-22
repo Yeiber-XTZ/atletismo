@@ -67,13 +67,27 @@ const convocatoriaCategoryOptions = Array.from(
 
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
+const canDelegateAssemblyPermissions = user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN';
+const delegatedAssemblyPermissions = [
+  'assembly:self_panel',
+  'assembly:attendance:create',
+  'assembly:observations:create',
+  'documents:read_private_asamblea'
+];
+const canManageUsers = hasPermission(user, 'users:manage');
+const canManageApprovals = hasPermission(user, 'approvals:manage');
+const canManageAsambleas = hasPermission(user, 'asambleas:manage');
+const canViewAsambleasPanel = canManageAsambleas || hasPermission(user, 'assembly:self_panel');
 if ((contentTab === 'roles' || contentTab === 'permisos') && !isSuperAdmin) {
   return Astro.redirect('/acceso-denegado');
 }
 if (contentTab === 'notificaciones' && !hasPermission(user, 'notificaciones:manage')) {
   return Astro.redirect('/acceso-denegado');
 }
-const users = isAdminRoot ? await listUsers() : [];
+if (contentTab === 'asambleas' && !canViewAsambleasPanel) {
+  return Astro.redirect('/acceso-denegado');
+}
+const users = canManageUsers ? await listUsers() : [];
 const pqrs = isAdminRoot ? await listPqrs(500) : [];
 const canApprovePostulations = hasPermission(user, 'postulations:approve');
 const postulationsDb = (canApprovePostulations || user?.role === 'CLUB') ? await listPostulaciones() : [];
@@ -81,15 +95,15 @@ const postulations = user?.role === 'CLUB' ? postulationsDb.filter(p => String(p
 const postulationSummary = canApprovePostulations
   ? await summarizePostulaciones()
   : { total: 0, byStatus: [], byConvocatoria: [] };
-const asambleas = isAdminRoot || user?.role === 'ASAMBLEISTA' || user?.role === 'LIGA' ? await listAssemblyMeetings() : [];
-const asambleaAttendanceSummary = isAdminRoot
+const asambleas = canViewAsambleasPanel ? await listAssemblyMeetings() : [];
+const asambleaAttendanceSummary = canManageAsambleas
   ? await summarizeAssemblyAttendance()
   : { total: 0, byStatus: [] };
-const asambleaMeetingsSummary = isAdminRoot ? await summarizeAssemblyMeetings() : [];
+const asambleaMeetingsSummary = canManageAsambleas ? await summarizeAssemblyMeetings() : [];
 const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAnalytics() : null;
 const alerts = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAlerts() : [];
 const notifications = isAdminRoot ? await listNotifications() : [];
-const registrationRadicados = isAdminRoot ? await listRadicados('pending') : [];
+const registrationRadicados = canManageApprovals ? await listRadicados('pending') : [];
 const auditLogs = isAdminRoot
   ? await listAuditLogs({
       action: auditAction || undefined,
@@ -134,7 +148,7 @@ const postulationStatusClass = (status: string) => {
 };
 
 const logoUrl = data.settings.logoUrl || '/logo.png';
-const assignableRoles = ROLES.filter((role) => role !== 'PUBLICO' && (isSuperAdmin || role !== 'SUPERADMIN'));
+const assignableRoles = ROLES.filter((role) => isSuperAdmin || role !== 'SUPERADMIN');
 const linesFromArray = (items: string[] | undefined) => (items ?? []).join('\n');
 const downloadsToLines = (downloads: Array<{ label: string; href: string }> | undefined) =>
   (downloads ?? []).map((item) => `${item.label}|${item.href}`).join('\n');
@@ -238,9 +252,9 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
 
 const navItems = rawNavItems.filter((item) => {
   if (item.id === 'perfil') return true;
+  if (item.id === 'asambleas') return canViewAsambleasPanel;
   const r = user?.role;
   if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents', 'alertas'].includes(item.id)) return true;
-  if (r === 'ASAMBLEISTA' && ['asambleas', 'documents'].includes(item.id)) return true;
   const need = NAV_PERMS[item.id] ?? 'admin:all';
   if (need === 'admin:all') return hasPermission(user, 'admin:all');
   return hasPermission(user, need);
@@ -1270,12 +1284,12 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       <td class="p-3 align-top text-gray-500">{u.id}</td>
                       <td class="p-3 align-top">{u.email}</td>
                       <td class="p-3 align-top">
-                        <input class="admin-input" form={`update-${u.id}`} name="displayName" value={u.displayName ?? ''} placeholder="Nombre" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'} />
+                        <input class="admin-input" form={`update-${u.id}`} name="displayName" value={u.displayName ?? ''} placeholder="Nombre" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'} />
                       </td>
                       <td class="p-3 align-top">
-                        <select class="admin-input" form={`update-${u.id}`} name="role" required disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                        <select class="admin-input" form={`update-${u.id}`} name="role" required disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                           {assignableRoles.map((r) => (
-                            <option value={r} selected={(u.roles?.[0] ?? 'PUBLICO') === r}>
+                            <option value={r} selected={(u.roles?.[0] ?? '') === r}>
                               {r}
                             </option>
                           ))}
@@ -1286,7 +1300,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <div class="text-xs text-gray-500">
                             {u.clubId ? `Actual: #${u.clubId} · ${clubNameById.get(Number(u.clubId)) ?? 'Sin nombre'}` : 'Actual: Sin club'}
                           </div>
-                          <select class="admin-input" form={`update-${u.id}`} name="clubId" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                          <select class="admin-input" form={`update-${u.id}`} name="clubId" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                             <option value="" selected={!u.clubId}>Sin club</option>
                             {clubsWithId.map((club) => (
                               <option value={String(club.id)} selected={Number(u.clubId ?? 0) === Number(club.id)}>
@@ -1298,7 +1312,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       </td>
                       <td class="p-3 align-top">
                         <label class="inline-flex items-center gap-2 text-xs text-gray-600">
-                          <input form={`update-${u.id}`} type="checkbox" name="isActive" value="1" checked={u.isActive} disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'} />
+                          <input form={`update-${u.id}`} type="checkbox" name="isActive" value="1" checked={u.isActive} disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'} />
                           Activo
                         </label>
                       </td>
@@ -1307,7 +1321,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <form id={`update-${u.id}`} method="POST" action="/api/admin/users" class="grid gap-2">
                             <input type="hidden" name="intent" value="update" />
                             <input type="hidden" name="id" value={u.id} />
-                            <button class="admin-btn admin-btn-primary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                            <button class="admin-btn admin-btn-primary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                               <span class="material-symbols-outlined">save</span>
                               Guardar
                             </button>
@@ -1315,20 +1329,23 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <form id={`pw-${u.id}`} method="POST" action="/api/admin/users" class="grid gap-2">
                             <input type="hidden" name="intent" value="password" />
                             <input type="hidden" name="id" value={u.id} />
-                            <input class="admin-input" type="password" name="password" placeholder="Nueva contraseña" required disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'} />
-                            <button class="admin-btn admin-btn-secondary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? 'PUBLICO') === 'SUPERADMIN'}>
+                            <input class="admin-input" type="password" name="password" placeholder="Nueva contraseña" required disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'} />
+                            <button class="admin-btn admin-btn-secondary" type="submit" disabled={!isSuperAdmin && (u.roles?.[0] ?? '') === 'SUPERADMIN'}>
                               <span class="material-symbols-outlined">key</span>
                               Reset
                             </button>
                           </form>
-                          {isSuperAdmin ? (
+                          {isSuperAdmin || (canDelegateAssemblyPermissions && (u.roles?.[0] ?? '') === 'CLUB') ? (
                             <form id={`permissions-${u.id}`} method="POST" action="/api/admin/users" class="grid gap-2">
                               <input type="hidden" name="intent" value="permissions" />
                               <input type="hidden" name="id" value={u.id} />
                               <details class="rounded-lg border border-gray-200 bg-gray-50 p-2">
                                 <summary class="cursor-pointer text-xs font-semibold text-gray-600">Permisos extra</summary>
                                 <div class="mt-2 grid gap-1 max-h-40 overflow-auto pr-1">
-                                  {PERMISSIONS.filter((p) => p !== 'super:all').map((perm) => (
+                                  {(isSuperAdmin
+                                    ? PERMISSIONS.filter((p) => p !== 'super:all')
+                                    : PERMISSIONS.filter((p) => delegatedAssemblyPermissions.includes(p))
+                                  ).map((perm) => (
                                     <label class="inline-flex items-center gap-2 text-xs text-gray-600">
                                       <input type="checkbox" name="permissions" value={perm} checked={(u.directPermissions ?? []).includes(perm)} />
                                       <span>{perm}</span>
@@ -1392,8 +1409,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 <div class="md:col-span-2">
                   <label class="admin-label">Rol al aprobar</label>
                   <select class="admin-input" name="role">
-                    <option value="PUBLICO" selected={item.profile === 'usuario'}>PUBLICO</option>
-                    <option value="ATLETA" selected={item.profile === 'atleta'}>ATLETA</option>
                     <option value="CLUB" selected={item.profile === 'club'}>CLUB</option>
                   </select>
                 </div>
@@ -1584,7 +1599,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Asambleas y Asistencia</h4>
         </div>
         <div class="admin-card-body">
-          {user?.role === 'ASAMBLEISTA' ? (
+          {!canManageAsambleas ? (
             <>
               <p class="text-sm text-gray-500 mb-4">A continuación encuentras el listado de asambleas convocadas y sus respectivos órdenes del día.</p>
               <div class="space-y-4">
@@ -1626,7 +1641,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           ) : (
             <>
               <p class="text-sm text-gray-500">
-                Gestiona convocatorias de asamblea, agenda y anexos. Este módulo alimenta el panel del asambleísta.
+                Gestiona convocatorias de asamblea, agenda y anexos. Este módulo alimenta el panel de asambleas.
               </p>
 
               <div class="mt-4 grid gap-3 md:grid-cols-3">
@@ -2137,7 +2152,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Documentos y Noticias</h4>
         </div>
         <div class="admin-card-body">
-          {user?.role === 'CLUB' || user?.role === 'ASAMBLEISTA' ? (
+          {user?.role === 'CLUB' || hasPermission(user, 'documents:read_private_asamblea') ? (
             <>
               <p class="text-sm text-gray-500 mb-4">Aquí encontrarás documentos, circulares y actas importantes para tu gestión.</p>
               <div class="space-y-3">

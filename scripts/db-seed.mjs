@@ -62,10 +62,7 @@ try {
     ['ADMIN', 'Control total'],
     ['ORGANO_ADMIN', 'Gestion de organo administrativo'],
     ['LIGA', 'Gestión deportiva e institucional'],
-    ['ATLETA', 'Perfil de atleta'],
-    ['CLUB', 'Gestión del club e inscripciones'],
-    ['ASAMBLEISTA', 'Lectura privada'],
-    ['PUBLICO', 'Lectura pública']
+    ['CLUB', 'Gestión del club e inscripciones']
   ];
   for (const [name, description] of roles) {
     await client.query('INSERT INTO roles (name, description) VALUES ($1,$2) ON CONFLICT (name) DO NOTHING', [
@@ -93,9 +90,6 @@ try {
     ['documents:read_private', 'Leer documentos privados'],
     ['postulations:approve', 'Aprobar postulaciones'],
     ['club:self_manage', 'Gestión propia de club'],
-    ['athlete:self_manage', 'Gestion propia de atleta'],
-    ['athlete:self_read', 'Lectura del perfil deportivo propio'],
-    ['postulations:self_read', 'Seguimiento de postulaciones propias'],
     ['assembly:self_panel', 'Acceso al panel de asamblea'],
     ['assembly:attendance:create', 'Registrar asistencia de asamblea'],
     ['assembly:observations:create', 'Registrar observaciones de asamblea'],
@@ -141,6 +135,7 @@ try {
     ORGANO_ADMIN: [
       'clubs:manage',
       'clubs:approve',
+      'users:manage',
       'calendar:manage',
       'convocatorias:manage',
       'competencias:manage',
@@ -154,6 +149,7 @@ try {
     LIGA: [
       'clubs:manage',
       'clubs:approve',
+      'users:manage',
       'calendar:manage',
       'convocatorias:manage',
       'competencias:manage',
@@ -164,16 +160,7 @@ try {
       'postulations:approve',
       'approvals:manage'
     ],
-    ATLETA: ['athlete:self_manage', 'athlete:self_read', 'postulations:self_read'],
     CLUB: ['club:self_manage'],
-    ASAMBLEISTA: [
-      'documents:read_private',
-      'documents:read_private_asamblea',
-      'assembly:self_panel',
-      'assembly:attendance:create',
-      'assembly:observations:create'
-    ],
-    PUBLICO: []
   };
   for (const role of Object.keys(rolePerms)) {
     for (const perm of rolePerms[role]) {
@@ -284,3 +271,4 @@ try {
 } finally {
   await client.end();
 }
+
