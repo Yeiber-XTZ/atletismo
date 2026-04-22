@@ -38,6 +38,12 @@ function invalidRedirectPath(next: string | undefined) {
   return '/login?error=invalid';
 }
 
+function inactiveRedirectPath(next: string | undefined) {
+  const safe = safeNext(next);
+  if (safe.startsWith('/admin')) return '/admin/login?error=inactive';
+  return '/login?error=inactive';
+}
+
 function dbRedirectPath(next: string | undefined) {
   const safe = safeNext(next);
   if (safe.startsWith('/admin')) return '/admin/login?error=db';
@@ -105,7 +111,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   try {
     const user = await getUserByEmail(parsed.data.email);
-    if (!user || !user.isActive || !verifyPassword(parsed.data.password, user.passwordHash)) {
+    if (!user) {
+      await logAudit({ userId: null, action: 'login_failed', meta: { email: parsed.data.email }, request });
+      return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
+    }
+    if (!user.isActive) {
+      await logAudit({ userId: user.id, action: 'login_inactive', meta: { email: parsed.data.email }, request });
+      return Response.redirect(new URL(inactiveRedirectPath(parsed.data.next), request.url), 302);
+    }
+    if (!verifyPassword(parsed.data.password, user.passwordHash)) {
       await logAudit({ userId: null, action: 'login_failed', meta: { email: parsed.data.email }, request });
       return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
     }

@@ -11,7 +11,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const password = String(form.get('password') ?? '');
   try {
     const user = await getUserByEmail(email);
-    if (!user || !user.isActive || !verifyPassword(password, user.passwordHash)) {
+    if (!user) {
+      await logAudit({ userId: null, action: 'admin_login_failed', meta: { email }, request });
+      return Response.redirect(new URL('/admin/login?error=invalid', request.url), 302);
+    }
+    if (!user.isActive) {
+      await logAudit({ userId: user.id, action: 'admin_login_inactive', meta: { email }, request });
+      return Response.redirect(new URL('/admin/login?error=inactive', request.url), 302);
+    }
+    if (!verifyPassword(password, user.passwordHash)) {
       await logAudit({ userId: null, action: 'admin_login_failed', meta: { email }, request });
       return Response.redirect(new URL('/admin/login?error=invalid', request.url), 302);
     }

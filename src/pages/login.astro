@@ -85,6 +85,11 @@ const next = Astro.url.searchParams.get('next') ?? '';
                 Credenciales inválidas. Verifica e intenta de nuevo.
               </div>
             ) : null}
+            {error === 'inactive' ? (
+              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                Tu solicitud aún está pendiente de aprobación por la Liga.
+              </div>
+            ) : null}
             {error === 'db' ? (
               <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                 La base de datos no está disponible. Inicia PostgreSQL/Docker y vuelve a intentar.
