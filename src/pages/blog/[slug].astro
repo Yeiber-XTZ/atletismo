@@ -47,6 +47,13 @@ if (!post) {
                 <img src={post.imageUrl} alt={post.title} class="w-full max-h-[420px] object-cover" referrerpolicy="no-referrer" />
               </div>
             ) : null}
+            {post.videoUrl ? (
+              <div class="mb-8 overflow-hidden rounded-2xl ring-1 ring-slate-100 bg-black">
+                <video class="w-full max-h-[420px]" controls preload="metadata" src={post.videoUrl}>
+                  Tu navegador no soporta video HTML5.
+                </video>
+              </div>
+            ) : null}
             <div class="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
               <span class="inline-flex items-center gap-2">
                 <span class="material-symbols-outlined text-base">calendar_month</span>

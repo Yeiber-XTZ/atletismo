@@ -30,6 +30,11 @@ export const db = {
   }
 };
 
+export async function getDb() {
+  if (!pool) return null;
+  return db;
+}
+
 export function isDbUnavailableError(error: unknown) {
   const code = String((error as any)?.code ?? '');
   const message = String((error as any)?.message ?? '');

@@ -260,10 +260,14 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   published_date DATE,
   tags JSONB NOT NULL DEFAULT '[]'::jsonb,
   image_url TEXT,
+  video_url TEXT,
   body JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE IF EXISTS blog_posts
+  ADD COLUMN IF NOT EXISTS video_url TEXT;
 
 -- Official documents (PDFs, images, etc.)
 CREATE TABLE IF NOT EXISTS documents (
@@ -337,7 +341,18 @@ CREATE TABLE IF NOT EXISTS postulations (
 CREATE INDEX IF NOT EXISTS idx_postulations_club_id ON postulations(club_id);
 CREATE INDEX IF NOT EXISTS idx_postulations_status ON postulations(status);
 CREATE INDEX IF NOT EXISTS idx_postulations_created_at ON postulations(created_at);
-CREATE INDEX IF NOT EXISTS idx_postulations_submitted_by ON postulations(submitted_by_user_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'postulations'
+      AND column_name = 'submitted_by_user_id'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_postulations_submitted_by ON postulations(submitted_by_user_id)';
+  END IF;
+END $$;
 
 -- Clubs
 CREATE TABLE IF NOT EXISTS clubs (
@@ -390,8 +405,31 @@ CREATE INDEX IF NOT EXISTS idx_convocatorias_created_at ON convocatorias(created
 CREATE INDEX IF NOT EXISTS idx_convocatoria_categories_name ON convocatoria_categories(name);
 CREATE INDEX IF NOT EXISTS idx_competencias_date ON competencias(event_date);
 CREATE INDEX IF NOT EXISTS idx_clubs_name ON clubs(name);
-CREATE INDEX IF NOT EXISTS idx_rankings_municipality ON rankings(municipality);
-CREATE INDEX IF NOT EXISTS idx_rankings_club ON rankings(club);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'rankings'
+      AND column_name = 'municipality'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_rankings_municipality ON rankings(municipality)';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'rankings'
+      AND column_name = 'club'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_rankings_club ON rankings(club)';
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS assembly_meetings (
   id SERIAL PRIMARY KEY,

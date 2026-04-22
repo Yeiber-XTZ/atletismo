@@ -32,7 +32,21 @@ run('docker', [
 ]);
 
 // Apply schema.sql (mounted at /schema.sql).
-run('docker', ['compose', 'exec', '-T', 'db', 'psql', '-U', user, '-d', db, '-f', '/schema.sql']);
+run('docker', [
+  'compose',
+  'exec',
+  '-T',
+  'db',
+  'psql',
+  '-v',
+  'ON_ERROR_STOP=1',
+  '-U',
+  user,
+  '-d',
+  db,
+  '-f',
+  '/schema.sql'
+]);
 
 // Seed default content the first time (uses host DATABASE_URL).
 run('node', ['scripts/db-seed.mjs', '--if-empty']);

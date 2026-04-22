@@ -17,6 +17,7 @@ const schema = z
       date: z.string().min(0).max(40),
       tags: z.array(z.string().min(1).max(40)).min(0).max(24),
       imageUrl: urlOrPath,
+      videoUrl: urlOrPath,
       body: z.array(z.string().min(1).max(800)).min(0).max(80)
     })
   )
@@ -46,6 +47,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const tags = form.getAll('blogTags').map((value) => String(value).trim());
     const imageFiles = form.getAll('blogImageFile');
     const imageUrls = form.getAll('blogImageUrl').map((value) => String(value).trim());
+    const videoFiles = form.getAll('blogVideoFile');
+    const videoUrls = form.getAll('blogVideoUrl').map((value) => String(value).trim());
     const bodies = form.getAll('blogBody').map((value) => String(value).trim());
 
     const resolvedImageUrls = await Promise.all(
@@ -55,6 +58,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           return uploadPath ?? imageUrls[index] ?? '';
         }
         return imageUrls[index] ?? '';
+      })
+    );
+    const resolvedVideoUrls = await Promise.all(
+      videoFiles.map(async (videoFile, index) => {
+        if (videoFile instanceof File && videoFile.size > 0) {
+          const uploadPath = await saveFileUpload(videoFile, Number(auth.user.id) || null);
+          return uploadPath ?? videoUrls[index] ?? '';
+        }
+        return videoUrls[index] ?? '';
       })
     );
 
@@ -70,6 +82,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           .map((item) => item.trim())
           .filter(Boolean),
         imageUrl: resolvedImageUrls[index] ?? '',
+        videoUrl: resolvedVideoUrls[index] ?? '',
         body: (bodies[index] ?? '')
           .split('\n')
           .map((item) => item.trim())
@@ -87,7 +100,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     ...p,
     slug: (p.slug || slugify(p.title)).trim(),
     type: p.type || 'Técnico',
-    imageUrl: p.imageUrl || undefined
+    imageUrl: p.imageUrl || undefined,
+    videoUrl: p.videoUrl || undefined
   }));
 
   await upsertBlogPosts(normalized);

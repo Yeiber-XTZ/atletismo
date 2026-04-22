@@ -45,12 +45,20 @@ const activeTab = navAliases[requestedTab] ?? requestedTab;
 const contentTab = tabAliases[requestedTab] ?? requestedTab;
 const saved = Astro.url.searchParams.get('saved');
 const error = Astro.url.searchParams.get('error');
+const settingsViewParam = (Astro.url.searchParams.get('settingsView') ?? '').trim().toLowerCase();
+const settingsViews = new Set(['general', 'hero', 'home']);
+const settingsView = settingsViews.has(settingsViewParam) ? settingsViewParam : '';
+const ligaViewParam = (Astro.url.searchParams.get('ligaView') ?? '').trim().toLowerCase();
+const ligaViews = new Set(['hero', 'info', 'estructura']);
+const ligaView = ligaViews.has(ligaViewParam) ? ligaViewParam : '';
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
 const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
 const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
 const auditAction = (Astro.url.searchParams.get('auditAction') ?? '').trim();
 const auditEntity = (Astro.url.searchParams.get('auditEntity') ?? '').trim();
 const auditUserId = Number(Astro.url.searchParams.get('auditUserId') ?? 0);
+const auditPage = Math.max(1, Number(Astro.url.searchParams.get('auditPage') ?? 1));
+const auditPageSize = Math.min(100, Math.max(10, Number(Astro.url.searchParams.get('auditPageSize') ?? 25)));
 
 const data = await getAdminData();
 const managedConvocatoriaCategories = await listConvocatoriaCategories();
@@ -90,14 +98,31 @@ const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' |
 const alerts = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAlerts() : [];
 const notifications = isAdminRoot ? await listNotifications() : [];
 const registrationRadicados = isAdminRoot ? await listRadicados('pending') : [];
-const auditLogs = isAdminRoot
+const auditLogResult = isAdminRoot
   ? await listAuditLogs({
       action: auditAction || undefined,
       entityType: auditEntity || undefined,
       userId: Number.isFinite(auditUserId) && auditUserId > 0 ? auditUserId : undefined,
-      limit: 250
+      limit: auditPageSize,
+      offset: (auditPage - 1) * auditPageSize
     })
-  : [];
+  : { rows: [], total: 0, limit: auditPageSize, offset: 0 };
+const auditLogs = auditLogResult.rows;
+const auditTotal = auditLogResult.total;
+const auditTotalPages = Math.max(1, Math.ceil(auditTotal / auditPageSize));
+const auditPrevPage = Math.max(1, auditPage - 1);
+const auditNextPage = Math.min(auditTotalPages, auditPage + 1);
+const auditBaseParams = new URLSearchParams();
+auditBaseParams.set('tab', 'auditoria');
+if (auditAction) auditBaseParams.set('auditAction', auditAction);
+if (auditEntity) auditBaseParams.set('auditEntity', auditEntity);
+if (Number.isFinite(auditUserId) && auditUserId > 0) auditBaseParams.set('auditUserId', String(auditUserId));
+auditBaseParams.set('auditPageSize', String(auditPageSize));
+const getAuditPageHref = (page: number) => {
+  const params = new URLSearchParams(auditBaseParams);
+  params.set('auditPage', String(Math.max(1, page)));
+  return `/admin?${params.toString()}`;
+};
 const dashboardCards = [
   { label: 'Convocatorias', value: analytics?.totals.convocatorias ?? 0, color: 'from-emerald-500 to-emerald-700' },
   { label: 'Competencias', value: analytics?.totals.competencias ?? 0, color: 'from-sky-500 to-sky-700' },
@@ -367,18 +392,47 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Configuración del Home</h4>
         </div>
         <div class="admin-card-body space-y-4">
-          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <h5 class="text-sm font-semibold text-emerald-800">Configuración guiada</h5>
-            <p class="text-sm text-emerald-700 mt-1">Abre solo la tarjeta que quieras editar y guarda cada bloque por separado.</p>
-            <div class="mt-3 flex flex-wrap gap-2 text-xs">
-              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-general">General</a>
-              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-hero">Hero</a>
-              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-home">CTA y Patrocinadores</a>
-            </div>
-          </div>
+          {!settingsView ? (
+            <>
+              <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <h5 class="text-sm font-semibold text-emerald-800">Módulos de configuración</h5>
+                <p class="text-sm text-emerald-700 mt-1">Elige una tarjeta para abrir su formulario en una vista dedicada.</p>
+              </div>
+              <div class="grid gap-4 md:grid-cols-3">
+                <a href="/admin?tab=settings&settingsView=general" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                  <div class="flex items-start justify-between">
+                    <span class="material-symbols-outlined text-emerald-600">tune</span>
+                    <span class="text-xs font-semibold text-gray-400 group-hover:text-emerald-700">Abrir</span>
+                  </div>
+                  <h5 class="mt-3 text-base font-semibold text-gray-800">Ajustes Generales</h5>
+                  <p class="mt-1 text-sm text-gray-500">Nombre del sitio, logo, colores y canales de contacto.</p>
+                </a>
+                <a href="/admin?tab=settings&settingsView=hero" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                  <div class="flex items-start justify-between">
+                    <span class="material-symbols-outlined text-emerald-600">wallpaper</span>
+                    <span class="text-xs font-semibold text-gray-400 group-hover:text-emerald-700">Abrir</span>
+                  </div>
+                  <h5 class="mt-3 text-base font-semibold text-gray-800">Hero Principal</h5>
+                  <p class="mt-1 text-sm text-gray-500">Título, subtítulo, badge e imagen principal de portada.</p>
+                </a>
+                <a href="/admin?tab=settings&settingsView=home" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                  <div class="flex items-start justify-between">
+                    <span class="material-symbols-outlined text-emerald-600">campaign</span>
+                    <span class="text-xs font-semibold text-gray-400 group-hover:text-emerald-700">Abrir</span>
+                  </div>
+                  <h5 class="mt-3 text-base font-semibold text-gray-800">CTA y Patrocinadores</h5>
+                  <p class="mt-1 text-sm text-gray-500">Botones de acción final y bloque de aliados/sponsors.</p>
+                </a>
+              </div>
+            </>
+          ) : null}
 
-          <details id="cfg-general" class="rounded-xl border border-gray-200 bg-gray-50 p-2" open>
-            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">1) Ajustes generales</summary>
+          {settingsView === 'general' ? (
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+              <div class="mb-2 px-3 py-2 flex items-center justify-between">
+                <h5 class="text-sm font-semibold text-gray-700">1) Ajustes generales</h5>
+                <a href="/admin?tab=settings" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+              </div>
           <form method="POST" action="/api/admin/settings" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
             <h5 class="text-sm font-semibold text-gray-700">1) Ajustes generales</h5>
             <div class="grid gap-5 md:grid-cols-2">
@@ -436,10 +490,15 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
-          </details>
+            </div>
+          ) : null}
 
-          <details id="cfg-hero" class="rounded-xl border border-gray-200 bg-gray-50 p-2">
-            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">2) Hero principal</summary>
+          {settingsView === 'hero' ? (
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+              <div class="mb-2 px-3 py-2 flex items-center justify-between">
+                <h5 class="text-sm font-semibold text-gray-700">2) Hero principal</h5>
+                <a href="/admin?tab=settings" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+              </div>
           <form method="POST" action="/api/admin/hero" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
             <h5 class="text-sm font-semibold text-gray-700">2) Hero principal</h5>
             <div>
@@ -469,10 +528,15 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
-          </details>
+            </div>
+          ) : null}
 
-          <details id="cfg-home" class="rounded-xl border border-gray-200 bg-gray-50 p-2">
-            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">3) CTA y Patrocinadores</summary>
+          {settingsView === 'home' ? (
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+              <div class="mb-2 px-3 py-2 flex items-center justify-between">
+                <h5 class="text-sm font-semibold text-gray-700">3) CTA y Patrocinadores</h5>
+                <a href="/admin?tab=settings" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+              </div>
           <form method="POST" action="/api/admin/home" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
             <h5 class="text-sm font-semibold text-gray-700">3) CTA y Patrocinadores del Home</h5>
             <p class="text-sm text-gray-500">La noticia destacada se maneja en <strong>Noticias</strong> y la competencia destacada en <strong>Competencias</strong>.</p>
@@ -536,7 +600,8 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
-          </details>
+            </div>
+          ) : null}
 
         </div>
       </section>
@@ -553,44 +618,41 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             La imagen principal de cada vista pública se administra en su módulo correspondiente.
           </div>
 
-          <section class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-emerald-100/40 p-4 md:p-5">
-            <h5 class="text-sm font-semibold text-emerald-900">Editar por secciones</h5>
-            <p class="text-xs text-emerald-700 mt-1">Haz clic en una tarjeta para ir directo al formulario.</p>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#form-liga-hero-view">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Imagen</div>
-                <div class="mt-1 font-semibold text-gray-800">Hero de La Liga</div>
-                <div class="mt-1 text-xs text-gray-500">Portada de la vista /la-liga</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#form-liga-info">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Contenido</div>
-                <div class="mt-1 font-semibold text-gray-800">Información institucional</div>
-                <div class="mt-1 text-xs text-gray-500">Acerca de la liga, misión y visión</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-hero" data-open-details="#card-laliga-hero">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Hero y cabecera</div>
-                <div class="mt-1 text-xs text-gray-500">Título, subtítulo e imagen de historia</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-principios" data-open-details="#card-laliga-principios">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Principios institucionales</div>
-                <div class="mt-1 text-xs text-gray-500">Tarjetas de principios de la sección</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-organos" data-open-details="#card-laliga-organos">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Órganos directivos</div>
-                <div class="mt-1 text-xs text-gray-500">Cargos y jerarquía institucional</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-marco" data-open-details="#card-laliga-marco">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Marco normativo</div>
-                <div class="mt-1 text-xs text-gray-500">Documentos y enlaces normativos</div>
-              </button>
-            </div>
-          </section>
+          {!ligaView ? (
+            <section class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-emerald-100/40 p-4 md:p-5">
+              <h5 class="text-sm font-semibold text-emerald-900">Editar por módulos</h5>
+              <p class="text-xs text-emerald-700 mt-1">Haz clic en una tarjeta para abrir su vista dedicada.</p>
+              <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <a href="/admin?tab=liga-publica&ligaView=hero" class="text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div class="text-xs uppercase tracking-wide text-emerald-600">Imagen</div>
+                  <div class="mt-1 font-semibold text-gray-800">Hero de La Liga</div>
+                  <div class="mt-1 text-xs text-gray-500">Portada de la vista /la-liga</div>
+                </a>
+                <a href="/admin?tab=liga-publica&ligaView=info" class="text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div class="text-xs uppercase tracking-wide text-emerald-600">Contenido</div>
+                  <div class="mt-1 font-semibold text-gray-800">Información institucional</div>
+                  <div class="mt-1 text-xs text-gray-500">Acerca de la liga, misión y visión</div>
+                </a>
+                <a href="/admin?tab=liga-publica&ligaView=estructura" class="text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
+                  <div class="mt-1 font-semibold text-gray-800">Estructura pública</div>
+                  <div class="mt-1 text-xs text-gray-500">Cabecera, principios, órganos y marco normativo</div>
+                </a>
+              </div>
+            </section>
+          ) : null}
 
-          <form id="form-liga-hero-view" method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
+          {ligaView ? (
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p class="text-sm font-semibold text-gray-700">
+                {ligaView === 'hero' ? 'Módulo: Hero de La Liga' : ligaView === 'info' ? 'Módulo: Información institucional' : 'Módulo: Estructura pública'}
+              </p>
+              <a href="/admin?tab=liga-publica" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+            </div>
+          ) : null}
+
+          {ligaView === 'hero' ? (
+            <form id="form-liga-hero-view" method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
             <input type="hidden" name="pageKey" value="laLiga" />
             <input type="hidden" name="tab" value="liga-publica" />
             <h5 class="text-sm font-semibold text-gray-700">Hero de la vista La Liga</h5>
@@ -607,8 +669,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
+          ) : null}
 
-          <form id="form-liga-info" method="POST" action="/api/admin/federation" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
+          {ligaView === 'info' ? (
+            <form id="form-liga-info" method="POST" action="/api/admin/federation" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
             <h5 class="text-sm font-semibold text-gray-700">1) Información institucional (contenido)</h5>
             <div>
               <label class="admin-label">Acerca de la liga</label>
@@ -629,8 +693,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
+          ) : null}
 
-          <form method="POST" action="/api/admin/public-site" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5">
+          {ligaView === 'estructura' ? (
+            <form method="POST" action="/api/admin/public-site" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5">
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
               <h5 class="text-sm font-semibold text-gray-700">2) Sección La Liga (estructura pública)</h5>
               <p class="text-xs text-gray-500 mt-1">Usa estas tarjetas para editar solo el bloque que necesites.</p>
@@ -755,11 +821,12 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               <div class="flex items-center justify-end pt-3">
                 <button class="admin-btn admin-btn-primary" type="submit">
                   <span class="material-symbols-outlined">save</span>
-                  Guardar marco normativo
-                </button>
-              </div>
-            </details>
+                Guardar marco normativo
+              </button>
+            </div>
+          </details>
           </form>
+          ) : null}
         </div>
       </section>
     ) : null}
@@ -787,71 +854,94 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/clubs" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Formulario guiado: completa los campos y guarda. Sin JSON.</p>
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Directorio de clubes</p>
+                <p class="text-xs text-gray-500">Los clubes se muestran como tarjetas para una edición más clara.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-club" data-container="#clubs-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar club
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar clubes
+                </button>
+              </div>
+            </div>
             <div id="clubs-container" class="space-y-3" data-repeat-container>
               {data.clubs.map((club) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3" data-club-id={club.id}>
-                  <div>
-                    <label class="admin-label">Nombre</label>
-                    <input class="admin-input" name="clubName" value={club.name} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Municipio</label>
-                    <input class="admin-input" name="clubMunicipality" value={club.municipality} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Atletas</label>
-                    <input class="admin-input" name="clubAthletes" type="number" min="0" value={club.athletes} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Estado</label>
-                    <input class="admin-input" name="clubStatus" value={club.status} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Entrenador</label>
-                    <input class="admin-input" name="clubCoach" value={club.coach} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Categoría</label>
-                    <input class="admin-input" name="clubCategory" value={club.category ?? ''} />
-                  </div>
-                  <div class="md:col-span-3">
-                    <label class="admin-label">Imagen</label>
-                    <input class="admin-input" type="file" name="clubImageFile" accept="image/*" />
-                    <input type="hidden" name="clubImageUrl" value={club.imageUrl ?? ''} />
-                    {club.imageUrl && (
-                      <p class="text-xs text-gray-500 mt-1">Actual: {club.imageUrl}</p>
-                    )}
-                  </div>
-                  <div class="md:col-span-3 flex justify-between items-center gap-2">
-                    {isAdminRoot && club.id ? (
-                      <button
-                        type="button"
-                        class="admin-btn admin-btn-danger js-delete-club-db"
-                        data-club-id={String(club.id)}
-                        data-club-name={club.name}
-                      >
-                        <span class="material-symbols-outlined">delete_forever</span>
-                        Eliminar permanentemente
+                <details class="js-repeat-item rounded-2xl border border-gray-200 bg-white shadow-sm" data-club-id={club.id} data-accordion-group="#clubs-container">
+                  <summary class="cursor-pointer list-none p-4 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {club.imageUrl ? (
+                        <img src={club.imageUrl} alt={club.name} class="h-11 w-11 rounded-full object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-11 w-11 rounded-full border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">groups</span>
+                        </div>
+                      )}
+                      <div class="min-w-0">
+                        <p class="text-xs uppercase tracking-wide text-emerald-700">Club afiliado</p>
+                        <h6 class="text-sm font-semibold text-gray-800 truncate">{club.name || 'Nuevo club'}</h6>
+                      </div>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-4 grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label class="admin-label">Nombre</label>
+                      <input class="admin-input" name="clubName" value={club.name} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Municipio</label>
+                      <input class="admin-input" name="clubMunicipality" value={club.municipality} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Atletas</label>
+                      <input class="admin-input" name="clubAthletes" type="number" min="0" value={club.athletes} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Estado</label>
+                      <input class="admin-input" name="clubStatus" value={club.status} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Entrenador</label>
+                      <input class="admin-input" name="clubCoach" value={club.coach} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Categoría</label>
+                      <input class="admin-input" name="clubCategory" value={club.category ?? ''} />
+                    </div>
+                    <div class="md:col-span-2">
+                      <label class="admin-label">Imagen</label>
+                      <input class="admin-input" type="file" name="clubImageFile" accept="image/*" />
+                      <input type="hidden" name="clubImageUrl" value={club.imageUrl ?? ''} />
+                      {club.imageUrl && (
+                        <p class="text-xs text-gray-500 mt-1">Actual: {club.imageUrl}</p>
+                      )}
+                    </div>
+                    <div class="md:col-span-2 mt-2 flex justify-between items-center gap-2">
+                      {isAdminRoot && club.id ? (
+                        <button
+                          type="button"
+                          class="admin-btn admin-btn-danger js-delete-club-db"
+                          data-club-id={String(club.id)}
+                          data-club-name={club.name}
+                        >
+                          <span class="material-symbols-outlined">delete_forever</span>
+                          Eliminar permanentemente
+                        </button>
+                      ) : <span />}
+                      <button type="button" class="admin-btn admin-btn-secondary js-remove-row">
+                        <span class="material-symbols-outlined">remove_circle_outline</span>
+                        Quitar de la lista
                       </button>
-                    ) : <span />}
-                    <button type="button" class="admin-btn admin-btn-secondary js-remove-row">
-                      <span class="material-symbols-outlined">remove_circle_outline</span>
-                      Quitar de la lista
-                    </button>
+                    </div>
                   </div>
-                </div>
+                </details>
               ))}
-            </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-club">
-                <span class="material-symbols-outlined">add</span>
-                Agregar club
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar clubes
-              </button>
             </div>
           </form>
         </div>
@@ -932,42 +1022,77 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     </button>
                   </div>
                 </form>
-                <div class="mt-3 space-y-2">
-                  {managedConvocatoriaCategories.map((item) => (
-                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 grid gap-2 md:grid-cols-12">
-                      <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-10 grid gap-2 md:grid-cols-6">
-                        <input type="hidden" name="intent" value="update" />
-                        <input type="hidden" name="id" value={item.id} />
-                        <div class="md:col-span-4">
-                          <input class="admin-input" name="name" value={item.name} required />
-                        </div>
-                        <div class="md:col-span-2 flex items-end justify-end">
-                          <button class="admin-btn admin-btn-secondary" type="submit">
-                            <span class="material-symbols-outlined">save</span>
-                            Guardar
+                <details class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3" open>
+                  <summary class="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-gray-700">
+                    <span>Categorías existentes ({managedConvocatoriaCategories.length})</span>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="mt-3 space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {managedConvocatoriaCategories.map((item) => (
+                      <div class="rounded-lg border border-gray-200 bg-white p-3 grid gap-2 md:grid-cols-12">
+                        <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-10 grid gap-2 md:grid-cols-6">
+                          <input type="hidden" name="intent" value="update" />
+                          <input type="hidden" name="id" value={item.id} />
+                          <div class="md:col-span-4">
+                            <input class="admin-input" name="name" value={item.name} required />
+                          </div>
+                          <div class="md:col-span-2 flex items-end justify-end">
+                            <button class="admin-btn admin-btn-secondary" type="submit">
+                              <span class="material-symbols-outlined">save</span>
+                              Guardar
+                            </button>
+                          </div>
+                        </form>
+                        <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-2 flex items-end justify-end">
+                          <input type="hidden" name="intent" value="delete" />
+                          <input type="hidden" name="id" value={item.id} />
+                          <button class="admin-btn admin-btn-danger" type="submit">
+                            <span class="material-symbols-outlined">delete</span>
+                            Eliminar
                           </button>
-                        </div>
-                      </form>
-                      <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-2 flex items-end justify-end">
-                        <input type="hidden" name="intent" value="delete" />
-                        <input type="hidden" name="id" value={item.id} />
-                        <button class="admin-btn admin-btn-danger" type="submit">
-                          <span class="material-symbols-outlined">delete</span>
-                          Eliminar
-                        </button>
-                      </form>
-                    </div>
-                  ))}
-                  {managedConvocatoriaCategories.length === 0 ? (
-                    <p class="text-xs text-gray-400">No hay categorías definidas aún.</p>
-                  ) : null}
-                </div>
+                        </form>
+                      </div>
+                    ))}
+                    {managedConvocatoriaCategories.length === 0 ? (
+                      <p class="text-xs text-gray-400">No hay categorías definidas aún.</p>
+                    ) : null}
+                  </div>
+                </details>
               </section>
               <form method="POST" action="/api/admin/convocatorias" encType="multipart/form-data" class="grid gap-5 mt-6">
-                <p class="text-xs text-gray-400">Campos guiados. Requisitos y categorías: una línea por ítem.</p>
-                <div class="space-y-3" data-repeat-container>
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-700">Tarjetas de convocatorias</p>
+                    <p class="text-xs text-gray-500">Cada tarjeta muestra solo nombre e imagen. Haz clic para editar el detalle.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-convocatoria">
+                      <span class="material-symbols-outlined">add</span>
+                      Agregar convocatoria
+                    </button>
+                    <button class="admin-btn admin-btn-primary" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar convocatorias
+                    </button>
+                  </div>
+                </div>
+                <div id="convocatorias-container" class="space-y-3" data-repeat-container>
                   {data.convocatorias.map((conv) => (
-                    <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                    <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#convocatorias-container">
+                      <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                          {conv.imageUrl ? (
+                            <img src={conv.imageUrl} alt={conv.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                          ) : (
+                            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                              <span class="material-symbols-outlined text-base">campaign</span>
+                            </div>
+                          )}
+                          <h6 class="text-sm font-semibold text-gray-800 truncate">{conv.title || 'Nueva convocatoria'}</h6>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                      </summary>
+                      <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
                       <div>
                         <label class="admin-label">Título</label>
                         <input class="admin-input" name="convTitle" value={conv.title} required />
@@ -1033,18 +1158,9 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           Quitar convocatoria
                         </button>
                       </div>
-                    </div>
+                      </div>
+                    </details>
                   ))}
-                </div>
-                <div class="flex items-center justify-end gap-2 pt-2">
-                  <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-convocatoria">
-                    <span class="material-symbols-outlined">add</span>
-                    Agregar convocatoria
-                  </button>
-                  <button class="admin-btn admin-btn-primary" type="submit">
-                    <span class="material-symbols-outlined">save</span>
-                    Guardar convocatorias
-                  </button>
                 </div>
               </form>
             </>
@@ -1122,10 +1238,39 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 </div>
               </form>
               <form method="POST" action="/api/admin/competencias" encType="multipart/form-data" class="grid gap-5 mt-6">
-                <p class="text-xs text-gray-400">Descargas: una línea por archivo con formato `Etiqueta|URL`.</p>
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-700">Tarjetas de competencias</p>
+                    <p class="text-xs text-gray-500">Cada tarjeta muestra nombre e imagen. Haz clic para editar.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-competencia" data-container="#competencias-container">
+                      <span class="material-symbols-outlined">add</span>
+                      Agregar competencia
+                    </button>
+                    <button class="admin-btn admin-btn-primary" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar competencias
+                    </button>
+                  </div>
+                </div>
                 <div id="competencias-container" class="space-y-3" data-repeat-container>
                   {data.competencias.map((comp) => (
-                    <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                    <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#competencias-container">
+                      <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                          {comp.imageUrl ? (
+                            <img src={comp.imageUrl} alt={comp.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                          ) : (
+                            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                              <span class="material-symbols-outlined text-base">sports</span>
+                            </div>
+                          )}
+                          <h6 class="text-sm font-semibold text-gray-800 truncate">{comp.title || 'Nueva competencia'}</h6>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                      </summary>
+                      <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
                       <div>
                         <label class="admin-label">Título</label>
                         <input class="admin-input" name="compTitle" value={comp.title} required />
@@ -1166,22 +1311,13 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                           <span class="material-symbols-outlined">delete</span>
                           Quitar competencia
-                    </button>
-                  </div>
+                        </button>
+                      </div>
+                      </div>
+                    </details>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-competencia" data-container="#competencias-container">
-                <span class="material-symbols-outlined">add</span>
-                Agregar competencia
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar competencias
-              </button>
-            </div>
-          </form>
+              </form>
             </>
           )}
         </div>
@@ -2083,8 +2219,9 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Auditoria Avanzada</h4>
         </div>
         <div class="admin-card-body">
-          <form method="GET" action="/admin" class="mb-4 rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-5">
+          <form method="GET" action="/admin" class="mb-4 rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-6">
             <input type="hidden" name="tab" value="auditoria" />
+            <input type="hidden" name="auditPage" value="1" />
             <div>
               <label class="admin-label">Accion</label>
               <input class="admin-input" name="auditAction" value={auditAction} placeholder="login_success" />
@@ -2096,6 +2233,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             <div>
               <label class="admin-label">Usuario ID</label>
               <input class="admin-input" name="auditUserId" value={auditUserId > 0 ? String(auditUserId) : ''} placeholder="123" />
+            </div>
+            <div>
+              <label class="admin-label">Por página</label>
+              <select class="admin-input" name="auditPageSize">
+                <option value="25" selected={auditPageSize === 25}>25</option>
+                <option value="50" selected={auditPageSize === 50}>50</option>
+                <option value="100" selected={auditPageSize === 100}>100</option>
+              </select>
             </div>
             <div class="md:col-span-2 flex items-end gap-2">
               <button class="admin-btn admin-btn-primary" type="submit">
@@ -2109,24 +2254,71 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
 
-          <div class="space-y-2">
-            {auditLogs.map((log) => (
-              <article class="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <div class="flex items-center justify-between gap-3">
-                  <div class="text-sm">
-                    <strong class="text-gray-700">{log.action}</strong> · {log.entityType || 'general'} · {log.entityId || '-'}
-                  </div>
-                  <div class="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString('es-CO')}</div>
-                </div>
-                <div class="text-xs text-gray-600 mt-1">Usuario: {log.userId ?? '-'} · IP: {log.ip ?? '-'}</div>
-              </article>
-            ))}
+          <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr class="text-left text-gray-500">
+                    <th class="px-4 py-3 font-semibold">Fecha</th>
+                    <th class="px-4 py-3 font-semibold">Usuario</th>
+                    <th class="px-4 py-3 font-semibold">Acción</th>
+                    <th class="px-4 py-3 font-semibold">Módulo</th>
+                    <th class="px-4 py-3 font-semibold">Entidad</th>
+                    <th class="px-4 py-3 font-semibold">IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log) => (
+                    <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60">
+                      <td class="px-4 py-3 whitespace-nowrap text-gray-600">{new Date(log.timestamp || log.createdAt).toLocaleString('es-CO')}</td>
+                      <td class="px-4 py-3">
+                        <div class="font-semibold text-gray-800">
+                          {log.userDisplayName || log.userEmail || (log.userId ? `Usuario #${log.userId}` : 'Sistema')}
+                        </div>
+                        <div class="text-xs text-gray-500">{log.userEmail || (log.userId ? `ID ${log.userId}` : 'Sin usuario')}</div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{log.action}</span>
+                      </td>
+                      <td class="px-4 py-3 text-gray-700">{log.tableName || log.entityType || 'general'}</td>
+                      <td class="px-4 py-3 text-gray-600">{log.entityId || '-'}</td>
+                      <td class="px-4 py-3 text-gray-600">{log.ip || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {auditLogs.length === 0 ? (
-              <div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+              <div class="p-6 text-sm text-gray-500 border-t border-gray-100">
                 Sin registros con esos filtros.
               </div>
             ) : null}
           </div>
+
+          {auditLogs.length > 0 ? (
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <p class="text-sm text-gray-600">
+                Mostrando <strong>{auditLogResult.offset + 1}</strong>–<strong>{Math.min(auditLogResult.offset + auditLogResult.limit, auditTotal)}</strong> de <strong>{auditTotal}</strong> registros
+              </p>
+              <div class="flex items-center gap-2">
+                <a
+                  class:list={['admin-btn admin-btn-secondary', auditPage <= 1 ? 'pointer-events-none opacity-50' : '']}
+                  href={getAuditPageHref(auditPrevPage)}
+                >
+                  <span class="material-symbols-outlined">chevron_left</span>
+                  Anterior
+                </a>
+                <span class="text-sm font-semibold text-gray-700">Página {auditPage} de {auditTotalPages}</span>
+                <a
+                  class:list={['admin-btn admin-btn-secondary', auditPage >= auditTotalPages ? 'pointer-events-none opacity-50' : '']}
+                  href={getAuditPageHref(auditNextPage)}
+                >
+                  Siguiente
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </a>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
     ) : null}
@@ -2194,35 +2386,49 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 </form>
               </div>
 
-              <div class="mt-6 space-y-3">
+              <div class="mt-6 space-y-3" id="documents-container">
                 {docs.map((d) => (
-                  <form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="admin-list-item md:grid-cols-6">
-                    <input type="hidden" name="id" value={d.id} />
-                    <input type="hidden" name="intent" value="update" />
-                    <input type="hidden" name="existingHref" value={d.href} />
-                    <input class="admin-input" name="title" value={d.title} required />
-                    <input class="admin-input" name="category" value={d.category ?? ''} placeholder="Categoría" />
-                    <input class="admin-input" type="date" name="date" value={d.date ?? ''} placeholder="YYYY-MM-DD" />
-                    <div class="md:col-span-2">
-                      <input class="admin-input" type="file" name="file" />
-                      <p class="text-xs text-gray-500 mt-1">
-                        Archivo actual: <a class="text-emerald-700 underline break-all" href={d.href} target="_blank" rel="noreferrer">{d.href}</a>
-                      </p>
-                    </div>
-                    <button class="admin-btn admin-btn-primary" type="submit">
-                      <span class="material-symbols-outlined">save</span>
-                      Actualizar
-                    </button>
-                    <textarea class="admin-input min-h-[80px] md:col-span-5" name="description">{d.description}</textarea>
-                    <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-5">
-                      <input type="checkbox" name="isSensitive" value="1" />
-                      Marcar como sensible para solicitar aprobación
-                    </label>
-                    <button class="admin-btn admin-btn-danger" type="submit" name="intent" value="delete">
-                      <span class="material-symbols-outlined">delete</span>
-                      Eliminar
-                    </button>
-                  </form>
+                  <details class="rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#documents-container">
+                    <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">description</span>
+                        </div>
+                        <div class="min-w-0">
+                          <h6 class="text-sm font-semibold text-gray-800 truncate">{d.title || 'Documento'}</h6>
+                          <p class="text-xs text-gray-500 truncate">{d.category || 'Sin categoría'} · {d.date || 'Sin fecha'}</p>
+                        </div>
+                      </div>
+                      <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                    </summary>
+                    <form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-6">
+                      <input type="hidden" name="id" value={d.id} />
+                      <input type="hidden" name="intent" value="update" />
+                      <input type="hidden" name="existingHref" value={d.href} />
+                      <input class="admin-input" name="title" value={d.title} required />
+                      <input class="admin-input" name="category" value={d.category ?? ''} placeholder="Categoría" />
+                      <input class="admin-input" type="date" name="date" value={d.date ?? ''} placeholder="YYYY-MM-DD" />
+                      <div class="md:col-span-2">
+                        <input class="admin-input" type="file" name="file" />
+                        <p class="text-xs text-gray-500 mt-1">
+                          Archivo actual: <a class="text-emerald-700 underline break-all" href={d.href} target="_blank" rel="noreferrer">{d.href}</a>
+                        </p>
+                      </div>
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar
+                      </button>
+                      <textarea class="admin-input min-h-[80px] md:col-span-5" name="description">{d.description}</textarea>
+                      <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-5">
+                        <input type="checkbox" name="isSensitive" value="1" />
+                        Marcar como sensible para solicitar aprobación
+                      </label>
+                      <button class="admin-btn admin-btn-danger" type="submit" name="intent" value="delete">
+                        <span class="material-symbols-outlined">delete</span>
+                        Eliminar
+                      </button>
+                    </form>
+                  </details>
                 ))}
                 {docs.length === 0 && (
                   <div class="text-center py-12 text-gray-400">
@@ -2257,42 +2463,65 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/ranking" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Formulario guiado del ranking destacado.</p>
-            <div class="space-y-3" data-repeat-container>
-              {rankingRows.map((item) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-5">
-                  <input class="admin-input" name="rankingRank" value={item.rank} placeholder="Puesto" required />
-                  <input class="admin-input md:col-span-2" name="rankingAthlete" value={item.athlete} placeholder="Atleta" required />
-                  <input class="admin-input md:col-span-2" name="rankingClub" value={item.club} placeholder="Club" />
-                  <input class="admin-input" name="rankingMark" value={item.mark} placeholder="Marca" required />
-                  <input class="admin-input" name="rankingStatus" value={item.status} placeholder="Estado" />
-                  <input class="admin-input" name="rankingCategory" value={item.category} placeholder="Categoría" />
-                  <input class="admin-input" name="rankingDiscipline" value={item.discipline} placeholder="Disciplina" />
-                  <input class="admin-input" name="rankingGender" value={item.gender} placeholder="Sexo" />
-                  <input class="admin-input" name="rankingSeason" value={item.season} placeholder="Temporada" />
-                  <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" />
-                  <input type="hidden" name="rankingImageUrl" value={item.imageUrl ?? ''} />
-                  {item.imageUrl && (
-                    <p class="text-xs text-gray-500 mt-1 md:col-span-3">Actual: {item.imageUrl}</p>
-                  )}
-                  <div class="md:col-span-5 flex justify-end">
-                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
-                      <span class="material-symbols-outlined">delete</span>
-                      Quitar fila
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Tarjetas de ranking</p>
+                <p class="text-xs text-gray-500">Cada tarjeta muestra nombre e imagen. Haz clic para editar la fila.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-ranking" data-container="#ranking-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar fila
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar ranking
+                </button>
+              </div>
             </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-ranking">
-                <span class="material-symbols-outlined">add</span>
-                Agregar fila
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar ranking
-              </button>
+            <div id="ranking-container" class="space-y-3" data-repeat-container>
+              {rankingRows.map((item) => (
+                <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#ranking-container">
+                  <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.athlete} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">leaderboard</span>
+                        </div>
+                      )}
+                      <div class="min-w-0">
+                        <h6 class="text-sm font-semibold text-gray-800 truncate">{item.athlete || 'Nueva fila'}</h6>
+                        <p class="text-xs text-gray-500 truncate">#{item.rank || '-'} · {item.club || 'Sin club'}</p>
+                      </div>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-5">
+                    <input class="admin-input" name="rankingRank" value={item.rank} placeholder="Puesto" required />
+                    <input class="admin-input md:col-span-2" name="rankingAthlete" value={item.athlete} placeholder="Atleta" required />
+                    <input class="admin-input md:col-span-2" name="rankingClub" value={item.club} placeholder="Club" />
+                    <input class="admin-input" name="rankingMark" value={item.mark} placeholder="Marca" required />
+                    <input class="admin-input" name="rankingStatus" value={item.status} placeholder="Estado" />
+                    <input class="admin-input" name="rankingCategory" value={item.category} placeholder="Categoría" />
+                    <input class="admin-input" name="rankingDiscipline" value={item.discipline} placeholder="Disciplina" />
+                    <input class="admin-input" name="rankingGender" value={item.gender} placeholder="Sexo" />
+                    <input class="admin-input" name="rankingSeason" value={item.season} placeholder="Temporada" />
+                    <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" />
+                    <input type="hidden" name="rankingImageUrl" value={item.imageUrl ?? ''} />
+                    {item.imageUrl && (
+                      <p class="text-xs text-gray-500 mt-1 md:col-span-3">Actual: {item.imageUrl}</p>
+                    )}
+                    <div class="md:col-span-5 flex justify-end">
+                      <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                        <span class="material-symbols-outlined">delete</span>
+                        Quitar fila
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              ))}
             </div>
           </form>
         </div>
@@ -2456,51 +2685,71 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/news" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Formulario guiado. Contenido: una línea por párrafo.</p>
-            <div class="space-y-3" data-repeat-container>
-              {data.news.map((item) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-                  <input class="admin-input" name="newsSlug" value={item.slug} placeholder="Slug (opcional)" />
-                  <input class="admin-input md:col-span-2" name="newsTitle" value={item.title} placeholder="Título" required />
-                  <input class="admin-input md:col-span-3" name="newsExcerpt" value={item.excerpt} placeholder="Resumen" />
-                  <input class="admin-input" name="newsDate" type="date" value={item.date} />
-                  <input class="admin-input" name="newsCategory" value={item.category} placeholder="Categoría" />
-                  <input class="admin-input" type="file" name="newsImageFile" accept="image/*" />
-                  <input type="hidden" name="newsImageUrl" value={item.imageUrl ?? ''} />
-                  {item.imageUrl && (
-                    <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
-                  )}
-                  <div>
-                    <label class="admin-label">Destacada en Home</label>
-                    <select class="admin-input" name="newsFeaturedOrder">
-                      <option value="" selected={!featuredNewsOrderMap.get(item.slug)}>No destacar</option>
-                      <option value="1" selected={featuredNewsOrderMap.get(item.slug) === 1}>Orden 1</option>
-                      <option value="2" selected={featuredNewsOrderMap.get(item.slug) === 2}>Orden 2</option>
-                      <option value="3" selected={featuredNewsOrderMap.get(item.slug) === 3}>Orden 3</option>
-                    </select>
-                  </div>
-                  <div class="md:col-span-3">
-                    <label class="admin-label">Párrafos del contenido</label>
-                    <textarea class="admin-input min-h-[110px]" name="newsBody">{linesFromArray(item.body)}</textarea>
-                  </div>
-                  <div class="md:col-span-3 flex justify-end">
-                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
-                      <span class="material-symbols-outlined">delete</span>
-                      Quitar noticia
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Tarjetas de noticias</p>
+                <p class="text-xs text-gray-500">Cada tarjeta muestra título e imagen. Haz clic para editar.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-news" data-container="#news-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar noticia
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar noticias
+                </button>
+              </div>
             </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-news">
-                <span class="material-symbols-outlined">add</span>
-                Agregar noticia
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar noticias
-              </button>
+            <div id="news-container" class="space-y-3" data-repeat-container>
+              {data.news.map((item) => (
+                <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#news-container">
+                  <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">newspaper</span>
+                        </div>
+                      )}
+                      <h6 class="text-sm font-semibold text-gray-800 truncate">{item.title || 'Nueva noticia'}</h6>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+                    <input class="admin-input" name="newsSlug" value={item.slug} placeholder="Slug (opcional)" />
+                    <input class="admin-input md:col-span-2" name="newsTitle" value={item.title} placeholder="Título" required />
+                    <input class="admin-input md:col-span-3" name="newsExcerpt" value={item.excerpt} placeholder="Resumen" />
+                    <input class="admin-input" name="newsDate" type="date" value={item.date} />
+                    <input class="admin-input" name="newsCategory" value={item.category} placeholder="Categoría" />
+                    <input class="admin-input" type="file" name="newsImageFile" accept="image/*" />
+                    <input type="hidden" name="newsImageUrl" value={item.imageUrl ?? ''} />
+                    {item.imageUrl && (
+                      <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
+                    )}
+                    <div>
+                      <label class="admin-label">Destacada en Home</label>
+                      <select class="admin-input" name="newsFeaturedOrder">
+                        <option value="" selected={!featuredNewsOrderMap.get(item.slug)}>No destacar</option>
+                        <option value="1" selected={featuredNewsOrderMap.get(item.slug) === 1}>Orden 1</option>
+                        <option value="2" selected={featuredNewsOrderMap.get(item.slug) === 2}>Orden 2</option>
+                        <option value="3" selected={featuredNewsOrderMap.get(item.slug) === 3}>Orden 3</option>
+                      </select>
+                    </div>
+                    <div class="md:col-span-3">
+                      <label class="admin-label">Párrafos del contenido</label>
+                      <textarea class="admin-input min-h-[110px]" name="newsBody">{linesFromArray(item.body)}</textarea>
+                    </div>
+                    <div class="md:col-span-3 flex justify-end">
+                      <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                        <span class="material-symbols-outlined">delete</span>
+                        Quitar noticia
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              ))}
             </div>
           </form>
         </div>
@@ -2527,43 +2776,66 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/blog" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Etiquetas separadas por coma. Contenido: una línea por párrafo.</p>
-            <div class="space-y-3" data-repeat-container>
-              {data.blogPosts.map((item) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-                  <input class="admin-input" name="blogSlug" value={item.slug} placeholder="Slug (opcional)" />
-                  <input class="admin-input" name="blogType" value={item.type} placeholder="Tipo" />
-                  <input class="admin-input" name="blogDate" type="date" value={item.date} />
-                  <input class="admin-input md:col-span-3" name="blogTitle" value={item.title} placeholder="Título" required />
-                  <input class="admin-input md:col-span-3" name="blogExcerpt" value={item.excerpt} placeholder="Resumen" />
-                  <input class="admin-input md:col-span-2" name="blogTags" value={(item.tags ?? []).join(', ')} placeholder="tags, separadas, por, coma" />
-                  <input class="admin-input" type="file" name="blogImageFile" accept="image/*" />
-                  <input type="hidden" name="blogImageUrl" value={item.imageUrl ?? ''} />
-                  {item.imageUrl && (
-                    <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
-                  )}
-                  <div class="md:col-span-3">
-                    <label class="admin-label">Párrafos del contenido</label>
-                    <textarea class="admin-input min-h-[110px]" name="blogBody">{linesFromArray(item.body)}</textarea>
-                  </div>
-                  <div class="md:col-span-3 flex justify-end">
-                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
-                      <span class="material-symbols-outlined">delete</span>
-                      Quitar artículo
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Tarjetas de blog</p>
+                <p class="text-xs text-gray-500">Cada tarjeta muestra título e imagen. Haz clic para editar.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-blog" data-container="#blog-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar artículo
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar blog
+                </button>
+              </div>
             </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-blog">
-                <span class="material-symbols-outlined">add</span>
-                Agregar artículo
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar blog
-              </button>
+            <div id="blog-container" class="space-y-3" data-repeat-container>
+              {data.blogPosts.map((item) => (
+                <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#blog-container">
+                  <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">article</span>
+                        </div>
+                      )}
+                      <h6 class="text-sm font-semibold text-gray-800 truncate">{item.title || 'Nuevo artículo'}</h6>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+                    <input class="admin-input" name="blogSlug" value={item.slug} placeholder="Slug (opcional)" />
+                    <input class="admin-input" name="blogType" value={item.type} placeholder="Tipo" />
+                    <input class="admin-input" name="blogDate" type="date" value={item.date} />
+                    <input class="admin-input md:col-span-3" name="blogTitle" value={item.title} placeholder="Título" required />
+                    <input class="admin-input md:col-span-3" name="blogExcerpt" value={item.excerpt} placeholder="Resumen" />
+                    <input class="admin-input md:col-span-2" name="blogTags" value={(item.tags ?? []).join(', ')} placeholder="tags, separadas, por, coma" />
+                    <input class="admin-input" type="file" name="blogImageFile" accept="image/*" />
+                    <input type="hidden" name="blogImageUrl" value={item.imageUrl ?? ''} />
+                    {item.imageUrl && (
+                      <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
+                    )}
+                    <input class="admin-input md:col-span-2" type="file" name="blogVideoFile" accept="video/*" />
+                    <input class="admin-input md:col-span-3" name="blogVideoUrl" value={item.videoUrl ?? ''} placeholder="URL del video (opcional)" />
+                    <p class="text-xs text-gray-500 mt-1 md:col-span-3">Puedes subir archivo o pegar URL. Si subes archivo, se usará ese video.</p>
+                    <div class="md:col-span-3">
+                      <label class="admin-label">Párrafos del contenido</label>
+                      <textarea class="admin-input min-h-[110px]" name="blogBody">{linesFromArray(item.body)}</textarea>
+                    </div>
+                    <div class="md:col-span-3 flex justify-end">
+                      <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                        <span class="material-symbols-outlined">delete</span>
+                        Quitar artículo
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              ))}
             </div>
           </form>
         </div>
@@ -2684,58 +2956,94 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
     </template>
     <template id="tpl-club">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <div><label class="admin-label">Nombre</label><input class="admin-input" name="clubName" required /></div>
-        <div><label class="admin-label">Municipio</label><input class="admin-input" name="clubMunicipality" required /></div>
-        <div><label class="admin-label">Atletas</label><input class="admin-input" name="clubAthletes" type="number" min="0" value="0" required /></div>
-        <div><label class="admin-label">Estado</label><input class="admin-input" name="clubStatus" value="Activo" required /></div>
-        <div><label class="admin-label">Entrenador</label><input class="admin-input" name="clubCoach" required /></div>
-        <div><label class="admin-label">Categoría</label><input class="admin-input" name="clubCategory" /></div>
-        <div class="md:col-span-3"><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="clubImageFile" accept="image/*" /><input type="hidden" name="clubImageUrl" value="" /></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar club</button></div>
-      </div>
+      <details class="js-repeat-item rounded-2xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#clubs-container">
+        <summary class="cursor-pointer list-none p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-11 w-11 rounded-full border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">groups</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs uppercase tracking-wide text-emerald-700">Club afiliado</p>
+              <h6 class="text-sm font-semibold text-gray-800 truncate">Nuevo club</h6>
+            </div>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-4 grid gap-3 md:grid-cols-2">
+          <div><label class="admin-label">Nombre</label><input class="admin-input" name="clubName" required /></div>
+          <div><label class="admin-label">Municipio</label><input class="admin-input" name="clubMunicipality" required /></div>
+          <div><label class="admin-label">Atletas</label><input class="admin-input" name="clubAthletes" type="number" min="0" value="0" required /></div>
+          <div><label class="admin-label">Estado</label><input class="admin-input" name="clubStatus" value="Activo" required /></div>
+          <div><label class="admin-label">Entrenador</label><input class="admin-input" name="clubCoach" required /></div>
+          <div><label class="admin-label">Categoría</label><input class="admin-input" name="clubCategory" /></div>
+          <div class="md:col-span-2"><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="clubImageFile" accept="image/*" /><input type="hidden" name="clubImageUrl" value="" /></div>
+          <div class="md:col-span-2 mt-2 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar club</button></div>
+        </div>
+      </details>
     </template>
     <template id="tpl-convocatoria">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <div><label class="admin-label">Título</label><input class="admin-input" name="convTitle" required /></div>
-        <div>
-          <label class="admin-label">Categoría</label>
-          <select class="admin-input" name="convCategory" required>
-            {convocatoriaCategoryOptions.map((categoryOption, idx) => (
-              <option value={categoryOption} selected={idx === 0}>{categoryOption}</option>
-            ))}
-            {convocatoriaCategoryOptions.length === 0 ? (
-              <option value="General" selected>General</option>
-            ) : null}
-          </select>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#convocatorias-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">campaign</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva convocatoria</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <div><label class="admin-label">Título</label><input class="admin-input" name="convTitle" required /></div>
+          <div>
+            <label class="admin-label">Categoría</label>
+            <select class="admin-input" name="convCategory" required>
+              {convocatoriaCategoryOptions.map((categoryOption, idx) => (
+                <option value={categoryOption} selected={idx === 0}>{categoryOption}</option>
+              ))}
+              {convocatoriaCategoryOptions.length === 0 ? (
+                <option value="General" selected>General</option>
+              ) : null}
+            </select>
+          </div>
+          <div>
+            <label class="admin-label">Estado</label>
+            <input class="admin-input" value="Próximamente (automático)" disabled />
+          </div>
+          <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
+          <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
+          <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
+          <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required /></div>
+          <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
+          <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
+          <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
+          <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
+          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
         </div>
-        <div>
-          <label class="admin-label">Estado</label>
-          <input class="admin-input" value="Próximamente (automático)" disabled />
-        </div>
-        <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
-        <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
-        <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
-        <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required /></div>
-        <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
-        <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
-        <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
-        <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
-      </div>
+      </details>
     </template>
         <template id="tpl-competencia">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <div><label class="admin-label">Título</label><input class="admin-input" name="compTitle" required /></div>
-        <div><label class="admin-label">Estado</label><input class="admin-input" name="compStatus" value="Confirmado" required /></div>
-        <div><label class="admin-label">Fecha</label><input class="admin-input" name="compDate" type="date" /></div>
-        <div><label class="admin-label">Ubicación</label><input class="admin-input" name="compLocation" required /></div>
-        <div><label class="admin-label">Tipo</label><input class="admin-input" name="compType" /></div>
-        <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="compImageFile" accept="image/*" /><input type="hidden" name="compImageUrl" value="" /></div>
-        <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[90px]" name="compDescription" required></textarea></div>
-        <div class="md:col-span-3"><label class="admin-label">Descargas (`Etiqueta|URL`)</label><textarea class="admin-input min-h-[90px]" name="compDownloads"></textarea></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar competencia</button></div>
-      </div>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#competencias-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">sports</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva competencia</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <div><label class="admin-label">Título</label><input class="admin-input" name="compTitle" required /></div>
+          <div><label class="admin-label">Estado</label><input class="admin-input" name="compStatus" value="Confirmado" required /></div>
+          <div><label class="admin-label">Fecha</label><input class="admin-input" name="compDate" type="date" /></div>
+          <div><label class="admin-label">Ubicación</label><input class="admin-input" name="compLocation" required /></div>
+          <div><label class="admin-label">Tipo</label><input class="admin-input" name="compType" /></div>
+          <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="compImageFile" accept="image/*" /><input type="hidden" name="compImageUrl" value="" /></div>
+          <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[90px]" name="compDescription" required></textarea></div>
+          <div class="md:col-span-3"><label class="admin-label">Descargas (`Etiqueta|URL`)</label><textarea class="admin-input min-h-[90px]" name="compDownloads"></textarea></div>
+          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar competencia</button></div>
+        </div>
+      </details>
     </template>
     <template id="tpl-asamblea">
       <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
@@ -2751,19 +3059,30 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
     </template>
     <template id="tpl-ranking">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-5">
-        <input class="admin-input" name="rankingRank" placeholder="Puesto" required />
-        <input class="admin-input md:col-span-2" name="rankingAthlete" placeholder="Atleta" required />
-        <input class="admin-input md:col-span-2" name="rankingClub" placeholder="Club" />
-        <input class="admin-input" name="rankingMark" placeholder="Marca" required />
-        <input class="admin-input" name="rankingStatus" placeholder="Estado" />
-        <input class="admin-input" name="rankingCategory" placeholder="Categoría" />
-        <input class="admin-input" name="rankingDiscipline" placeholder="Disciplina" />
-        <input class="admin-input" name="rankingGender" placeholder="Sexo" />
-        <input class="admin-input" name="rankingSeason" placeholder="Temporada" />
-        <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="rankingImageUrl" value="" />
-        <div class="md:col-span-5 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar fila</button></div>
-      </div>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#ranking-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">leaderboard</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva fila</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-5">
+          <input class="admin-input" name="rankingRank" placeholder="Puesto" required />
+          <input class="admin-input md:col-span-2" name="rankingAthlete" placeholder="Atleta" required />
+          <input class="admin-input md:col-span-2" name="rankingClub" placeholder="Club" />
+          <input class="admin-input" name="rankingMark" placeholder="Marca" required />
+          <input class="admin-input" name="rankingStatus" placeholder="Estado" />
+          <input class="admin-input" name="rankingCategory" placeholder="Categoría" />
+          <input class="admin-input" name="rankingDiscipline" placeholder="Disciplina" />
+          <input class="admin-input" name="rankingGender" placeholder="Sexo" />
+          <input class="admin-input" name="rankingSeason" placeholder="Temporada" />
+          <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="rankingImageUrl" value="" />
+          <div class="md:col-span-5 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar fila</button></div>
+        </div>
+      </details>
     </template>
     <template id="tpl-result">
       <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-4">
@@ -2781,42 +3100,83 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
     </template>
     <template id="tpl-news">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <input class="admin-input" name="newsSlug" placeholder="Slug (opcional)" />
-        <input class="admin-input md:col-span-2" name="newsTitle" placeholder="Título" required />
-        <input class="admin-input md:col-span-3" name="newsExcerpt" placeholder="Resumen" />
-        <input class="admin-input" name="newsDate" type="date" />
-        <input class="admin-input" name="newsCategory" placeholder="Categoría" />
-        <input class="admin-input" type="file" name="newsImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="newsImageUrl" value="" />
-        <div>
-          <label class="admin-label">Destacada en Home</label>
-          <select class="admin-input" name="newsFeaturedOrder">
-            <option value="" selected>No destacar</option>
-            <option value="1">Orden 1</option>
-            <option value="2">Orden 2</option>
-            <option value="3">Orden 3</option>
-          </select>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#news-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">newspaper</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva noticia</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <input class="admin-input" name="newsSlug" placeholder="Slug (opcional)" />
+          <input class="admin-input md:col-span-2" name="newsTitle" placeholder="Título" required />
+          <input class="admin-input md:col-span-3" name="newsExcerpt" placeholder="Resumen" />
+          <input class="admin-input" name="newsDate" type="date" />
+          <input class="admin-input" name="newsCategory" placeholder="Categoría" />
+          <input class="admin-input" type="file" name="newsImageFile" accept="image/*" />
+          <input type="hidden" name="newsImageUrl" value="" />
+          <div>
+            <label class="admin-label">Destacada en Home</label>
+            <select class="admin-input" name="newsFeaturedOrder">
+              <option value="" selected>No destacar</option>
+              <option value="1">Orden 1</option>
+              <option value="2">Orden 2</option>
+              <option value="3">Orden 3</option>
+            </select>
+          </div>
+          <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="newsBody"></textarea></div>
+          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar noticia</button></div>
         </div>
-        <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="newsBody"></textarea></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar noticia</button></div>
-      </div>
+      </details>
     </template>
     <template id="tpl-blog">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <input class="admin-input" name="blogSlug" placeholder="Slug (opcional)" />
-        <input class="admin-input" name="blogType" placeholder="Tipo" />
-        <input class="admin-input" name="blogDate" type="date" />
-        <input class="admin-input md:col-span-3" name="blogTitle" placeholder="Título" required />
-        <input class="admin-input md:col-span-3" name="blogExcerpt" placeholder="Resumen" />
-        <input class="admin-input md:col-span-2" name="blogTags" placeholder="tags, separadas, por, coma" />
-        <input class="admin-input" type="file" name="blogImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="blogImageUrl" value="" />
-        <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="blogBody"></textarea></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar artículo</button></div>
-      </div>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#blog-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">article</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nuevo artículo</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <input class="admin-input" name="blogSlug" placeholder="Slug (opcional)" />
+          <input class="admin-input" name="blogType" placeholder="Tipo" />
+          <input class="admin-input" name="blogDate" type="date" />
+          <input class="admin-input md:col-span-3" name="blogTitle" placeholder="Título" required />
+          <input class="admin-input md:col-span-3" name="blogExcerpt" placeholder="Resumen" />
+          <input class="admin-input md:col-span-2" name="blogTags" placeholder="tags, separadas, por, coma" />
+          <input class="admin-input" type="file" name="blogImageFile" accept="image/*" />
+          <input type="hidden" name="blogImageUrl" value="" />
+          <input class="admin-input md:col-span-2" type="file" name="blogVideoFile" accept="video/*" />
+          <input class="admin-input md:col-span-3" name="blogVideoUrl" placeholder="URL del video (opcional)" />
+          <p class="text-xs text-gray-500 mt-1 md:col-span-3">Puedes subir archivo o pegar URL. Si subes archivo, se usará ese video.</p>
+          <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="blogBody"></textarea></div>
+          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar artículo</button></div>
+        </div>
+      </details>
     </template>
 
     <script is:inline>
       const root = document;
+      root.addEventListener('toggle', (event) => {
+        const details = event.target instanceof HTMLDetailsElement ? event.target : null;
+        if (!details || !details.open) return;
+        const groupSelector = details.getAttribute('data-accordion-group');
+        if (!groupSelector) return;
+        const group = root.querySelector(groupSelector);
+        if (!group) return;
+        group.querySelectorAll(`details[data-accordion-group="${groupSelector}"]`).forEach((node) => {
+          if (node instanceof HTMLDetailsElement && node !== details) {
+            node.open = false;
+          }
+        });
+      }, true);
+
       root.addEventListener('click', (event) => {
         const targetEl = event.target instanceof HTMLElement ? event.target : null;
         if (!targetEl) return;

@@ -1,6 +1,6 @@
 ---
 import { hasRole, type AuthUser } from '../lib/rbac';
-const { siteName = 'Liga ChocÃ³', logoUrl = '/logo.png' } = Astro.props;
+const { siteName = 'Liga Chocó', logoUrl = '/logo.png' } = Astro.props;
 
 const currentPath = Astro.url.pathname;
 const isActive = (href: string) => currentPath === href || (href !== '/' && currentPath.startsWith(href));
@@ -48,8 +48,8 @@ const navOrder = [
 ] as const;
 ---
 
-<nav class="navbar-custom" aria-label="NavegaciÃ³n principal">
-  <!-- Declive curvo (como la versiÃ³n anterior) -->
+<nav class="navbar-custom" aria-label="Navegación principal">
+  <!-- Declive curvo (como la versión anterior) -->
   <svg class="navbar-svg-curve" viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true">
     <path
       d="M0,0 L1440,0 L1440,60 C1100,60 800,65 500,75 C300,82 150,95 0,100 Z"
@@ -63,7 +63,7 @@ const navOrder = [
     </a>
 
     <!-- Links (Desktop) -->
-    <div class="navbar-links" aria-label="MenÃº">
+    <div class="navbar-links" aria-label="Menú">
       {navOrder.map((entry) => {
         if (entry.kind === 'link') {
           return (
@@ -111,20 +111,20 @@ const navOrder = [
           <form method="POST" action="/api/logout">
             <button class="navbar-account-logout" type="submit">
               <span class="material-symbols-outlined">logout</span>
-              Cerrar sesiÃ³n
+              Cerrar sesión
             </button>
           </form>
         </div>
       </details>
     ) : (
-      <a class="navbar-login-btn" href={publicLoginHref} aria-label="Iniciar sesiÃ³n">
-        Iniciar sesiÃ³n
+      <a class="navbar-login-btn" href={publicLoginHref} aria-label="Iniciar sesión">
+        Iniciar sesión
       </a>
     )}
 
     <!-- Mobile Menu -->
     <details class="navbar-mobile">
-      <summary aria-label="Abrir menÃº" class="navbar-mobile-toggle">
+      <summary aria-label="Abrir menú" class="navbar-mobile-toggle">
         <span class="material-symbols-outlined">menu</span>
       </summary>
       <div class="navbar-mobile-menu">
@@ -156,12 +156,12 @@ const navOrder = [
             <form method="POST" action="/api/logout" class="px-2">
               <button class="navbar-mobile-logout" type="submit">
                 <span class="material-symbols-outlined">logout</span>
-                Cerrar sesiÃ³n
+                Cerrar sesión
               </button>
             </form>
           </div>
         ) : (
-          <a class="navbar-mobile-login" href={publicLoginHref}>Iniciar sesiÃ³n</a>
+          <a class="navbar-mobile-login" href={publicLoginHref}>Iniciar sesión</a>
         )}
       </div>
     </details>

@@ -123,6 +123,7 @@ export type Store = {
     date: string;
     tags: string[];
     imageUrl?: string;
+    videoUrl?: string;
     body: string[];
   }>;
   events: Array<{
@@ -303,9 +304,9 @@ const defaultStore: Store = {
       footnote: 'Cupos abiertos para semilleros y clubes regionales.'
     },
     sponsors: [
-      { name: 'Indeportes ChocÃ³', href: '#', logoUrl: '' },
-      { name: 'AlcaldÃ­a de QuibdÃ³', href: '#', logoUrl: '' },
-      { name: 'GobernaciÃ³n del ChocÃ³', href: '#', logoUrl: '' },
+      { name: 'Indeportes Chocó', href: '#', logoUrl: '' },
+      { name: 'Alcaldía de Quibdó', href: '#', logoUrl: '' },
+      { name: 'Gobernación del Chocó', href: '#', logoUrl: '' },
       { name: 'Aliado Deportivo', href: '#', logoUrl: '' }
     ]
   },
@@ -859,6 +860,7 @@ function normalizeStore(raw: unknown): Store {
           date: String(p?.date ?? ''),
           tags: Array.isArray(p?.tags) ? p.tags.map((x: any) => String(x)) : [],
           imageUrl: typeof p?.imageUrl === 'string' && p.imageUrl.trim() ? p.imageUrl.trim() : undefined,
+          videoUrl: typeof p?.videoUrl === 'string' && p.videoUrl.trim() ? p.videoUrl.trim() : undefined,
           body: Array.isArray(p?.body) ? p.body.map((x: any) => String(x)) : []
         }))
       : (defaultStore as any).blogPosts,

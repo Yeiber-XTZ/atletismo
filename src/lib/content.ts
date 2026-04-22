@@ -118,7 +118,7 @@ export async function getHomeData() {
        LIMIT 12`
     );
 
-    // Resultados: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Resultados: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let results: Store['results'] = storeFallback.results;
     try {
       const resultsRes = await db.query(
@@ -152,7 +152,7 @@ export async function getHomeData() {
       console.warn('[content] Results table unavailable, falling back to local store.', error);
     }
 
-    // Rankings: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Rankings: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let rankings: Store['rankings'] = storeFallback.rankings;
     try {
       const rankingsRes = await db.query(
@@ -186,7 +186,7 @@ export async function getHomeData() {
       console.warn('[content] Rankings table unavailable, falling back to local store.', error);
     }
 
-    // Noticias: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Noticias: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let news: Store['news'] = storeFallback.news;
     try {
       const newsRes = await db.query(
@@ -214,10 +214,12 @@ export async function getHomeData() {
       console.warn('[content] News table unavailable, falling back to local store.', error);
     }
 
-    // Blog: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Blog: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let blogPosts: Store['blogPosts'] = storeFallback.blogPosts;
     try {
-      const blogRes = await db.query(
+      let blogRes;
+      try {
+        blogRes = await db.query(
         `SELECT slug,
                 COALESCE(type, 'Técnico') as type,
                 title,
@@ -225,11 +227,29 @@ export async function getHomeData() {
                 COALESCE(published_date::text, '') as date,
                 COALESCE(tags, '[]'::jsonb) as tags,
                 COALESCE(image_url, '') as "imageUrl",
+                COALESCE(video_url, '') as "videoUrl",
                 COALESCE(body, '[]'::jsonb) as body
          FROM blog_posts
          ORDER BY COALESCE(published_date, created_at) DESC, id DESC
          LIMIT 500`
-      );
+        );
+      } catch (error) {
+        console.warn('[content] Blog select (video_url) fallback.', error);
+        blogRes = await db.query(
+          `SELECT slug,
+                  COALESCE(type, 'Técnico') as type,
+                  title,
+                  COALESCE(excerpt, '') as excerpt,
+                  COALESCE(published_date::text, '') as date,
+                  COALESCE(tags, '[]'::jsonb) as tags,
+                  COALESCE(image_url, '') as "imageUrl",
+                  COALESCE(body, '[]'::jsonb) as body
+           FROM blog_posts
+           ORDER BY COALESCE(published_date, created_at) DESC, id DESC
+           LIMIT 500`
+        );
+        blogRes.rows = blogRes.rows.map((row: any) => ({ ...row, videoUrl: '' }));
+      }
       blogPosts = blogRes.rows.map((p: any) => ({
         slug: p.slug ?? '',
         type: p.type ?? 'Técnico',
@@ -238,6 +258,7 @@ export async function getHomeData() {
         date: p.date ?? '',
         tags: Array.isArray(p.tags) ? p.tags.map((x: any) => String(x)) : [],
         imageUrl: p.imageUrl || undefined,
+        videoUrl: p.videoUrl || undefined,
         body: Array.isArray(p.body) ? p.body.map((x: any) => String(x)) : []
       }));
     } catch (error) {
