@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { logAudit } from '../../../lib/audit';
 import { getUserFromCookies } from '../../../lib/auth';
 import { getClubByOwnerUserId } from '../../../lib/clubs';
+import { listGeoCatalogs } from '../../../lib/catalogs';
 import { hasPermission } from '../../../lib/rbac';
 import { createAthlete, deleteAthlete, getAthleteEffectiveClubId, updateAthlete } from '../../../lib/athletes-admin';
 import { saveFileUpload } from '../../../lib/file-upload';
@@ -18,7 +19,7 @@ const athleteBaseSchema = z.object({
   countryIso2: z.string().max(2).optional().or(z.literal('')),
   departmentCode: z.string().max(10).optional().or(z.literal('')),
   municipalityCode: z.string().max(10).optional().or(z.literal('')),
-  municipality: z.string().min(2).max(80),
+  municipality: z.string().max(80).optional().or(z.literal('')),
   coach: z.string().max(120).optional().or(z.literal('')),
   eps: z.string().max(120).optional().or(z.literal('')),
   emergencyContact: z.string().max(120).optional().or(z.literal('')),
@@ -56,6 +57,20 @@ function parseDisciplines(raw: string) {
         .filter(Boolean)
     )
   );
+}
+
+let geoCatalogCachePromise: ReturnType<typeof listGeoCatalogs> | null = null;
+async function resolveMunicipalityNameByCode(codeRaw: string, fallbackNameRaw: string) {
+  const fallbackName = String(fallbackNameRaw ?? '').trim();
+  const code = String(codeRaw ?? '').trim();
+  if (!code) return fallbackName;
+
+  geoCatalogCachePromise ??= listGeoCatalogs();
+  const geoCatalog = await geoCatalogCachePromise;
+  const municipalities = Array.isArray(geoCatalog.municipalities) ? geoCatalog.municipalities : [];
+  const byCode = municipalities.find((item) => String(item.code ?? '').trim() === code);
+  if (byCode?.name) return String(byCode.name).trim();
+  return fallbackName;
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -107,6 +122,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       resolvedPhotoUrl = uploadPath ?? resolvedPhotoUrl;
     }
 
+    const municipalityName = await resolveMunicipalityNameByCode(
+      parsed.data.municipalityCode ?? '',
+      parsed.data.municipality ?? ''
+    );
+    if (!municipalityName) {
+      return Response.redirect(new URL('/admin?tab=athletes&error=missing_municipality', request.url), 302);
+    }
+
     try {
       const athleteId = await createAthlete({
         firstName: parsed.data.firstName.trim(),
@@ -119,7 +142,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         countryIso2: parsed.data.countryIso2?.trim() || '',
         departmentCode: parsed.data.departmentCode?.trim() || '',
         municipalityCode: parsed.data.municipalityCode?.trim() || '',
-        municipality: parsed.data.municipality.trim(),
+        municipality: municipalityName,
         coach: parsed.data.coach?.trim() || '',
         eps: parsed.data.eps?.trim() || '',
         emergencyContact: parsed.data.emergencyContact?.trim() || '',
@@ -189,6 +212,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       resolvedPhotoUrl = uploadPath ?? resolvedPhotoUrl;
     }
 
+    const municipalityName = await resolveMunicipalityNameByCode(
+      parsed.data.municipalityCode ?? '',
+      parsed.data.municipality ?? ''
+    );
+    if (!municipalityName) {
+      return Response.redirect(new URL('/admin?tab=athletes&error=missing_municipality', request.url), 302);
+    }
+
     try {
       await updateAthlete(parsed.data.id, {
         firstName: parsed.data.firstName.trim(),
@@ -201,7 +232,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         countryIso2: parsed.data.countryIso2?.trim() || '',
         departmentCode: parsed.data.departmentCode?.trim() || '',
         municipalityCode: parsed.data.municipalityCode?.trim() || '',
-        municipality: parsed.data.municipality.trim(),
+        municipality: municipalityName,
         coach: parsed.data.coach?.trim() || '',
         eps: parsed.data.eps?.trim() || '',
         emergencyContact: parsed.data.emergencyContact?.trim() || '',

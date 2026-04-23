@@ -48,6 +48,13 @@ const activeTab = navAliases[requestedTab] ?? requestedTab;
 const contentTab = tabAliases[requestedTab] ?? requestedTab;
 const saved = Astro.url.searchParams.get('saved');
 const error = Astro.url.searchParams.get('error');
+const errorMessages: Record<string, string> = {
+  invalid_schema: 'Hay campos inválidos o incompletos. Revisa el formulario.',
+  missing_club: 'Tu usuario no tiene club asociado para registrar atletas.',
+  missing_municipality: 'Debes seleccionar un municipio válido.',
+  duplicate_document: 'Ya existe un atleta con ese número de documento.'
+};
+const errorMessage = error ? (errorMessages[error] ?? 'Error al guardar los cambios') : '';
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
 const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
 const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
@@ -361,7 +368,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {error ? (
       <div class="admin-alert admin-alert-error">
         <span class="material-symbols-outlined">error</span>
-        <span>Error al guardar los cambios</span>
+        <span>{errorMessage}</span>
       </div>
     ) : null}
 
@@ -1114,6 +1121,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         </div>
 
                         <label class="admin-label mt-4">Pruebas habilitadas</label>
+                        <p class="mt-1 text-xs text-gray-500"><span class="js-conv-events-count-v3">0</span> pruebas seleccionadas</p>
                         <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
                           <div class="grid gap-2 sm:grid-cols-2">
                             {athleticsEventsCatalog.map((eventItem) => (
@@ -1491,7 +1499,12 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 ? 'Administra atletas de todos los clubes y filtra por club.'
                 : 'Administra únicamente los atletas de tu club.'}
             </p>
-            <button type="button" id="toggle-create-athlete" class="admin-btn admin-btn-secondary">
+            <button
+              type="button"
+              id="toggle-create-athlete"
+              class="admin-btn admin-btn-secondary"
+              disabled={!canManageAllAthletes && !ownClubId}
+            >
               <span class="material-symbols-outlined">person_add</span>
               Registrar atleta
             </button>
@@ -3204,6 +3217,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </button>
           </div>
           <label class="admin-label mt-4">Pruebas habilitadas</label>
+          <p class="mt-1 text-xs text-gray-500"><span class="js-conv-events-count-v3">0</span> pruebas seleccionadas</p>
           <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
             <div class="grid gap-2 sm:grid-cols-2">
               {athleticsEventsCatalog.map((eventItem) => (
@@ -3317,6 +3331,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       const GEO_DEPARTMENTS = geoDepartments;
       const GEO_MUNICIPALITIES = geoMunicipalities;
 
+      const normalizeCode = (value) => String(value || '').trim().toUpperCase();
+      const matchesCode = (left, right) => {
+        const a = normalizeCode(left);
+        const b = normalizeCode(right);
+        if (!a || !b) return false;
+        return a === b || a.startsWith(b) || b.startsWith(a);
+      };
+
       const fillSelect = (selectEl, items, selectedValue, valueKey = 'code', labelKey = 'name') => {
         if (!(selectEl instanceof HTMLSelectElement)) return;
         const firstOption = selectEl.querySelector('option');
@@ -3344,12 +3366,12 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
 
         const selectedDepartment = department.getAttribute('data-selected') || department.value || '';
         const selectedMunicipality = municipality.getAttribute('data-selected') || municipality.value || '';
-        const countryCode = country.value || 'CO';
+        const countryCode = normalizeCode(country.value || 'CO');
         if (!country.value) country.value = countryCode;
-        const deps = GEO_DEPARTMENTS.filter((item) => String(item.countryIso2 || '') === countryCode);
+        const deps = GEO_DEPARTMENTS.filter((item) => matchesCode(item.countryIso2, countryCode));
         fillSelect(department, deps, selectedDepartment);
-        const depCode = department.value || selectedDepartment;
-        const muns = GEO_MUNICIPALITIES.filter((item) => String(item.departmentCode || '') === depCode);
+        const depCode = normalizeCode(department.value || selectedDepartment);
+        const muns = GEO_MUNICIPALITIES.filter((item) => matchesCode(item.departmentCode, depCode));
         fillSelect(municipality, muns, selectedMunicipality);
 
         if (municipalityNameInput instanceof HTMLInputElement) {
@@ -3380,9 +3402,11 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         if (target.classList.contains('js-geo-department')) {
           const scope = target.getAttribute('data-geo-scope');
           if (!scope) return;
+          if (!(target instanceof HTMLSelectElement)) return;
           const municipality = root.querySelector(`.js-geo-municipality[data-geo-scope=\"${scope}\"]`);
           if (!(municipality instanceof HTMLSelectElement)) return;
-          const muns = GEO_MUNICIPALITIES.filter((item) => String(item.departmentCode || '') === String((target as HTMLSelectElement).value || ''));
+          const selectedDepartmentCode = normalizeCode(target.value || '');
+          const muns = GEO_MUNICIPALITIES.filter((item) => matchesCode(item.departmentCode, selectedDepartmentCode));
           fillSelect(municipality, muns, '');
           syncMunicipalityName(scope);
           return;
@@ -3391,6 +3415,17 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           const scope = target.getAttribute('data-geo-scope');
           if (scope) syncMunicipalityName(scope);
         }
+      });
+
+      root.addEventListener('submit', (event) => {
+        const form = event.target instanceof HTMLFormElement ? event.target : null;
+        if (!form) return;
+        const municipalities = Array.from(form.querySelectorAll('.js-geo-municipality'));
+        municipalities.forEach((el) => {
+          if (!(el instanceof HTMLSelectElement)) return;
+          const scope = el.getAttribute('data-geo-scope');
+          if (scope) syncMunicipalityName(scope);
+        });
       });
 
       const syncConvCatalogHidden = (catalogRoot) => {
@@ -3680,6 +3715,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           const clearVisibleBtn = catalogRoot.querySelector('.js-conv-clear-visible-events-v3');
           const disciplinesHidden = catalogRoot.querySelector('.js-conv-disciplines-hidden-v3');
           const eventsHidden = catalogRoot.querySelector('.js-conv-events-hidden-v3');
+          const selectedCount = catalogRoot.querySelector('.js-conv-events-count-v3');
 
           if (
             !(disciplineSelect instanceof HTMLSelectElement) ||
@@ -3695,6 +3731,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               .filter(Boolean);
             disciplinesHidden.value = selectedDiscipline ? selectedDiscipline : '';
             eventsHidden.value = selectedEvents.join('\n');
+            if (selectedCount instanceof HTMLElement) selectedCount.textContent = String(selectedEvents.length);
           };
 
           const refresh = () => {
@@ -3704,13 +3741,12 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               if (!(el instanceof HTMLInputElement)) return;
               const row = el.closest('label') || el.parentElement;
               const discipline = norm(el.getAttribute('data-discipline'));
-              const visible = Boolean(selectedDiscipline) && discipline === selectedDiscipline;
+              const visible = !selectedDiscipline || discipline === selectedDiscipline;
               el.disabled = !visible;
               if (row instanceof HTMLElement) {
                 row.style.display = visible ? '' : 'none';
                 row.setAttribute('aria-hidden', visible ? 'false' : 'true');
               }
-              if (!visible) el.checked = false;
             });
 
             syncHidden();

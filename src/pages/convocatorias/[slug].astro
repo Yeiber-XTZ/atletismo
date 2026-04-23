@@ -36,10 +36,12 @@ const postulationErrorMessage =
           ? 'La disciplina del atleta no esta habilitada en esta convocatoria.'
           : error === 'event_disabled'
             ? 'La prueba seleccionada no esta habilitada en esta convocatoria.'
-            : error === 'athlete_discipline_mismatch'
-              ? 'El atleta no tiene registrada la disciplina de la prueba seleccionada.'
-              : error === 'not_open'
-                ? 'La convocatoria aun no esta habilitada para postulaciones.'
+              : error === 'athlete_discipline_mismatch'
+                ? 'El atleta no tiene registrada la disciplina de la prueba seleccionada.'
+                : error === 'invalid_batch'
+                  ? 'La lista de postulaciones esta vacia o tiene datos invalidos.'
+                : error === 'not_open'
+                  ? 'La convocatoria aun no esta habilitada para postulaciones.'
                 : error === 'closed'
                   ? 'La convocatoria esta cerrada y ya no admite nuevas postulaciones.'
                   : error === 'not_found'
@@ -56,11 +58,30 @@ const clubAthletes = user?.role === 'CLUB' && effectiveClubId
   ? await listAthletes({ clubId: effectiveClubId, status: 'active' })
   : [];
 
+const athleticsCatalog = await listAthleticsCatalogs();
+const convocatoriaDisciplines = Array.isArray((convocatoria as any)?.disciplines)
+  ? (convocatoria as any).disciplines.map((item: string) => String(item).trim()).filter(Boolean)
+  : [];
 const convocatoriaEvents = Array.isArray((convocatoria as any)?.events)
   ? (convocatoria as any).events.map((item: string) => String(item).trim()).filter(Boolean)
   : [];
-const fallbackAthleticsEvents = convocatoriaEvents.length === 0 ? (await listAthleticsCatalogs()).events.map((item) => item.name) : [];
+const fallbackAthleticsEvents = convocatoriaEvents.length === 0 ? athleticsCatalog.events.map((item) => item.name) : [];
 const eventOptions = convocatoriaEvents.length > 0 ? convocatoriaEvents : fallbackAthleticsEvents;
+const athleticsEventMap = new Map(
+  (athleticsCatalog.events ?? []).map((item) => [String(item.name ?? '').trim().toLowerCase(), item])
+);
+const eventOptionsPayload = eventOptions
+  .map((eventName) => {
+    const eventItem = athleticsEventMap.get(String(eventName).toLowerCase());
+    const discipline = String(eventItem?.disciplineName ?? '').trim();
+    const gender = String((eventItem as any)?.gender ?? '').trim();
+    return {
+      name: String(eventName),
+      discipline,
+      gender
+    };
+  })
+  .filter((item) => !convocatoriaDisciplines.length || !item.discipline || convocatoriaDisciplines.includes(item.discipline));
 const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsPerAthlete ?? 1) || 1);
 ---
 <BaseLayout
@@ -92,6 +113,7 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
     <section class="page-section">
       <div class="container mx-auto px-6">
         {convocatoria ? (
+          <>
           <div class="grid gap-10 md:grid-cols-3">
             <div class="md:col-span-2">
               <h2 class="section-heading">Requisitos</h2>
@@ -138,7 +160,7 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
               <div class="mt-8 flex flex-col gap-3">
                 {postulated ? (
                   <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    Postulacion enviada correctamente.
+                    {Number(postulated) > 1 ? `Se enviaron ${postulated} postulaciones correctamente.` : 'Postulacion enviada correctamente.'}
                   </div>
                 ) : null}
                 {error ? (
@@ -149,34 +171,10 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
 
                 {user?.role === 'CLUB' ? (
                   effectiveClubId ? (
-                    <form method="POST" action="/api/dashboard/club/postulaciones" encType="multipart/form-data" class="grid gap-3">
-                      <input type="hidden" name="clubId" value={String(effectiveClubId)} />
-                      <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
-                      <input type="hidden" name="convocatoriaSlug" value={slug} />
-                      <label class="form-label">Atleta *</label>
-                      <select class="form-input" name="athleteId" required>
-                        <option value="">Selecciona atleta</option>
-                        {clubAthletes.map((athlete) => (
-                          <option value={String(athlete.id)}>{athlete.fullName} - {athlete.documentType} {athlete.document}</option>
-                        ))}
-                      </select>
-                      <label class="form-label">Prueba *</label>
-                      <select class="form-input" name="eventName" required>
-                        <option value="">Selecciona prueba</option>
-                        {eventOptions.map((eventName) => (
-                          <option value={eventName}>{eventName}</option>
-                        ))}
-                      </select>
-                      <p class="text-xs text-[var(--text-muted)]">Esta convocatoria permite hasta {maxEventsPerAthlete} prueba(s) por deportista.</p>
-                      <label class="form-label">Soporte documental (opcional)</label>
-                      <input class="form-input" type="file" name="supportFile" accept=".pdf,.jpg,.jpeg,.png,.webp" />
-                      <label class="form-label">Observaciones</label>
-                      <textarea class="form-input min-h-[90px]" name="notes" placeholder="Opcional"></textarea>
-                      <button type="submit" class="btn-primary">
-                        <span class="material-symbols-outlined">send</span>
-                        Postular atleta
-                      </button>
-                    </form>
+                    <a href="#postulacion-club-panel" class="btn-primary">
+                      <span class="material-symbols-outlined">how_to_reg</span>
+                      Abrir panel de postulación
+                    </a>
                   ) : (
                     <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
                       <span class="material-symbols-outlined text-base align-middle mr-1">warning</span>
@@ -216,6 +214,115 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
               <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulacion se consulta en el panel del club.</p>
             </aside>
           </div>
+          {user?.role === 'CLUB' && effectiveClubId ? (
+            <section id="postulacion-club-panel" class="mt-8 rounded-2xl border border-[var(--border)] bg-white p-6">
+              <h3 class="text-lg font-bold text-[#0f172a] mb-4">Panel de Postulación de Deportistas</h3>
+              <form
+                method="POST"
+                action="/api/dashboard/club/postulaciones"
+                class="grid gap-4 lg:grid-cols-2 js-postulation-batch-form"
+                data-convocatoria-disciplines={convocatoriaDisciplines.join('|')}
+              >
+                <input type="hidden" name="clubId" value={String(effectiveClubId)} />
+                <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
+                <input type="hidden" name="convocatoriaSlug" value={slug} />
+                <input type="hidden" name="entriesJson" value="[]" class="js-post-entries-json" />
+
+                <div class="space-y-3">
+                  <label class="form-label">Atleta *</label>
+                  <select class="form-input js-post-athlete">
+                    <option value="">Selecciona atleta</option>
+                    {clubAthletes.map((athlete) => (
+                      <option
+                        value={String(athlete.id)}
+                        data-disciplines={(Array.isArray(athlete.disciplines) ? athlete.disciplines : []).join('|')}
+                        data-sex-code={String(athlete.sexCode ?? athlete.gender ?? '')}
+                        data-club-name={String(athlete.clubName ?? '')}
+                      >
+                        {athlete.fullName} - {athlete.documentType} {athlete.document}
+                      </option>
+                    ))}
+                  </select>
+
+                  <label class="form-label">Prueba *</label>
+                  <div class="rounded-xl border border-gray-300 bg-gray-50 js-post-events-picker" data-max-events={String(maxEventsPerAthlete)}>
+                    <button
+                      type="button"
+                      class="js-post-events-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                      aria-expanded="false"
+                    >
+                      <span>Selección pruebas</span>
+                      <span class="js-post-events-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                    </button>
+                    <div class="js-post-events-panel hidden max-h-52 overflow-auto border-t border-gray-300 p-2">
+                      <div class="grid gap-1 js-post-events-list">
+                        {eventOptionsPayload.map((eventItem) => (
+                          <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-white">
+                            <input
+                              type="checkbox"
+                              class="js-post-event-check"
+                              value={eventItem.name}
+                              data-discipline={eventItem.discipline}
+                              data-gender={eventItem.gender}
+                            />
+                            <span>{eventItem.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-xs text-[var(--text-muted)]">Esta convocatoria permite hasta {maxEventsPerAthlete} prueba(s) por deportista.</p>
+                  <button type="button" class="btn-secondary js-post-add-item opacity-50 pointer-events-none" disabled>
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar a lista
+                  </button>
+                  <p class="js-post-warning hidden rounded-md border border-amber-200 bg-amber-50 px-2 py-2 text-xs text-amber-800"></p>
+                </div>
+
+                <div class="space-y-3 lg:col-span-1">
+                  <div class="rounded-lg border border-[var(--border)] bg-[#f8fafc] p-3">
+                    <div class="mb-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                      <span>Lista de postulaciones</span>
+                      <span><strong class="js-post-count">0</strong> seleccionadas</span>
+                    </div>
+                    <div class="overflow-x-auto js-post-list-wrapper hidden">
+                      <table class="min-w-full text-sm">
+                        <thead>
+                          <tr class="text-left text-gray-500">
+                            <th class="px-2 py-1">Deportista</th>
+                            <th class="px-2 py-1">Club</th>
+                            <th class="px-2 py-1 text-center">Pruebas</th>
+                            <th class="px-2 py-1 text-right">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody class="js-post-table-body"></tbody>
+                      </table>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] js-post-empty">No hay atletas/pruebas agregados.</p>
+                  </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                  <button type="submit" class="btn-primary js-post-submit w-full sm:w-auto" disabled>
+                    <span class="material-symbols-outlined">send</span>
+                    Enviar postulaciones
+                  </button>
+                </div>
+              </form>
+            </section>
+          ) : null}
+          <div class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/50 p-4 js-post-modal">
+            <div class="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl">
+              <div class="mb-3 flex items-center justify-between">
+                <h4 class="text-sm font-semibold text-gray-800 js-post-modal-title">Pruebas del deportista</h4>
+                <button type="button" class="rounded-md border border-gray-200 px-2 py-1 text-xs js-post-modal-close">Cerrar</button>
+              </div>
+              <div class="max-h-72 overflow-auto rounded-md border border-gray-200 p-2">
+                <ul class="list-disc pl-5 text-sm text-gray-700 js-post-modal-list"></ul>
+              </div>
+            </div>
+          </div>
+          </>
         ) : (
           <div class="rounded-2xl border border-[var(--border)] bg-white p-8">
             <p class="text-[var(--text-secondary)]">Vuelve al listado de convocatorias para continuar.</p>
@@ -229,4 +336,387 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
   </main>
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
+  <script is:inline>
+    (() => {
+      const normalize = (value) => String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+      const parsePipeSet = (raw) =>
+        new Set(
+          String(raw || '')
+            .split(/[|,;\n\r]+/g)
+            .map((item) => normalize(item))
+            .filter(Boolean)
+        );
+
+      const initPostulationBatchForm = () => {
+        try {
+        const form = document.querySelector('.js-postulation-batch-form');
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.dataset.postBatchBound === '1') return;
+        form.dataset.postBatchBound = '1';
+
+        const athleteSelect = form.querySelector('.js-post-athlete');
+        const eventsPicker = form.querySelector('.js-post-events-picker');
+        const eventsToggle = form.querySelector('.js-post-events-toggle');
+        const eventsPanel = form.querySelector('.js-post-events-panel');
+        const eventsCount = form.querySelector('.js-post-events-count');
+        const eventChecks = Array.from(form.querySelectorAll('.js-post-event-check'));
+        const addBtn = form.querySelector('.js-post-add-item');
+        const entriesInput = form.querySelector('.js-post-entries-json');
+        const listTableWrapper = form.querySelector('.js-post-list-wrapper');
+        const tableBody = form.querySelector('.js-post-table-body');
+        const emptyText = form.querySelector('.js-post-empty');
+        const countEl = form.querySelector('.js-post-count');
+        const submitBtn = form.querySelector('.js-post-submit');
+        const warningEl = form.querySelector('.js-post-warning');
+        const modal = document.querySelector('.js-post-modal');
+        const modalTitle = document.querySelector('.js-post-modal-title');
+        const modalList = document.querySelector('.js-post-modal-list');
+        const modalClose = document.querySelector('.js-post-modal-close');
+        if (
+          !(athleteSelect instanceof HTMLSelectElement) ||
+          !(eventsPicker instanceof HTMLElement) ||
+          !(eventsToggle instanceof HTMLButtonElement) ||
+          !(eventsPanel instanceof HTMLElement) ||
+          !(eventsCount instanceof HTMLElement) ||
+          !(addBtn instanceof HTMLButtonElement) ||
+          !(entriesInput instanceof HTMLInputElement) ||
+          !(listTableWrapper instanceof HTMLElement) ||
+          !(tableBody instanceof HTMLElement) ||
+          !(emptyText instanceof HTMLElement) ||
+          !(countEl instanceof HTMLElement) ||
+          !(submitBtn instanceof HTMLButtonElement) ||
+          !(warningEl instanceof HTMLElement) ||
+          !(modal instanceof HTMLElement) ||
+          !(modalTitle instanceof HTMLElement) ||
+          !(modalList instanceof HTMLElement) ||
+          !(modalClose instanceof HTMLButtonElement)
+        ) return;
+
+        const maxEventsPerAthlete = Math.max(1, Number(eventsPicker.dataset.maxEvents ?? 1) || 1);
+        const convocatoriaDisciplines = parsePipeSet(form.dataset.convocatoriaDisciplines || '');
+        const athleteMap = new Map(
+          Array.from(athleteSelect.options)
+            .filter((opt) => String(opt.value || '').trim())
+            .map((opt) => [
+              String(opt.value),
+              {
+                label: String(opt.textContent || '').trim(),
+                fullName: String(opt.textContent || '').split(' - ')[0]?.trim() || String(opt.textContent || '').trim(),
+                clubName: String(opt.dataset.clubName || ''),
+                sexCode: normalize(opt.dataset.sexCode || ''),
+                disciplines: parsePipeSet(opt.dataset.disciplines || '')
+              }
+            ])
+        );
+        const allEvents = eventChecks
+          .filter((input) => input instanceof HTMLInputElement)
+          .map((input) => ({
+            input,
+            name: String(input.value || '').trim(),
+            discipline: normalize(input.dataset.discipline || ''),
+            gender: normalize(input.dataset.gender || '')
+          }));
+
+        const state = [];
+        const norm = normalize;
+
+        const genderBucket = (sexCode) => {
+          const value = norm(sexCode);
+          if (!value) return 'unknown';
+          if (value.includes('f') || value.includes('muj') || value.includes('femen')) return 'f';
+          if (value.includes('m') || value.includes('hom') || value.includes('mascul')) return 'm';
+          return 'unknown';
+        };
+
+        const eventMatchesGender = (eventGender, athleteSexCode) => {
+          const eg = norm(eventGender);
+          const ag = genderBucket(athleteSexCode);
+          if (!eg || eg === 'todos' || eg === 'mixto' || eg.includes('mix')) return true;
+          if (ag === 'f') return eg.includes('fem');
+          if (ag === 'm') return eg.includes('masc');
+          return true;
+        };
+        let pickerDisabled = true;
+
+        const setWarning = (message) => {
+          const text = String(message || '').trim();
+          if (!text) {
+            warningEl.textContent = '';
+            warningEl.classList.add('hidden');
+            return;
+          }
+          warningEl.textContent = text;
+          warningEl.classList.remove('hidden');
+        };
+
+        const setAddDisabled = (disabled) => {
+          addBtn.disabled = Boolean(disabled);
+          addBtn.classList.toggle('opacity-50', Boolean(disabled));
+          addBtn.classList.toggle('pointer-events-none', Boolean(disabled));
+        };
+
+        const setPickerOpen = (open) => {
+          eventsPanel.classList.toggle('hidden', !open);
+          eventsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+
+        const clearEventChecks = () => {
+          allEvents.forEach((item) => {
+            item.input.checked = false;
+          });
+        };
+
+        const getSelectedEventNames = () => {
+          return allEvents
+            .filter((item) => !item.input.disabled && item.input.checked)
+            .map((item) => item.name)
+            .filter(Boolean);
+        };
+
+        const syncEventsCount = () => {
+          eventsCount.textContent = String(getSelectedEventNames().length);
+        };
+
+        const syncAddButtonState = () => {
+          const hasAthlete = Boolean(String(athleteSelect.value || '').trim());
+          const hasEventsSelected = getSelectedEventNames().length > 0;
+          setAddDisabled(!hasAthlete || pickerDisabled || !hasEventsSelected);
+        };
+
+        const renderEventsByAthlete = () => {
+          const athleteId = String(athleteSelect.value || '');
+          const athlete = athleteMap.get(athleteId);
+          const disciplines = athlete?.disciplines instanceof Set ? athlete.disciplines : new Set();
+
+          clearEventChecks();
+          syncEventsCount();
+          if (!athleteId || !athlete) {
+            pickerDisabled = true;
+            allEvents.forEach((item) => {
+              const row = item.input.closest('label') || item.input.parentElement;
+              item.input.disabled = true;
+              if (row instanceof HTMLElement) row.style.display = '';
+            });
+            syncAddButtonState();
+            setWarning('Selecciona un deportista para ver sus pruebas habilitadas.');
+            return;
+          }
+
+          const hasEnabledDiscipline =
+            convocatoriaDisciplines.size === 0 ||
+            Array.from(disciplines).some(
+              (discipline) =>
+                convocatoriaDisciplines.has(discipline) ||
+                Array.from(convocatoriaDisciplines).some(
+                  (enabledDiscipline) =>
+                    discipline.includes(enabledDiscipline) || enabledDiscipline.includes(discipline)
+                )
+            );
+          if (!hasEnabledDiscipline) {
+            pickerDisabled = true;
+            allEvents.forEach((item) => {
+              const row = item.input.closest('label') || item.input.parentElement;
+              item.input.disabled = true;
+              if (row instanceof HTMLElement) row.style.display = 'none';
+            });
+            syncAddButtonState();
+            setWarning('La disciplina del deportista no está habilitada en esta convocatoria.');
+            return;
+          }
+
+          const allowedEvents = allEvents.filter((eventItem) => {
+            if (!eventItem.discipline) return false;
+            const disciplineMatch =
+              disciplines.has(eventItem.discipline) ||
+              Array.from(disciplines).some(
+                (discipline) => discipline.includes(eventItem.discipline) || eventItem.discipline.includes(discipline)
+              );
+            if (!disciplineMatch) return false;
+            return eventMatchesGender(eventItem.gender, athlete.sexCode);
+          });
+
+          allEvents.forEach((eventItem) => {
+            const row = eventItem.input.closest('label') || eventItem.input.parentElement;
+            const visible = allowedEvents.includes(eventItem);
+            eventItem.input.disabled = !visible;
+            eventItem.input.checked = false;
+            if (row instanceof HTMLElement) row.style.display = visible ? '' : 'none';
+          });
+
+          pickerDisabled = allowedEvents.length === 0;
+          syncEventsCount();
+          syncAddButtonState();
+          if (allowedEvents.length === 0) {
+            setWarning('No hay pruebas habilitadas para las disciplinas de este deportista.');
+          } else {
+            setWarning('');
+          }
+        };
+
+        const updateStateOutputs = () => {
+          entriesInput.value = JSON.stringify(
+            state.map((item) => ({ athleteId: Number(item.athleteId), eventName: item.eventName }))
+          );
+          countEl.textContent = String(state.length);
+          emptyText.classList.toggle('hidden', state.length > 0);
+          submitBtn.disabled = state.length === 0;
+        };
+
+        const renderList = () => {
+          tableBody.innerHTML = '';
+          const grouped = new Map();
+          state.forEach((item) => {
+            const key = String(item.athleteId);
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(item.eventName);
+          });
+
+          Array.from(grouped.entries()).forEach(([athleteId, eventNames]) => {
+            const athlete = athleteMap.get(String(athleteId));
+            const tr = document.createElement('tr');
+            tr.className = 'border-t border-gray-200';
+
+            const tdAthlete = document.createElement('td');
+            tdAthlete.className = 'px-2 py-2 text-gray-700';
+            tdAthlete.textContent = String(athlete?.fullName || athlete?.label || athleteId);
+
+            const tdClub = document.createElement('td');
+            tdClub.className = 'px-2 py-2 text-gray-600';
+            tdClub.textContent = String(athlete?.clubName || '-');
+
+            const tdCount = document.createElement('td');
+            tdCount.className = 'px-2 py-2 text-center';
+            const countBtn = document.createElement('button');
+            countBtn.type = 'button';
+            countBtn.className = 'rounded px-2 py-1 text-sm font-semibold text-blue-700 hover:bg-blue-50';
+            countBtn.textContent = String(eventNames.length);
+
+            const tdActions = document.createElement('td');
+            tdActions.className = 'px-2 py-2 text-right';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'rounded bg-red-50 px-2 py-1 text-[11px] text-red-700';
+            removeBtn.textContent = 'Quitar';
+            removeBtn.addEventListener('click', () => {
+              for (let i = state.length - 1; i >= 0; i -= 1) {
+                if (String(state[i].athleteId) === String(athleteId)) state.splice(i, 1);
+              }
+              renderList();
+              updateStateOutputs();
+            });
+
+            tdActions.appendChild(removeBtn);
+            tdCount.appendChild(countBtn);
+
+            tr.appendChild(tdAthlete);
+            tr.appendChild(tdClub);
+            tr.appendChild(tdCount);
+            tr.appendChild(tdActions);
+            tableBody.appendChild(tr);
+
+            countBtn.addEventListener('click', () => {
+              modalTitle.textContent = `Pruebas de ${String(athlete?.fullName || athlete?.label || athleteId)}`;
+              modalList.innerHTML = '';
+              eventNames.forEach((eventName) => {
+                const li = document.createElement('li');
+                li.textContent = String(eventName);
+                modalList.appendChild(li);
+              });
+              modal.classList.remove('hidden');
+              modal.classList.add('flex');
+            });
+          });
+
+          listTableWrapper.classList.toggle('hidden', grouped.size === 0);
+        };
+
+        athleteSelect.addEventListener('change', () => {
+          renderEventsByAthlete();
+        });
+        eventsToggle.addEventListener('click', (event) => {
+          event.preventDefault();
+          if (pickerDisabled) return;
+          const isOpen = !eventsPanel.classList.contains('hidden');
+          setPickerOpen(!isOpen);
+        });
+        allEvents.forEach((eventItem) => {
+          eventItem.input.addEventListener('change', () => {
+            if (maxEventsPerAthlete <= 1 && eventItem.input.checked) {
+              allEvents.forEach((other) => {
+                if (other !== eventItem) other.input.checked = false;
+              });
+            }
+            syncEventsCount();
+            syncAddButtonState();
+          });
+        });
+        document.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          if (!eventsPicker.contains(target)) setPickerOpen(false);
+        });
+        modalClose.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        });
+        modal.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          if (target === modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+          }
+        });
+        addBtn.addEventListener('click', () => {
+          const athleteId = String(athleteSelect.value || '').trim();
+          const selectedEventNames = getSelectedEventNames();
+          if (!athleteId || selectedEventNames.length === 0) return;
+
+          const athlete = athleteMap.get(athleteId);
+          if (!athlete) return;
+
+          let selectedCountForAthlete = state.filter((item) => String(item.athleteId) === athleteId).length;
+          let addedAny = false;
+
+          for (const eventName of selectedEventNames) {
+            if (selectedCountForAthlete >= maxEventsPerAthlete) {
+              setWarning(`Este deportista ya tiene ${maxEventsPerAthlete} prueba(s) en la lista.`);
+              break;
+            }
+
+            const exists = state.some((item) => String(item.athleteId) === athleteId && norm(item.eventName) === norm(eventName));
+            if (exists) continue;
+
+            state.push({
+              athleteId,
+              athleteLabel: String(athlete.label || athleteId),
+              eventName
+            });
+            selectedCountForAthlete += 1;
+            addedAny = true;
+          }
+
+          clearEventChecks();
+          syncEventsCount();
+          syncAddButtonState();
+          if (addedAny) setWarning('');
+          renderList();
+          updateStateOutputs();
+        });
+
+        renderEventsByAthlete();
+        renderList();
+        updateStateOutputs();
+      } catch (error) {
+        console.error('[convocatorias] postulation batch script failed', error);
+      }
+      };
+
+      initPostulationBatchForm();
+      document.addEventListener('DOMContentLoaded', initPostulationBatchForm);
+      document.addEventListener('astro:page-load', initPostulationBatchForm);
+    })();
+  </script>
 </BaseLayout>

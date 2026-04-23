@@ -473,6 +473,15 @@ CREATE TABLE IF NOT EXISTS catalog_municipalities (
   is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+CREATE TABLE IF NOT EXISTS sport_catalogs (
+  code TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'INDIVIDUAL',
+  is_olympic BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 CREATE TABLE IF NOT EXISTS sport_disciplines (
   id SERIAL PRIMARY KEY,
   sport_code TEXT NOT NULL,
@@ -497,6 +506,7 @@ CREATE TABLE IF NOT EXISTS sport_events (
 
 CREATE INDEX IF NOT EXISTS idx_catalog_departments_country ON catalog_departments(country_iso2);
 CREATE INDEX IF NOT EXISTS idx_catalog_municipalities_department ON catalog_municipalities(department_code);
+CREATE INDEX IF NOT EXISTS idx_sport_catalogs_active_sort ON sport_catalogs(is_active, sort_order, name);
 CREATE INDEX IF NOT EXISTS idx_sport_disciplines_sport ON sport_disciplines(sport_code);
 CREATE INDEX IF NOT EXISTS idx_sport_events_sport ON sport_events(sport_code);
 CREATE INDEX IF NOT EXISTS idx_sport_events_discipline ON sport_events(sport_code, discipline_name);
