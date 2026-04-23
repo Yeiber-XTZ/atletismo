@@ -49,6 +49,9 @@ const postulationErrorMessage =
                     : error
                       ? 'No se pudo enviar la postulacion. Verifica los datos.'
                       : '';
+const postulationSuccessMessage = postulated
+  ? (Number(postulated) > 1 ? `Se enviaron ${postulated} postulaciones correctamente.` : 'Postulacion enviada correctamente.')
+  : '';
 
 if (!convocatoria) {
   Astro.response.status = 404;
@@ -67,6 +70,13 @@ const convocatoriaEvents = Array.isArray((convocatoria as any)?.events)
   : [];
 const fallbackAthleticsEvents = convocatoriaEvents.length === 0 ? athleticsCatalog.events.map((item) => item.name) : [];
 const eventOptions = convocatoriaEvents.length > 0 ? convocatoriaEvents : fallbackAthleticsEvents;
+const normalizeText = (value: string) =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+const convocatoriaDisciplineNormSet = new Set(convocatoriaDisciplines.map((item) => normalizeText(item)).filter(Boolean));
 const athleticsEventMap = new Map(
   (athleticsCatalog.events ?? []).map((item) => [String(item.name ?? '').trim().toLowerCase(), item])
 );
@@ -81,7 +91,21 @@ const eventOptionsPayload = eventOptions
       gender
     };
   })
-  .filter((item) => !convocatoriaDisciplines.length || !item.discipline || convocatoriaDisciplines.includes(item.discipline));
+  .filter((item) => {
+    if (convocatoriaEvents.length > 0) return true;
+    return !convocatoriaDisciplines.length || !item.discipline || convocatoriaDisciplineNormSet.has(normalizeText(item.discipline));
+  });
+const effectiveConvocatoriaDisciplineNormSet = (() => {
+  if (convocatoriaEvents.length > 0) {
+    const fromEvents = new Set(
+      eventOptionsPayload
+        .map((item) => normalizeText(item.discipline))
+        .filter(Boolean)
+    );
+    if (fromEvents.size > 0) return fromEvents;
+  }
+  return convocatoriaDisciplineNormSet;
+})();
 const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsPerAthlete ?? 1) || 1);
 ---
 <BaseLayout
@@ -158,17 +182,6 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
               </div>
 
               <div class="mt-8 flex flex-col gap-3">
-                {postulated ? (
-                  <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    {Number(postulated) > 1 ? `Se enviaron ${postulated} postulaciones correctamente.` : 'Postulacion enviada correctamente.'}
-                  </div>
-                ) : null}
-                {error ? (
-                  <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    {postulationErrorMessage}
-                  </div>
-                ) : null}
-
                 {user?.role === 'CLUB' ? (
                   effectiveClubId ? (
                     <a href="#postulacion-club-panel" class="btn-primary">
@@ -221,7 +234,7 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
                 method="POST"
                 action="/api/dashboard/club/postulaciones"
                 class="grid gap-4 lg:grid-cols-2 js-postulation-batch-form"
-                data-convocatoria-disciplines={convocatoriaDisciplines.join('|')}
+                data-convocatoria-disciplines={Array.from(effectiveConvocatoriaDisciplineNormSet).join('|')}
               >
                 <input type="hidden" name="clubId" value={String(effectiveClubId)} />
                 <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
@@ -319,6 +332,24 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
               </div>
               <div class="max-h-72 overflow-auto rounded-md border border-gray-200 p-2">
                 <ul class="list-disc pl-5 text-sm text-gray-700 js-post-modal-list"></ul>
+              </div>
+            </div>
+          </div>
+          <div
+            class="fixed inset-0 z-[95] hidden items-center justify-center bg-black/50 p-4 js-post-result-modal"
+            data-message={postulationSuccessMessage || postulationErrorMessage}
+            data-type={postulationSuccessMessage ? 'success' : postulationErrorMessage ? 'error' : ''}
+          >
+            <div class="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+              <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined js-post-result-icon text-2xl">check_circle</span>
+                <div class="flex-1">
+                  <h4 class="text-base font-semibold text-[#0f172a] js-post-result-title">Resultado</h4>
+                  <p class="mt-1 text-sm text-gray-700 js-post-result-message"></p>
+                </div>
+              </div>
+              <div class="mt-4 flex justify-end">
+                <button type="button" class="rounded-md border border-gray-300 px-3 py-1.5 text-sm js-post-result-close">Entendido</button>
               </div>
             </div>
           </div>
@@ -715,8 +746,63 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
       };
 
       initPostulationBatchForm();
+
+      const initPostulationResultModal = () => {
+        const modal = document.querySelector('.js-post-result-modal');
+        if (!(modal instanceof HTMLElement)) return;
+        if (modal.dataset.bound === '1') return;
+        modal.dataset.bound = '1';
+
+        const message = String(modal.dataset.message || '').trim();
+        const type = String(modal.dataset.type || '').trim();
+        if (!message || !type) return;
+
+        const titleEl = modal.querySelector('.js-post-result-title');
+        const messageEl = modal.querySelector('.js-post-result-message');
+        const iconEl = modal.querySelector('.js-post-result-icon');
+        const closeBtn = modal.querySelector('.js-post-result-close');
+        if (
+          !(titleEl instanceof HTMLElement) ||
+          !(messageEl instanceof HTMLElement) ||
+          !(iconEl instanceof HTMLElement) ||
+          !(closeBtn instanceof HTMLButtonElement)
+        ) return;
+
+        const isSuccess = type === 'success';
+        titleEl.textContent = isSuccess ? 'Postulación enviada' : 'No se pudo enviar';
+        messageEl.textContent = message;
+        iconEl.textContent = isSuccess ? 'check_circle' : 'error';
+        iconEl.classList.toggle('text-green-600', isSuccess);
+        iconEl.classList.toggle('text-red-600', !isSuccess);
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('postulated');
+          url.searchParams.delete('error');
+          window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+        } catch {}
+
+        const closeModal = () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          if (target === modal) closeModal();
+        });
+      };
+
+      initPostulationResultModal();
       document.addEventListener('DOMContentLoaded', initPostulationBatchForm);
       document.addEventListener('astro:page-load', initPostulationBatchForm);
+      document.addEventListener('DOMContentLoaded', initPostulationResultModal);
+      document.addEventListener('astro:page-load', initPostulationResultModal);
     })();
   </script>
 </BaseLayout>

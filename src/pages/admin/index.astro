@@ -3327,7 +3327,9 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     </template>
 
     <script is:inline define:vars={{ geoDepartments, geoMunicipalities }}>
+      (() => {
       const root = document;
+      const baseState = globalThis.__adminBaseBindingsState || (globalThis.__adminBaseBindingsState = { handlersBound: false });
       const GEO_DEPARTMENTS = geoDepartments;
       const GEO_MUNICIPALITIES = geoMunicipalities;
 
@@ -3386,11 +3388,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         municipalityNameInput.value = municipality.value ? (municipality.options[municipality.selectedIndex]?.text || '') : '';
       };
 
-      root.querySelectorAll('.js-geo-country').forEach((el) => {
-        const scope = el.getAttribute('data-geo-scope');
-        if (scope) initGeoScope(scope);
-      });
+      const initAllGeoScopes = () => {
+        root.querySelectorAll('.js-geo-country').forEach((el) => {
+          const scope = el.getAttribute('data-geo-scope');
+          if (scope) initGeoScope(scope);
+        });
+      };
 
+      if (!baseState.handlersBound) {
       root.addEventListener('change', (event) => {
         const target = event.target instanceof HTMLElement ? event.target : null;
         if (!target) return;
@@ -3427,6 +3432,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           if (scope) syncMunicipalityName(scope);
         });
       });
+      }
 
       const syncConvCatalogHidden = (catalogRoot) => {
         if (!(catalogRoot instanceof HTMLElement)) return;
@@ -3529,9 +3535,12 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         root.querySelectorAll('.js-conv-catalog').forEach((catalogRoot) => initConvCatalog(catalogRoot));
       };
 
-      refreshAllConvCatalogs();
-      setTimeout(() => refreshAllConvCatalogs(), 0);
+      const initAllConvCatalogs = () => {
+        refreshAllConvCatalogs();
+        setTimeout(() => refreshAllConvCatalogs(), 0);
+      };
 
+      if (!baseState.handlersBound) {
       root.addEventListener('change', (event) => {
         const target = event.target instanceof HTMLElement ? event.target : null;
         if (!target) return;
@@ -3699,9 +3708,23 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         if (container.querySelectorAll('.js-repeat-item').length <= 1) return;
         item.remove();
       });
+
+      document.addEventListener('astro:page-load', () => {
+        initAllGeoScopes();
+        initAllConvCatalogs();
+      });
+      baseState.handlersBound = true;
+      }
+
+      initAllGeoScopes();
+      initAllConvCatalogs();
+      })();
     </script>
     <script is:inline>
       (() => {
+        if (globalThis.__adminConvCatalogV3Bound === true) return;
+        globalThis.__adminConvCatalogV3Bound = true;
+
         const norm = (value) => String(value || '').trim().toLowerCase();
 
         const bindCatalog = (catalogRoot) => {
@@ -3828,25 +3851,8 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     </script>
     <script is:inline>
       (() => {
-        const bindAthleteToggle = () => {
-          const btn = document.getElementById('toggle-create-athlete');
-          const panel = document.getElementById('create-athlete-panel');
-          if (!(btn instanceof HTMLButtonElement) || !(panel instanceof HTMLElement)) return;
-          if (btn.dataset.boundAthleteToggle === '1') return;
-          btn.dataset.boundAthleteToggle = '1';
-          btn.addEventListener('click', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            panel.classList.toggle('hidden');
-          });
-        };
+        const pickerState = globalThis.__adminDisciplinePickerState || (globalThis.__adminDisciplinePickerState = { handlersBound: false });
 
-        bindAthleteToggle();
-        setTimeout(bindAthleteToggle, 0);
-      })();
-    </script>
-    <script is:inline>
-      (() => {
         const syncCount = (root) => {
           if (!(root instanceof HTMLElement)) return;
           const countEl = root.querySelector('.js-discipline-count');
@@ -3897,14 +3903,22 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           document.querySelectorAll('.js-discipline-picker').forEach((root) => bindPicker(root));
         };
 
-        document.addEventListener('click', (event) => {
-          const target = event.target;
-          if (!(target instanceof Element)) return;
-          document.querySelectorAll('.js-discipline-picker').forEach((root) => {
-            if (!(root instanceof HTMLElement)) return;
-            if (!root.contains(target)) closePanel(root);
+        if (!pickerState.handlersBound) {
+          document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            document.querySelectorAll('.js-discipline-picker').forEach((root) => {
+              if (!(root instanceof HTMLElement)) return;
+              if (!root.contains(target)) closePanel(root);
+            });
           });
-        });
+
+          document.addEventListener('astro:page-load', () => {
+            bindAll();
+            setTimeout(bindAll, 0);
+          });
+          pickerState.handlersBound = true;
+        }
 
         bindAll();
         setTimeout(bindAll, 0);

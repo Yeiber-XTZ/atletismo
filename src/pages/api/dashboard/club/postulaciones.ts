@@ -37,6 +37,22 @@ type PendingEntry = {
   discipline: string;
 };
 
+const normalizeText = (value: string) =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const disciplineMatches = (athleteDisciplineNorm: string, eventDisciplineNorm: string) => {
+  if (!athleteDisciplineNorm || !eventDisciplineNorm) return false;
+  return (
+    athleteDisciplineNorm === eventDisciplineNorm ||
+    athleteDisciplineNorm.includes(eventDisciplineNorm) ||
+    eventDisciplineNorm.includes(athleteDisciplineNorm)
+  );
+};
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const user = await requireUser(cookies);
@@ -110,6 +126,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const convocatoriaEvents = Array.isArray((convocatoria as any).events)
       ? (convocatoria as any).events.map((item: string) => String(item).trim()).filter(Boolean)
       : [];
+    const convocatoriaDisciplinesNorm = new Set(
+      convocatoriaDisciplines.map((item) => normalizeText(item)).filter(Boolean)
+    );
+    const convocatoriaEventsNorm = new Set(
+      convocatoriaEvents.map((item) => normalizeText(item)).filter(Boolean)
+    );
     const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any).maxEventsPerAthlete ?? 1) || 1);
 
     const athleteIds = Array.from(new Set(entries.data.map((item) => Number(item.athleteId))));
@@ -183,15 +205,30 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=invalid_event`, request.url), 302);
       }
 
-      if (convocatoriaDisciplines.length > 0 && !convocatoriaDisciplines.includes(selectedEvent.disciplineName)) {
+      const selectedEventDisciplineNorm = normalizeText(selectedEvent.disciplineName);
+      const selectedEventNameNorm = normalizeText(selectedEvent.name);
+
+      if (
+        convocatoriaDisciplinesNorm.size > 0 &&
+        convocatoriaEventsNorm.size === 0 &&
+        !Array.from(convocatoriaDisciplinesNorm).some((disciplineNorm) =>
+          disciplineMatches(disciplineNorm, selectedEventDisciplineNorm)
+        )
+      ) {
         return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=discipline_disabled`, request.url), 302);
       }
-      if (convocatoriaEvents.length > 0 && !convocatoriaEvents.includes(selectedEvent.name)) {
+      if (convocatoriaEventsNorm.size > 0 && !convocatoriaEventsNorm.has(selectedEventNameNorm)) {
         return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=event_disabled`, request.url), 302);
       }
 
       const athleteDisciplines = disciplinesByAthlete.get(athleteId) ?? new Set<string>();
-      if (!athleteDisciplines.has(selectedEvent.disciplineName)) {
+      const athleteDisciplineNorms = Array.from(athleteDisciplines)
+        .map((discipline) => normalizeText(discipline))
+        .filter(Boolean);
+      const athleteCanRunDiscipline = athleteDisciplineNorms.some((disciplineNorm) =>
+        disciplineMatches(disciplineNorm, selectedEventDisciplineNorm)
+      );
+      if (!athleteCanRunDiscipline) {
         return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=athlete_discipline_mismatch`, request.url), 302);
       }
 
@@ -257,4 +294,3 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return Response.redirect(new URL('/convocatorias?error=postulation_internal', request.url), 302);
   }
 };
-
