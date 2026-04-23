@@ -10,7 +10,7 @@ import { listPostulaciones, PostulationStatus, summarizePostulaciones } from '..
 import { listAssemblyMeetings, summarizeAssemblyAttendance, summarizeAssemblyMeetings } from '../../lib/asambleas';
 import { getAdminAnalytics } from '../../lib/analytics';
 import { getAdminAlerts } from '../../lib/alerts';
-import { listNotifications } from '../../lib/notificaciones';
+import { listNotifications, listNotificationsForRole } from '../../lib/notificaciones';
 import { listAuditLogs } from '../../lib/audit';
 import { listRadicados } from '../../lib/radicados';
 import { listConvocatoriaCategories } from '../../lib/convocatoria-categories';
@@ -91,6 +91,9 @@ const canManageUsers = hasPermission(user, 'users:manage');
 const canManageApprovals = hasPermission(user, 'approvals:manage');
 const canManageAsambleas = hasPermission(user, 'asambleas:manage');
 const canViewAsambleasPanel = canManageAsambleas || hasPermission(user, 'assembly:self_panel');
+const canManageNotifications = hasPermission(user, 'notificaciones:manage');
+const canViewNotifications = canManageNotifications || hasPermission(user, 'assembly:self_panel') || user?.role === 'CLUB';
+const canViewAlerts = hasPermission(user, 'records:manage');
 const canManageAllAthletes = hasPermission(user, 'athletes:manage');
 const canManageClubAthletes = hasPermission(user, 'athletes:self_manage');
 const canAccessAthletesTab = canManageAllAthletes || canManageClubAthletes;
@@ -102,7 +105,10 @@ if (!ownClubId && user?.role === 'CLUB' && user?.id) {
 if ((contentTab === 'roles' || contentTab === 'permisos') && !isSuperAdmin) {
   return Astro.redirect('/acceso-denegado');
 }
-if (contentTab === 'notificaciones' && !hasPermission(user, 'notificaciones:manage')) {
+if (contentTab === 'notificaciones' && !canViewNotifications) {
+  return Astro.redirect('/acceso-denegado');
+}
+if (contentTab === 'alertas' && !canViewAlerts) {
   return Astro.redirect('/acceso-denegado');
 }
 if (contentTab === 'asambleas' && !canViewAsambleasPanel) {
@@ -141,8 +147,9 @@ const asambleaAttendanceSummary = canManageAsambleas
   : { total: 0, byStatus: [] };
 const asambleaMeetingsSummary = canManageAsambleas ? await summarizeAssemblyMeetings() : [];
 const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAnalytics() : null;
-const alerts = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAlerts() : [];
-const notifications = isAdminRoot ? await listNotifications() : [];
+const alerts = canViewAlerts ? await getAdminAlerts() : [];
+const notificationsManaged = canManageNotifications ? await listNotifications() : [];
+const notificationsForUser = canViewNotifications && user?.role ? await listNotificationsForRole(user.role) : [];
 const registrationRadicados = canManageApprovals ? await listRadicados('pending') : [];
 const auditLogResult = isAdminRoot
   ? await listAuditLogs({
@@ -177,6 +184,52 @@ const dashboardCards = [
   { label: 'Documentos', value: analytics?.totals.documents ?? 0, color: 'from-rose-500 to-rose-700' },
   { label: 'Usuarios', value: users.length, color: 'from-slate-600 to-slate-800' }
 ];
+const totalManagedContent = dashboardCards.reduce((acc, card) => acc + Number(card.value || 0), 0);
+const postStatusMap = new Map<string, number>(
+  (analytics?.postulationsByStatus ?? []).map((item) => [String(item.status ?? '').trim().toLowerCase(), Number(item.count ?? 0)])
+);
+const pqrsStatusMap = new Map<string, number>(
+  (analytics?.pqrsByStatus ?? []).map((item) => [String(item.status ?? '').trim().toLowerCase(), Number(item.count ?? 0)])
+);
+const postulationsTotal = Number(postulationSummary?.total ?? 0);
+const postulationsApproved = Array.from(postStatusMap.entries())
+  .filter(([status]) => status.includes('aprob'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const postulationsPending = Array.from(postStatusMap.entries())
+  .filter(([status]) => status.includes('postul') || status.includes('revisi') || status.includes('pend'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const postulationsRejected = Array.from(postStatusMap.entries())
+  .filter(([status]) => status.includes('rechaz') || status.includes('incomplet'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const pqrsTotal = (analytics?.pqrsByStatus ?? []).reduce((acc, item) => acc + Number(item.count ?? 0), 0);
+const pqrsResolved = Array.from(pqrsStatusMap.entries())
+  .filter(([status]) => status.includes('resuelt') || status.includes('cerrad'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const pqrsOpen = Math.max(0, pqrsTotal - pqrsResolved);
+const approvalRate = postulationsTotal > 0 ? Math.round((postulationsApproved / postulationsTotal) * 100) : 0;
+const pqrsResolutionRate = pqrsTotal > 0 ? Math.round((pqrsResolved / pqrsTotal) * 100) : 0;
+const activityLast7Post = (analytics?.last7Days ?? []).reduce((acc, day) => acc + Number(day.postulations ?? 0), 0);
+const activityLast7Pqrs = (analytics?.last7Days ?? []).reduce((acc, day) => acc + Number(day.pqrs ?? 0), 0);
+const activityPeak = Math.max(
+  1,
+  ...(analytics?.last7Days ?? []).map((day) => Math.max(Number(day.postulations ?? 0), Number(day.pqrs ?? 0)))
+);
+const todayActivity = (() => {
+  const today = new Date().toISOString().slice(0, 10);
+  return (analytics?.last7Days ?? []).find((day) => day.day === today);
+})();
+const operationalPulse =
+  approvalRate >= 60 && pqrsResolutionRate >= 60
+    ? 'Estable'
+    : approvalRate >= 40 || pqrsResolutionRate >= 40
+      ? 'En seguimiento'
+      : 'Crítico';
+const operationalPulseClass =
+  operationalPulse === 'Estable'
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    : operationalPulse === 'En seguimiento'
+      ? 'bg-amber-100 text-amber-800 border-amber-200'
+      : 'bg-red-100 text-red-800 border-red-200';
 
 const filteredPostulations = postulations.filter((p) => {
   if (postulationStatusFilter !== 'all' && p.status !== postulationStatusFilter) return false;
@@ -314,7 +367,7 @@ const navItems = rawNavItems.filter((item) => {
   if (item.id === 'asambleas') return canViewAsambleasPanel;
   if (item.id === 'athletes') return canAccessAthletesTab;
   const r = user?.role;
-  if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents', 'alertas'].includes(item.id)) return true;
+  if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents'].includes(item.id)) return true;
   const need = NAV_PERMS[item.id] ?? 'admin:all';
   if (need === 'admin:all') return hasPermission(user, 'admin:all');
   return hasPermission(user, need);
@@ -983,10 +1036,16 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           Eliminar permanentemente
                         </button>
                       ) : <span />}
-                      <button type="button" class="admin-btn admin-btn-secondary js-remove-row">
-                        <span class="material-symbols-outlined">remove_circle_outline</span>
-                        Quitar de la lista
-                      </button>
+                      <div class="flex items-center gap-2">
+                        <button class="admin-btn admin-btn-primary" type="submit">
+                          <span class="material-symbols-outlined">save</span>
+                          Actualizar club
+                        </button>
+                        <button type="button" class="admin-btn admin-btn-secondary js-remove-row">
+                          <span class="material-symbols-outlined">remove_circle_outline</span>
+                          Quitar de la lista
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </details>
@@ -1201,7 +1260,11 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <p class="text-xs text-gray-500 mt-1">Actual: {conv.imageUrl}</p>
                         )}
                       </div>
-                      <div class="md:col-span-3 flex justify-end">
+                      <div class="md:col-span-3 flex justify-end gap-2">
+                        <button class="admin-btn admin-btn-primary" type="submit">
+                          <span class="material-symbols-outlined">save</span>
+                          Actualizar convocatoria
+                        </button>
                         <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                           <span class="material-symbols-outlined">delete</span>
                           Quitar convocatoria
@@ -1356,7 +1419,11 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <label class="admin-label">Descargas</label>
                         <textarea class="admin-input min-h-[90px]" name="compDownloads">{downloadsToLines(comp.downloads)}</textarea>
                       </div>
-                      <div class="md:col-span-3 flex justify-end">
+                      <div class="md:col-span-3 flex justify-end gap-2">
+                        <button class="admin-btn admin-btn-primary" type="submit">
+                          <span class="material-symbols-outlined">save</span>
+                          Actualizar competencia
+                        </button>
                         <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                           <span class="material-symbols-outlined">delete</span>
                           Quitar competencia
@@ -2321,80 +2388,105 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {contentTab === 'notificaciones' ? (
       <section class="admin-card">
         <div class="admin-card-header">
-          <h4 class="admin-card-title">Notificaciones por Rol</h4>
+          <h4 class="admin-card-title">{canManageNotifications ? 'Notificaciones por Rol' : 'Mis notificaciones'}</h4>
         </div>
         <div class="admin-card-body">
-          <form method="POST" action="/api/admin/notificaciones" class="grid gap-4 md:grid-cols-6">
-            <input type="hidden" name="intent" value="create" />
-            <div class="md:col-span-2">
-              <label class="admin-label">Título</label>
-              <input class="admin-input" name="title" required />
-            </div>
-            <div class="md:col-span-2">
-              <label class="admin-label">Mensaje</label>
-              <input class="admin-input" name="message" required />
-            </div>
-            <div>
-              <label class="admin-label">Nivel</label>
-              <select class="admin-input" name="level">
-                <option value="info">info</option>
-                <option value="warning">warning</option>
-                <option value="critical">critical</option>
-              </select>
-            </div>
-            <div>
-              <label class="admin-label">Rol</label>
-              <select class="admin-input" name="targetRole">
-                <option value="ALL">ALL</option>
-                {ROLES.map((r) => (
-                  <option value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
-            <div class="md:col-span-4">
-              <label class="admin-label">Acción (URL interna opcional)</label>
-              <input class="admin-input" name="actionHref" placeholder="/dashboard/club" />
-            </div>
-            <div class="md:col-span-2 flex items-end justify-end">
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">add</span>
-                Publicar
-              </button>
-            </div>
-          </form>
+          {canManageNotifications ? (
+            <form method="POST" action="/api/admin/notificaciones" class="grid gap-4 md:grid-cols-6">
+              <input type="hidden" name="intent" value="create" />
+              <div class="md:col-span-2">
+                <label class="admin-label">Título</label>
+                <input class="admin-input" name="title" required />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Mensaje</label>
+                <input class="admin-input" name="message" required />
+              </div>
+              <div>
+                <label class="admin-label">Nivel</label>
+                <select class="admin-input" name="level">
+                  <option value="info">info</option>
+                  <option value="warning">warning</option>
+                  <option value="critical">critical</option>
+                </select>
+              </div>
+              <div>
+                <label class="admin-label">Rol</label>
+                <select class="admin-input" name="targetRole">
+                  <option value="ALL">ALL</option>
+                  {ROLES.map((r) => (
+                    <option value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">Acción (URL interna opcional)</label>
+                <input class="admin-input" name="actionHref" placeholder="/dashboard/club" />
+              </div>
+              <div class="md:col-span-2 flex items-end justify-end">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">add</span>
+                  Publicar
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p class="text-sm text-gray-500">
+              Notificaciones activas para tu rol. Si necesitas publicar una nueva, solicita apoyo al rol administrativo.
+            </p>
+          )}
 
           <div class="mt-6 space-y-3">
-            {notifications.map((n) => (
-              <form method="POST" action="/api/admin/notificaciones" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-6">
-                <input type="hidden" name="intent" value="toggle" />
-                <input type="hidden" name="id" value={n.id} />
-                <div class="md:col-span-2">
-                  <div class="font-semibold text-gray-700">{n.title}</div>
-                  <div class="text-sm text-gray-600">{n.message}</div>
-                </div>
-                <div class="text-sm text-gray-600">
-                  <div>Nivel: <strong>{n.level}</strong></div>
-                  <div>Rol: <strong>{n.targetRole}</strong></div>
-                </div>
-                <div class="text-sm text-gray-600">
-                  <div>Acción: <strong>{n.actionHref || '-'}</strong></div>
-                  <div>Fecha: <strong>{new Date(n.createdAt).toLocaleDateString('es-CO')}</strong></div>
-                </div>
-                <div class="md:col-span-2 flex items-end justify-end">
-                  <label class="inline-flex items-center gap-2 text-xs text-gray-600">
-                    <input type="checkbox" name="isActive" value="1" checked={n.isActive} />
-                    Activa
-                  </label>
-                  <button class="admin-btn admin-btn-secondary ml-3" type="submit">
-                    <span class="material-symbols-outlined">save</span>
-                    Guardar
-                  </button>
-                </div>
-              </form>
+            {(canManageNotifications ? notificationsManaged : notificationsForUser).map((n) => (
+              canManageNotifications ? (
+                <form method="POST" action="/api/admin/notificaciones" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-6">
+                  <input type="hidden" name="intent" value="toggle" />
+                  <input type="hidden" name="id" value={n.id} />
+                  <div class="md:col-span-2">
+                    <div class="font-semibold text-gray-700">{n.title}</div>
+                    <div class="text-sm text-gray-600">{n.message}</div>
+                  </div>
+                  <div class="text-sm text-gray-600">
+                    <div>Nivel: <strong>{n.level}</strong></div>
+                    <div>Rol: <strong>{n.targetRole}</strong></div>
+                  </div>
+                  <div class="text-sm text-gray-600">
+                    <div>Acción: <strong>{n.actionHref || '-'}</strong></div>
+                    <div>Fecha: <strong>{new Date(n.createdAt).toLocaleDateString('es-CO')}</strong></div>
+                  </div>
+                  <div class="md:col-span-2 flex items-end justify-end">
+                    <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                      <input type="checkbox" name="isActive" value="1" checked={n.isActive} />
+                      Activa
+                    </label>
+                    <button class="admin-btn admin-btn-secondary ml-3" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <article class="rounded-xl border border-gray-200 p-4 grid gap-2 bg-white">
+                  <div class="flex items-center justify-between gap-3">
+                    <h5 class="font-semibold text-gray-700">{n.title}</h5>
+                    <span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{n.level}</span>
+                  </div>
+                  <p class="text-sm text-gray-600">{n.message}</p>
+                  <div class="flex items-center justify-between gap-2 text-xs text-gray-500">
+                    <span>Dirigida a: <strong>{n.targetRole}</strong></span>
+                    <span>{new Date(n.createdAt).toLocaleDateString('es-CO')}</span>
+                  </div>
+                  {n.actionHref ? (
+                    <div class="pt-1">
+                      <a class="admin-btn admin-btn-secondary" href={n.actionHref}>Abrir</a>
+                    </div>
+                  ) : null}
+                </article>
+              )
             ))}
-            {notifications.length === 0 ? (
+            {(canManageNotifications ? notificationsManaged : notificationsForUser).length === 0 ? (
               <div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
-                No hay notificaciones creadas.
+                {canManageNotifications ? 'No hay notificaciones creadas.' : 'No hay notificaciones activas para tu rol.'}
               </div>
             ) : null}
           </div>
@@ -2835,7 +2927,11 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     {item.imageUrl && (
                       <p class="text-xs text-gray-500 mt-1 md:col-span-3">Actual: {item.imageUrl}</p>
                     )}
-                    <div class="md:col-span-5 flex justify-end">
+                    <div class="md:col-span-5 flex justify-end gap-2">
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar fila
+                      </button>
                       <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                         <span class="material-symbols-outlined">delete</span>
                         Quitar fila
@@ -3063,7 +3159,11 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       <label class="admin-label">Párrafos del contenido</label>
                       <textarea class="admin-input min-h-[110px]" name="newsBody">{linesFromArray(item.body)}</textarea>
                     </div>
-                    <div class="md:col-span-3 flex justify-end">
+                    <div class="md:col-span-3 flex justify-end gap-2">
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar noticia
+                      </button>
                       <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                         <span class="material-symbols-outlined">delete</span>
                         Quitar noticia
@@ -3149,7 +3249,11 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       <label class="admin-label">Párrafos del contenido</label>
                       <textarea class="admin-input min-h-[110px]" name="blogBody">{linesFromArray(item.body)}</textarea>
                     </div>
-                    <div class="md:col-span-3 flex justify-end">
+                    <div class="md:col-span-3 flex justify-end gap-2">
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar artículo
+                      </button>
                       <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                         <span class="material-symbols-outlined">delete</span>
                         Quitar artículo
@@ -3299,7 +3403,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <div><label class="admin-label">Entrenador</label><input class="admin-input" name="clubCoach" required /></div>
           <div><label class="admin-label">Categoría</label><input class="admin-input" name="clubCategory" /></div>
           <div class="md:col-span-2"><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="clubImageFile" accept="image/*" /><input type="hidden" name="clubImageUrl" value="" /></div>
-          <div class="md:col-span-2 mt-2 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar club</button></div>
+          <div class="md:col-span-2 mt-2 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar club</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar club</button>
+          </div>
         </div>
       </details>
     </template>
@@ -3339,7 +3446,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
           <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
           <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
-          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar convocatoria</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button>
+          </div>
         </div>
       </details>
     </template>
@@ -3363,7 +3473,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="compImageFile" accept="image/*" /><input type="hidden" name="compImageUrl" value="" /></div>
           <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[90px]" name="compDescription" required></textarea></div>
           <div class="md:col-span-3"><label class="admin-label">Descargas (`Etiqueta|URL`)</label><textarea class="admin-input min-h-[90px]" name="compDownloads"></textarea></div>
-          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar competencia</button></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar competencia</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar competencia</button>
+          </div>
         </div>
       </details>
     </template>
@@ -3402,7 +3515,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <input class="admin-input" name="rankingGender" placeholder="Sexo" />
           <input class="admin-input" name="rankingSeason" placeholder="Temporada" />
           <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="rankingImageUrl" value="" />
-          <div class="md:col-span-5 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar fila</button></div>
+          <div class="md:col-span-5 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar fila</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar fila</button>
+          </div>
         </div>
       </details>
     </template>
@@ -3450,7 +3566,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </select>
           </div>
           <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="newsBody"></textarea></div>
-          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar noticia</button></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar noticia</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar noticia</button>
+          </div>
         </div>
       </details>
     </template>
@@ -3478,7 +3597,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <input class="admin-input md:col-span-3" name="blogVideoUrl" placeholder="URL del video (opcional)" />
           <p class="text-xs text-gray-500 mt-1 md:col-span-3">Puedes subir archivo o pegar URL. Si subes archivo, se usará ese video.</p>
           <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="blogBody"></textarea></div>
-          <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar artículo</button></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar artículo</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar artículo</button>
+          </div>
         </div>
       </details>
     </template>

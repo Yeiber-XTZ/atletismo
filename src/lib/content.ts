@@ -271,7 +271,6 @@ export async function getHomeData() {
          LIMIT 500`
         );
       } catch (error) {
-        console.warn('[content] Blog select (video_url) fallback.', error);
         blogRes = await db.query(
           `SELECT slug,
                   COALESCE(type, 'Técnico') as type,

@@ -1,5 +1,62 @@
 import { db } from './db';
 
+let athletesSchemaReady = false;
+let athletesSchemaInitPromise: Promise<void> | null = null;
+
+async function ensureAthletesSchema() {
+  if (athletesSchemaReady) return;
+  if (athletesSchemaInitPromise) return athletesSchemaInitPromise;
+
+  athletesSchemaInitPromise = (async () => {
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS email TEXT`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS document TEXT`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS document_type TEXT DEFAULT 'CC'`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS municipality TEXT`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS coach TEXT`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS eps TEXT`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS emergency_contact TEXT`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS photo_url TEXT`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS club_id INTEGER REFERENCES clubs(id) ON DELETE SET NULL`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'`);
+    await db.query(`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+
+    await db.query(
+      `CREATE TABLE IF NOT EXISTS athlete_disciplines (
+        id SERIAL PRIMARY KEY,
+        athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+        discipline TEXT NOT NULL,
+        specialty_level TEXT,
+        personal_best TEXT,
+        personal_best_date DATE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (athlete_id, discipline)
+      )`
+    );
+
+    await db.query(
+      `CREATE TABLE IF NOT EXISTS club_athletes (
+        club_id INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+        joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        status TEXT NOT NULL DEFAULT 'active',
+        PRIMARY KEY (club_id, athlete_id)
+      )`
+    );
+
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_athlete_disciplines_athlete_id ON athlete_disciplines(athlete_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_club_athletes_club_id ON club_athletes(club_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_club_athletes_athlete_id ON club_athletes(athlete_id)`);
+    await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_athletes_document ON athletes(document) WHERE document IS NOT NULL`);
+
+    athletesSchemaReady = true;
+  })().finally(() => {
+    athletesSchemaInitPromise = null;
+  });
+
+  return athletesSchemaInitPromise;
+}
+
 export type AthleteAdminRow = {
   id: number;
   firstName: string;
@@ -74,6 +131,7 @@ async function refreshClubAthletesCount(clubId: number, client: { query: (text: 
 }
 
 export async function getAthleteEffectiveClubId(athleteId: number) {
+  await ensureAthletesSchema();
   const res = await db.query(
     `SELECT COALESCE(a.club_id, ca.club_id, c_by_name.id) AS "clubId"
      FROM athletes a
@@ -88,6 +146,7 @@ export async function getAthleteEffectiveClubId(athleteId: number) {
 }
 
 export async function listAthletes(input?: { clubId?: number; query?: string; status?: string }) {
+  await ensureAthletesSchema();
   const where: string[] = [];
   const params: unknown[] = [];
 
@@ -176,6 +235,7 @@ export async function listAthletes(input?: { clubId?: number; query?: string; st
 }
 
 export async function createAthlete(input: UpsertAthleteInput) {
+  await ensureAthletesSchema();
   const disciplines = normalizeDisciplines(input.disciplines);
   return db.transaction(async (client) => {
     const clubName = await getClubNameById(input.clubId, client);
@@ -230,6 +290,7 @@ export async function createAthlete(input: UpsertAthleteInput) {
 }
 
 export async function updateAthlete(athleteId: number, input: UpsertAthleteInput) {
+  await ensureAthletesSchema();
   const disciplines = normalizeDisciplines(input.disciplines);
   return db.transaction(async (client) => {
     const oldClubId = await getAthleteEffectiveClubId(athleteId);
@@ -299,6 +360,7 @@ export async function updateAthlete(athleteId: number, input: UpsertAthleteInput
 }
 
 export async function deleteAthlete(athleteId: number) {
+  await ensureAthletesSchema();
   return db.transaction(async (client) => {
     const oldClubId = await getAthleteEffectiveClubId(athleteId);
     await client.query(`DELETE FROM athletes WHERE id = $1`, [athleteId]);

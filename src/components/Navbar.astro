@@ -163,6 +163,12 @@ const navOrder = [
 </nav>
 
 <style is:global>
+  :root {
+    --navbar-height: 78px;
+    --navbar-curve-height: 100px;
+    --navbar-safe-space: 108px;
+  }
+
   .navbar-custom {
     position: fixed;
     top: 0;
@@ -178,7 +184,7 @@ const navOrder = [
     top: 0;
     left: 0;
     width: 100%;
-    height: 100px;
+    height: var(--navbar-curve-height);
     z-index: 1;
     pointer-events: none;
   }
@@ -190,7 +196,7 @@ const navOrder = [
     margin: 0 auto;
     display: flex;
     align-items: center;
-    height: 78px;
+    height: var(--navbar-height);
     padding: 0 24px;
     gap: 16px;
   }
@@ -220,6 +226,14 @@ const navOrder = [
   @media (min-width: 1024px) {
     .navbar-links {
       display: flex;
+    }
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --navbar-height: 74px;
+      --navbar-curve-height: 90px;
+      --navbar-safe-space: 96px;
     }
   }
 

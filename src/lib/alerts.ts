@@ -40,7 +40,7 @@ export async function getAdminAlerts(): Promise<AdminAlert[]> {
         type: 'convocatoria',
         level: days <= 1 ? 'critical' : 'warning',
         title: `Convocatoria por vencer: ${row.title}`,
-        detail: `Cierra en ${days} día(s).`,
+        detail: `Cierra en ${days} dÃ­a(s).`,
         href: '/admin?tab=convocatorias'
       });
     }
@@ -60,7 +60,7 @@ export async function getAdminAlerts(): Promise<AdminAlert[]> {
         type: 'pqrs',
         level: age >= 10 ? 'critical' : 'warning',
         title: `PQRS pendiente: ${row.radicado}`,
-        detail: `${age} día(s) sin cierre.`,
+        detail: `${age} dÃ­a(s) sin cierre.`,
         href: '/admin?tab=pqrs'
       });
     }
@@ -69,7 +69,7 @@ export async function getAdminAlerts(): Promise<AdminAlert[]> {
   const postRes = await db.query(
     `SELECT id, status, updated_at
      FROM postulations
-     WHERE status IN ('Postulada','En revisión','Incompleta')`
+     WHERE status IN ('Postulada','En revisiÃ³n','En revisión','Incompleta')`
   );
 
   for (const row of postRes.rows as Array<{ id: string; status: string; updated_at: string }>) {
@@ -79,8 +79,8 @@ export async function getAdminAlerts(): Promise<AdminAlert[]> {
       alerts.push({
         type: 'postulation',
         level: age >= 8 ? 'critical' : 'warning',
-        title: `Postulación estancada: ${row.id}`,
-        detail: `${age} día(s) en estado "${row.status}".`,
+        title: `PostulaciÃ³n estancada: ${row.id}`,
+        detail: `${age} dÃ­a(s) en estado "${row.status}".`,
         href: '/admin?tab=convocatorias'
       });
     }

@@ -25,125 +25,158 @@ const postulationErrorMessage =
   error === 'duplicate'
     ? 'Ese atleta ya fue postulado por tu club en esta convocatoria.'
     : error === 'not_open'
-      ? 'La convocatoria aún no está habilitada para postulaciones.'
-    : error === 'closed'
-      ? 'La convocatoria está cerrada y ya no admite nuevas postulaciones.'
-      : error === 'not_found'
-        ? 'La convocatoria no fue encontrada.'
-        : error
-          ? 'No se pudo enviar la postulación. Verifica los datos.'
-          : '';
+      ? 'La convocatoria aÃºn no estÃ¡ habilitada para postulaciones.'
+      : error === 'closed'
+        ? 'La convocatoria estÃ¡ cerrada y ya no admite nuevas postulaciones.'
+        : error === 'not_found'
+          ? 'La convocatoria no fue encontrada.'
+          : error
+            ? 'No se pudo enviar la postulaciÃ³n. Verifica los datos.'
+            : '';
+
+const heroImage = convocatoria?.imageUrl || data.publicSite?.pageHeroes?.convocatorias || data.hero?.imageUrl || '/logo.png';
 
 if (!convocatoria) {
   Astro.response.status = 404;
 }
 ---
 <BaseLayout
-  title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Chocó`}
-  description="Detalle de convocatoria y requisitos de postulación."
+  title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del ChocÃ³`}
+  description="Detalle de convocatoria y requisitos de postulaciÃ³n."
 >
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
-  <main class="pt-[72px]">
-    <section class="page-hero">
-      <div class="container mx-auto px-6">
-        <nav class="page-breadcrumb">
-          <a href="/" class="page-breadcrumb-link">
+  <main class="convocatoria-page">
+    <section class="convocatoria-hero">
+      <img src={heroImage} alt={convocatoria?.title || 'Convocatoria'} class="convocatoria-hero-image" referrerpolicy="no-referrer" />
+      <div class="convocatoria-hero-overlay"></div>
+      <span class="hero-track hero-track-a" aria-hidden="true"></span>
+      <span class="hero-track hero-track-b" aria-hidden="true"></span>
+      <div class="container convocatoria-hero-content">
+        <nav class="convocatoria-breadcrumb">
+          <a href="/" class="convocatoria-breadcrumb-link">
             <span class="material-symbols-outlined text-sm">home</span>
             Inicio
           </a>
           <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <a href="/convocatorias" class="page-breadcrumb-link">Convocatorias</a>
+          <a href="/convocatorias" class="convocatoria-breadcrumb-link">Convocatorias</a>
           <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <span class="page-breadcrumb-current">{convocatoria ? convocatoria.title : 'No encontrada'}</span>
+          <span class="convocatoria-breadcrumb-current">{convocatoria ? convocatoria.title : 'No encontrada'}</span>
         </nav>
-        <h1 class="page-title">{convocatoria ? convocatoria.title : 'Convocatoria no encontrada'}</h1>
-        <p class="page-subtitle">
-          {convocatoria ? convocatoria.description : 'La convocatoria solicitada no existe o fue retirada.'}
-        </p>
-      </div>
-    </section>
 
-    <section class="page-section">
-      <div class="container mx-auto px-6">
-        {convocatoria ? (
-          <div class="grid gap-10 md:grid-cols-3">
-            <div class="md:col-span-2">
-              <h2 class="section-heading">Requisitos</h2>
-              <ul class="list-disc pl-6 text-[var(--text-secondary)] leading-relaxed">
-                {convocatoria.requirements.map((r) => (
-                  <li>{r}</li>
-                ))}
-              </ul>
+        <div class="convocatoria-hero-grid">
+          <div>
+            <h1 class="convocatoria-title">{convocatoria ? convocatoria.title : 'Convocatoria no encontrada'}</h1>
+            <p class="convocatoria-subtitle">
+              {convocatoria ? convocatoria.description : 'La convocatoria solicitada no existe o fue retirada.'}
+            </p>
+          </div>
 
-              <h2 class="section-heading mt-10">Categorías</h2>
-              <div class="flex flex-wrap gap-2">
-                {convocatoria.categories.map((c) => (
-                  <span class="rounded-full bg-[#f1f5f9] px-3 py-1 text-sm font-semibold text-[#334155]">{c}</span>
-                ))}
-              </div>
-            </div>
-            <aside class="rounded-2xl border border-[var(--border)] bg-white p-6">
-              <div class="text-xs font-bold uppercase tracking-wider text-[var(--tertiary)]">{convocatoria.audience}</div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span
-                  class:list={[
-                    'rounded-full px-3 py-1 text-xs font-bold uppercase',
-                    convocatoria.status === 'Abierta' ? 'bg-[#e8f5e0] text-[#006b1b]' : 'bg-[#f1f5f9] text-[#334155]'
-                  ]}
-                >
+          {convocatoria ? (
+            <div class="convocatoria-quick-card">
+              <div class="convocatoria-quick-top">
+                <span class="convocatoria-audience">{convocatoria.audience}</span>
+                <span class:list={['convocatoria-status', convocatoria.status === 'Abierta' ? 'status-open' : 'status-closed']}>
                   {convocatoria.status}
                 </span>
               </div>
-              <div class="mt-6 space-y-3 text-sm text-[var(--text-secondary)]">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-base">event</span>
-                  Apertura: <strong class="text-[#0f172a]">{convocatoria.openDate}</strong>
+              <div class="convocatoria-quick-dates">
+                <div>
+                  <span class="material-symbols-outlined">event_upcoming</span>
+                  <strong>Apertura</strong>
+                  <p>{convocatoria.openDate}</p>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-base">event_busy</span>
-                  Cierre: <strong class="text-[#0f172a]">{convocatoria.closeDate}</strong>
+                <div>
+                  <span class="material-symbols-outlined">event_busy</span>
+                  <strong>Cierre</strong>
+                  <p>{convocatoria.closeDate}</p>
                 </div>
               </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
 
-              <div class="mt-8 flex flex-col gap-3">
-                {postulated ? (
-                  <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    Postulación enviada correctamente.
+    <section class="convocatoria-section">
+      <div class="container">
+        {convocatoria ? (
+          <div class="convocatoria-grid">
+            <div class="convocatoria-main-stack">
+              <article class="content-card">
+                <h2>Resumen</h2>
+                <p class="desc-break">{convocatoria.description}</p>
+              </article>
+
+              <article class="content-card">
+                <h2>Requisitos</h2>
+                {convocatoria.requirements?.length ? (
+                  <ul class="requirement-list">
+                    {convocatoria.requirements.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p class="empty-copy">Esta convocatoria no tiene requisitos cargados todavÃ­a.</p>
+                )}
+              </article>
+
+              <article class="content-card">
+                <h2>CategorÃ­as habilitadas</h2>
+                {convocatoria.categories?.length ? (
+                  <div class="category-grid">
+                    {convocatoria.categories.map((category) => (
+                      <span class="category-pill">{category}</span>
+                    ))}
                   </div>
+                ) : (
+                  <p class="empty-copy">No hay categorÃ­as definidas por el momento.</p>
+                )}
+              </article>
+            </div>
+
+            <aside class="convocatoria-side">
+              <div class="post-card">
+                <h3>PostulaciÃ³n de atleta</h3>
+                <p>Este proceso solo aplica para clubes afiliados con sesiÃ³n activa.</p>
+
+                {postulated ? (
+                  <div class="alert ok">PostulaciÃ³n enviada correctamente.</div>
                 ) : null}
                 {error ? (
-                  <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    {postulationErrorMessage}
-                  </div>
+                  <div class="alert error">{postulationErrorMessage}</div>
                 ) : null}
 
                 {user?.role === 'CLUB' ? (
                   effectiveClubId ? (
-                    <form method="POST" action="/api/dashboard/club/postulaciones" encType="multipart/form-data" class="grid gap-3">
+                    <form method="POST" action="/api/dashboard/club/postulaciones" encType="multipart/form-data" class="post-form">
                       <input type="hidden" name="clubId" value={String(effectiveClubId)} />
                       <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
                       <input type="hidden" name="convocatoriaSlug" value={slug} />
+
                       <label class="form-label">Nombre del atleta a postular *</label>
                       <input class="form-input" name="athleteName" placeholder="Nombre completo del atleta" required />
+
                       <label class="form-label">Soporte documental (opcional)</label>
                       <input class="form-input" type="file" name="supportFile" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+
                       <label class="form-label">Observaciones</label>
-                      <textarea class="form-input min-h-[90px]" name="notes" placeholder="Opcional"></textarea>
+                      <textarea class="form-input form-textarea" name="notes" placeholder="Opcional"></textarea>
+
                       <button type="submit" class="btn-primary">
                         <span class="material-symbols-outlined">send</span>
                         Postular atleta
                       </button>
                     </form>
                   ) : (
-                    <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
+                    <div class="alert warn">
                       <span class="material-symbols-outlined text-base align-middle mr-1">warning</span>
                       Tu cuenta no tiene un club asignado. Contacta al administrador de la Liga.
                     </div>
                   )
                 ) : user?.role === 'SUPERADMIN' || user?.role === 'ADMIN' || user?.role === 'LIGA' ? (
-                  <div class="grid gap-3">
-                    <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <div class="post-actions">
+                    <div class="alert info">
                       <span class="material-symbols-outlined text-base align-middle mr-1">admin_panel_settings</span>
                       Como administrador puedes revisar y gestionar todas las postulaciones a esta convocatoria.
                     </div>
@@ -153,34 +186,32 @@ if (!convocatoria) {
                     </a>
                   </div>
                 ) : user && (hasPermission(user, 'assembly:self_panel') || hasPermission(user, 'asambleas:manage')) ? (
-                  <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+                  <div class="alert info">
                     <span class="material-symbols-outlined text-base align-middle mr-1">visibility</span>
-                    Puedes consultar el estado de esta convocatoria desde tu <a href="/admin?tab=convocatorias" class="font-semibold underline">panel</a>.
+                    Puedes consultar el estado de esta convocatoria desde tu <a href="/admin?tab=convocatorias" class="inline-link">panel</a>.
                   </div>
                 ) : (
-                  /* Visitante anónimo */
-                  <>
-                    <p class="text-sm text-[var(--text-secondary)]">Los clubes afiliados pueden postular atletas a esta convocatoria.</p>
+                  <div class="post-actions">
+                    <p class="muted-copy">Los clubes afiliados pueden postular atletas en esta convocatoria.</p>
                     <a href={`/login?next=${encodeURIComponent(`/convocatorias/${slug}`)}`} class="btn-primary">
                       <span class="material-symbols-outlined">login</span>
-                      Iniciar sesión
+                      Iniciar sesiÃ³n
                     </a>
                     <a href="/registro/club" class="btn-secondary">
                       <span class="material-symbols-outlined">person_add</span>
-                      Registro Atleta
+                      Crear cuenta de club
                     </a>
-                  </>
+                  </div>
                 )}
+
+                <p class="post-note">El estado de la postulaciÃ³n se consulta en el panel del club.</p>
               </div>
-              <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulación se consulta en el panel del club.</p>
             </aside>
           </div>
         ) : (
-          <div class="rounded-2xl border border-[var(--border)] bg-white p-8">
-            <p class="text-[var(--text-secondary)]">Vuelve al listado de convocatorias para continuar.</p>
-            <div class="mt-6">
-              <a href="/convocatorias" class="btn-primary">Ver convocatorias</a>
-            </div>
+          <div class="not-found-card">
+            <p>Vuelve al listado de convocatorias para continuar.</p>
+            <a href="/convocatorias" class="btn-primary">Ver convocatorias</a>
           </div>
         )}
       </div>
@@ -189,3 +220,448 @@ if (!convocatoria) {
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
 </BaseLayout>
+
+<style>
+  .convocatoria-page {
+    padding-top: var(--navbar-safe-space, 108px);
+    background:
+      radial-gradient(circle at 14% 12%, rgba(90, 172, 50, 0.16) 0, rgba(90, 172, 50, 0) 38%),
+      radial-gradient(circle at 90% 72%, rgba(234, 179, 8, 0.12) 0, rgba(234, 179, 8, 0) 32%),
+      linear-gradient(180deg, #f3f8f2 0%, #edf6ee 100%);
+  }
+
+  .convocatoria-hero {
+    position: relative;
+    min-height: 500px;
+    overflow: hidden;
+    border-bottom: 2px solid #b9d9be;
+  }
+
+  .convocatoria-hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.03);
+  }
+
+  .convocatoria-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 82% 18%, rgba(234, 179, 8, 0.22) 0%, rgba(234, 179, 8, 0) 42%),
+      linear-gradient(112deg, rgba(0, 31, 9, 0.84) 0%, rgba(7, 46, 16, 0.72) 40%, rgba(9, 31, 76, 0.72) 100%);
+  }
+
+  .hero-track {
+    position: absolute;
+    display: block;
+    height: 14px;
+    border-radius: 999px;
+    opacity: 0.88;
+    transform: rotate(-14deg);
+    z-index: 1;
+  }
+
+  .hero-track-a {
+    right: -60px;
+    top: 110px;
+    width: 360px;
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.9));
+  }
+
+  .hero-track-b {
+    right: 220px;
+    top: 152px;
+    width: 260px;
+    height: 10px;
+    background: linear-gradient(90deg, rgba(90, 172, 50, 0.15), rgba(90, 172, 50, 0.9));
+  }
+
+  .convocatoria-hero-content {
+    position: relative;
+    z-index: 2;
+    padding-top: 34px;
+    padding-bottom: 44px;
+  }
+
+  .convocatoria-breadcrumb {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(209, 255, 200, 0.24);
+    backdrop-filter: blur(6px);
+    color: #e4f0e6;
+    margin-bottom: 18px;
+    font-size: 13px;
+  }
+
+  .convocatoria-breadcrumb-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #e4f0e6;
+    transition: color 140ms ease;
+  }
+
+  .convocatoria-breadcrumb-link:hover {
+    color: #f7ffe5;
+  }
+
+  .convocatoria-breadcrumb-current {
+    color: #f7ffe5;
+    font-weight: 700;
+  }
+
+  .convocatoria-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 26px;
+    align-items: end;
+  }
+
+  .convocatoria-title {
+    margin: 0;
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 4.3rem);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: #f2ffe6;
+    text-wrap: balance;
+    text-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .convocatoria-subtitle {
+    margin-top: 16px;
+    max-width: 760px;
+    color: rgba(232, 250, 238, 0.95);
+    font-size: clamp(1rem, 1.15vw, 1.13rem);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+    padding-left: 16px;
+    border-left: 4px solid #eab308;
+  }
+
+  .convocatoria-quick-card {
+    border-radius: 20px;
+    padding: 18px;
+    background: linear-gradient(145deg, rgba(8, 28, 11, 0.86), rgba(18, 55, 25, 0.68));
+    border: 1px solid rgba(209, 255, 200, 0.34);
+    backdrop-filter: blur(12px);
+    color: #f1ffe8;
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.25);
+  }
+
+  .convocatoria-quick-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .convocatoria-audience {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #d9f5e0;
+  }
+
+  .convocatoria-status {
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .status-open {
+    background: #9bfc96;
+    color: #0b3f15;
+  }
+
+  .status-closed {
+    background: rgba(226, 232, 240, 0.24);
+    color: #f3f7fa;
+  }
+
+  .convocatoria-quick-dates {
+    display: grid;
+    gap: 10px;
+  }
+
+  .convocatoria-quick-dates > div {
+    display: grid;
+    grid-template-columns: 20px auto;
+    gap: 2px 8px;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .convocatoria-quick-dates .material-symbols-outlined {
+    font-size: 18px;
+    color: #d1ffc8;
+    grid-row: span 2;
+  }
+
+  .convocatoria-quick-dates strong {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #cee8d5;
+  }
+
+  .convocatoria-quick-dates p {
+    margin: 0;
+    font-weight: 700;
+    color: #f7ffe5;
+  }
+
+  .convocatoria-section {
+    padding: 36px 0 78px;
+  }
+
+  .convocatoria-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .convocatoria-main-stack {
+    display: grid;
+    gap: 18px;
+  }
+
+  .content-card {
+    position: relative;
+    border-radius: 18px;
+    border: 1px solid #c9e3cf;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fcf7 100%);
+    padding: 22px 22px 20px;
+    box-shadow: 0 10px 32px rgba(9, 34, 13, 0.06);
+    overflow: hidden;
+  }
+
+  .content-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 180px;
+    height: 6px;
+    background: linear-gradient(90deg, #5aac32 0%, #eab308 100%);
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+  }
+
+  .content-card h2 {
+    margin: 2px 0 14px;
+    font-family: 'Sora', sans-serif;
+    font-size: 1.42rem;
+    color: #093316;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+
+  .desc-break {
+    margin: 0;
+    color: #4b5e56;
+    line-height: 1.68;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+  }
+
+  .requirement-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding-left: 18px;
+    color: #334155;
+  }
+
+  .requirement-list li::marker {
+    color: #5aac32;
+  }
+
+  .category-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .category-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: linear-gradient(180deg, #f4fff2 0%, #e6f8e1 100%);
+    color: #135122;
+    border: 1px solid #b9e4bc;
+  }
+
+  .empty-copy {
+    margin: 0;
+    color: #64748b;
+  }
+
+  .convocatoria-side {
+    position: sticky;
+    top: calc(var(--navbar-safe-space, 108px) + 14px);
+  }
+
+  .post-card {
+    border-radius: 20px;
+    border: 1px solid #b7d5be;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 244, 0.96) 100%);
+    padding: 20px;
+    box-shadow: 0 14px 30px rgba(9, 34, 13, 0.12);
+    display: grid;
+    gap: 10px;
+  }
+
+  .post-card h3 {
+    margin: 0;
+    font-family: 'Sora', sans-serif;
+    font-size: 1.18rem;
+    color: #093316;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .post-card > p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .post-form {
+    display: grid;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .post-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .alert {
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    border: 1px solid;
+  }
+
+  .alert.ok {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  .alert.error {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+
+  .alert.warn {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+  }
+
+  .alert.info {
+    border-color: #bbd9c0;
+    background: #eef8ef;
+    color: #165f2b;
+  }
+
+  .inline-link {
+    text-decoration: underline;
+    font-weight: 700;
+  }
+
+  .muted-copy {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .post-note {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .not-found-card {
+    border-radius: 18px;
+    border: 1px solid #bfe0c6;
+    background: linear-gradient(180deg, #fff 0%, #f4fbf5 100%);
+    padding: 24px;
+    display: grid;
+    gap: 14px;
+    justify-items: start;
+  }
+
+  .not-found-card p {
+    margin: 0;
+    color: #475569;
+  }
+
+  @media (max-width: 1080px) {
+    .convocatoria-hero-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .convocatoria-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .convocatoria-side {
+      position: static;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .convocatoria-page {
+      padding-top: var(--navbar-safe-space, 96px);
+    }
+
+    .convocatoria-hero {
+      min-height: 380px;
+    }
+
+    .convocatoria-hero-content {
+      padding-top: 16px;
+      padding-bottom: 24px;
+    }
+
+    .convocatoria-breadcrumb {
+      font-size: 12px;
+      padding: 7px 10px;
+    }
+
+    .hero-track {
+      display: none;
+    }
+
+    .content-card,
+    .post-card {
+      padding: 16px;
+    }
+  }
+</style>
