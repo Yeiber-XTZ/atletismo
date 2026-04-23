@@ -14,6 +14,7 @@ const schema = z
       category: z.string().min(1).max(60),
       status: z.string().min(2).max(40),
       statusMode: z.literal('auto').default('auto'),
+      maxEventsPerAthlete: z.coerce.number().int().min(1).max(30).default(1),
       openDate: z.string().min(0).max(40),
       closeDate: z.string().min(0).max(40),
       location: z.string().min(1).max(120),
@@ -21,6 +22,8 @@ const schema = z
       description: z.string().min(2).max(500),
       requirements: z.array(z.string().min(1).max(180)).min(0).max(30),
       categories: z.array(z.string().min(1).max(40)).min(0).max(30),
+      disciplines: z.array(z.string().min(1).max(80)).min(0).max(40).default([]),
+      events: z.array(z.string().min(1).max(180)).min(0).max(120).default([]),
       imageUrl: urlOrPath
     })
   )
@@ -48,11 +51,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const categories = form.getAll('convCategory').map((value) => String(value).trim());
     const openDates = form.getAll('convOpenDate').map((value) => String(value).trim());
     const closeDates = form.getAll('convCloseDate').map((value) => String(value).trim());
+    const maxEventsPerAthleteRaw = form.getAll('convMaxEventsPerAthlete').map((value) => String(value).trim());
     const locations = form.getAll('convLocation').map((value) => String(value).trim());
     const audiences = form.getAll('convAudience').map((value) => String(value).trim());
     const descriptions = form.getAll('convDescription').map((value) => String(value).trim());
     const requirementsRaw = form.getAll('convRequirements').map((value) => String(value).trim());
     const categoriesRaw = form.getAll('convCategories').map((value) => String(value).trim());
+    const disciplinesRaw = form.getAll('convDisciplines').map((value) => String(value).trim());
+    const eventsRaw = form.getAll('convEvents').map((value) => String(value).trim());
     const imageFiles = form.getAll('convImageFile');
     const imageUrls = form.getAll('convImageUrl').map((value) => String(value).trim());
 
@@ -75,6 +81,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           openDate: openDates[index] ?? '',
           closeDate: closeDates[index] ?? ''
         }),
+        maxEventsPerAthlete: Math.max(1, Number(maxEventsPerAthleteRaw[index] ?? 1) || 1),
         openDate: openDates[index] ?? '',
         closeDate: closeDates[index] ?? '',
         location: locations[index] ?? '',
@@ -85,6 +92,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           .map((item) => item.trim())
           .filter(Boolean),
         categories: (categoriesRaw[index] ?? '')
+          .split('\n')
+          .map((item) => item.trim())
+          .filter(Boolean),
+        disciplines: (disciplinesRaw[index] ?? '')
+          .split('\n')
+          .map((item) => item.trim())
+          .filter(Boolean),
+        events: (eventsRaw[index] ?? '')
           .split('\n')
           .map((item) => item.trim())
           .filter(Boolean),

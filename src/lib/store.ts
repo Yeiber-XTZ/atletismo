@@ -177,6 +177,7 @@ export type Store = {
     category: string;
     status: 'Abierta' | 'Próximamente' | 'Cerrada' | string;
     statusMode?: 'auto' | 'manual' | string;
+    maxEventsPerAthlete?: number;
     openDate: string;
     closeDate: string;
     location: string;
@@ -184,6 +185,8 @@ export type Store = {
     description: string;
     requirements: string[];
     categories: string[];
+    disciplines?: string[];
+    events?: string[];
     imageUrl?: string;
   }>;
   competencias: Array<{
@@ -646,6 +649,7 @@ const defaultStore: Store = {
       title: 'Selectivo Nacional 2026',
       category: 'Selección',
       status: 'Abierta',
+      maxEventsPerAthlete: 1,
       openDate: '2026-04-01',
       closeDate: '2026-04-25',
       location: 'Quibdó',
@@ -659,6 +663,7 @@ const defaultStore: Store = {
       title: 'Concentración Departamental de Talentos',
       category: 'Talentos',
       status: 'Próximamente',
+      maxEventsPerAthlete: 1,
       openDate: '2026-05-10',
       closeDate: '2026-05-25',
       location: 'Istmina',
@@ -937,3 +942,5 @@ export async function writeStore(data: Store) {
   await fs.mkdir(path.dirname(STORE_PATH), { recursive: true });
   await fs.writeFile(STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
 }
+
+

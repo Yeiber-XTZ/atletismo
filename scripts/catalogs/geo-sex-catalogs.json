@@ -1,0 +1,7710 @@
+{
+  "countries": [
+    {
+      "codigo_iso2": "CO",
+      "codigo_iso3": "COL",
+      "codigo_num": "170",
+      "nombre": "República de Colombia",
+      "nombre_corto": "Colombia",
+      "gentilicio": "colombiano/a",
+      "activo": true,
+      "orden": 1
+    },
+    {
+      "codigo_iso2": "VE",
+      "codigo_iso3": "VEN",
+      "codigo_num": "862",
+      "nombre": "República Bolivariana de Venezuela",
+      "nombre_corto": "Venezuela",
+      "gentilicio": "venezolano/a",
+      "activo": true,
+      "orden": 2
+    },
+    {
+      "codigo_iso2": "EC",
+      "codigo_iso3": "ECU",
+      "codigo_num": "218",
+      "nombre": "República del Ecuador",
+      "nombre_corto": "Ecuador",
+      "gentilicio": "ecuatoriano/a",
+      "activo": true,
+      "orden": 3
+    },
+    {
+      "codigo_iso2": "PE",
+      "codigo_iso3": "PER",
+      "codigo_num": "604",
+      "nombre": "República del Perú",
+      "nombre_corto": "Perú",
+      "gentilicio": "peruano/a",
+      "activo": true,
+      "orden": 4
+    },
+    {
+      "codigo_iso2": "BR",
+      "codigo_iso3": "BRA",
+      "codigo_num": "076",
+      "nombre": "República Federativa del Brasil",
+      "nombre_corto": "Brasil",
+      "gentilicio": "brasileño/a",
+      "activo": true,
+      "orden": 5
+    },
+    {
+      "codigo_iso2": "PA",
+      "codigo_iso3": "PAN",
+      "codigo_num": "591",
+      "nombre": "República de Panamá",
+      "nombre_corto": "Panamá",
+      "gentilicio": "panameño/a",
+      "activo": true,
+      "orden": 6
+    },
+    {
+      "codigo_iso2": "AR",
+      "codigo_iso3": "ARG",
+      "codigo_num": "032",
+      "nombre": "República Argentina",
+      "nombre_corto": "Argentina",
+      "gentilicio": "argentino/a",
+      "activo": true,
+      "orden": 7
+    },
+    {
+      "codigo_iso2": "CL",
+      "codigo_iso3": "CHL",
+      "codigo_num": "152",
+      "nombre": "República de Chile",
+      "nombre_corto": "Chile",
+      "gentilicio": "chileno/a",
+      "activo": true,
+      "orden": 8
+    },
+    {
+      "codigo_iso2": "MX",
+      "codigo_iso3": "MEX",
+      "codigo_num": "484",
+      "nombre": "Estados Unidos Mexicanos",
+      "nombre_corto": "México",
+      "gentilicio": "mexicano/a",
+      "activo": true,
+      "orden": 9
+    },
+    {
+      "codigo_iso2": "BO",
+      "codigo_iso3": "BOL",
+      "codigo_num": "068",
+      "nombre": "Estado Plurinacional de Bolivia",
+      "nombre_corto": "Bolivia",
+      "gentilicio": "boliviano/a",
+      "activo": true,
+      "orden": 10
+    },
+    {
+      "codigo_iso2": "PY",
+      "codigo_iso3": "PRY",
+      "codigo_num": "600",
+      "nombre": "República del Paraguay",
+      "nombre_corto": "Paraguay",
+      "gentilicio": "paraguayo/a",
+      "activo": true,
+      "orden": 11
+    },
+    {
+      "codigo_iso2": "UY",
+      "codigo_iso3": "URY",
+      "codigo_num": "858",
+      "nombre": "República Oriental del Uruguay",
+      "nombre_corto": "Uruguay",
+      "gentilicio": "uruguayo/a",
+      "activo": true,
+      "orden": 12
+    },
+    {
+      "codigo_iso2": "GT",
+      "codigo_iso3": "GTM",
+      "codigo_num": "320",
+      "nombre": "República de Guatemala",
+      "nombre_corto": "Guatemala",
+      "gentilicio": "guatemalteco/a",
+      "activo": true,
+      "orden": 13
+    },
+    {
+      "codigo_iso2": "HN",
+      "codigo_iso3": "HND",
+      "codigo_num": "340",
+      "nombre": "República de Honduras",
+      "nombre_corto": "Honduras",
+      "gentilicio": "hondureño/a",
+      "activo": true,
+      "orden": 14
+    },
+    {
+      "codigo_iso2": "SV",
+      "codigo_iso3": "SLV",
+      "codigo_num": "222",
+      "nombre": "República de El Salvador",
+      "nombre_corto": "El Salvador",
+      "gentilicio": "salvadoreño/a",
+      "activo": true,
+      "orden": 15
+    },
+    {
+      "codigo_iso2": "NI",
+      "codigo_iso3": "NIC",
+      "codigo_num": "558",
+      "nombre": "República de Nicaragua",
+      "nombre_corto": "Nicaragua",
+      "gentilicio": "nicaragüense",
+      "activo": true,
+      "orden": 16
+    },
+    {
+      "codigo_iso2": "CR",
+      "codigo_iso3": "CRI",
+      "codigo_num": "188",
+      "nombre": "República de Costa Rica",
+      "nombre_corto": "Costa Rica",
+      "gentilicio": "costarricense",
+      "activo": true,
+      "orden": 17
+    },
+    {
+      "codigo_iso2": "CU",
+      "codigo_iso3": "CUB",
+      "codigo_num": "192",
+      "nombre": "República de Cuba",
+      "nombre_corto": "Cuba",
+      "gentilicio": "cubano/a",
+      "activo": true,
+      "orden": 18
+    },
+    {
+      "codigo_iso2": "DO",
+      "codigo_iso3": "DOM",
+      "codigo_num": "214",
+      "nombre": "República Dominicana",
+      "nombre_corto": "Rep. Dominicana",
+      "gentilicio": "dominicano/a",
+      "activo": true,
+      "orden": 19
+    },
+    {
+      "codigo_iso2": "HT",
+      "codigo_iso3": "HTI",
+      "codigo_num": "332",
+      "nombre": "República de Haití",
+      "nombre_corto": "Haití",
+      "gentilicio": "haitiano/a",
+      "activo": true,
+      "orden": 20
+    },
+    {
+      "codigo_iso2": "JM",
+      "codigo_iso3": "JAM",
+      "codigo_num": "388",
+      "nombre": "Jamaica",
+      "nombre_corto": "Jamaica",
+      "gentilicio": "jamaicano/a",
+      "activo": true,
+      "orden": 21
+    },
+    {
+      "codigo_iso2": "TT",
+      "codigo_iso3": "TTO",
+      "codigo_num": "780",
+      "nombre": "República de Trinidad y Tobago",
+      "nombre_corto": "Trinidad y Tobago",
+      "gentilicio": "trinitense",
+      "activo": true,
+      "orden": 22
+    },
+    {
+      "codigo_iso2": "GY",
+      "codigo_iso3": "GUY",
+      "codigo_num": "328",
+      "nombre": "República Cooperativa de Guyana",
+      "nombre_corto": "Guyana",
+      "gentilicio": "guyanés/a",
+      "activo": true,
+      "orden": 23
+    },
+    {
+      "codigo_iso2": "SR",
+      "codigo_iso3": "SUR",
+      "codigo_num": "740",
+      "nombre": "República de Surinam",
+      "nombre_corto": "Surinam",
+      "gentilicio": "surinamés/a",
+      "activo": true,
+      "orden": 24
+    },
+    {
+      "codigo_iso2": "BZ",
+      "codigo_iso3": "BLZ",
+      "codigo_num": "084",
+      "nombre": "Belice",
+      "nombre_corto": "Belice",
+      "gentilicio": "beliceño/a",
+      "activo": true,
+      "orden": 25
+    },
+    {
+      "codigo_iso2": "BB",
+      "codigo_iso3": "BRB",
+      "codigo_num": "052",
+      "nombre": "Barbados",
+      "nombre_corto": "Barbados",
+      "gentilicio": "barbadense",
+      "activo": true,
+      "orden": 26
+    },
+    {
+      "codigo_iso2": "LC",
+      "codigo_iso3": "LCA",
+      "codigo_num": "662",
+      "nombre": "Santa Lucía",
+      "nombre_corto": "Santa Lucía",
+      "gentilicio": "santalucense",
+      "activo": true,
+      "orden": 27
+    },
+    {
+      "codigo_iso2": "VC",
+      "codigo_iso3": "VCT",
+      "codigo_num": "670",
+      "nombre": "San Vicente y las Granadinas",
+      "nombre_corto": "San Vicente y las Granadinas",
+      "gentilicio": "vicentino/a",
+      "activo": true,
+      "orden": 28
+    },
+    {
+      "codigo_iso2": "GD",
+      "codigo_iso3": "GRD",
+      "codigo_num": "308",
+      "nombre": "Granada",
+      "nombre_corto": "Granada",
+      "gentilicio": "granadino/a",
+      "activo": true,
+      "orden": 29
+    },
+    {
+      "codigo_iso2": "AG",
+      "codigo_iso3": "ATG",
+      "codigo_num": "028",
+      "nombre": "Antigua y Barbuda",
+      "nombre_corto": "Antigua y Barbuda",
+      "gentilicio": "antiguano/a",
+      "activo": true,
+      "orden": 30
+    },
+    {
+      "codigo_iso2": "DM",
+      "codigo_iso3": "DMA",
+      "codigo_num": "212",
+      "nombre": "Mancomunidad de Dominica",
+      "nombre_corto": "Dominica",
+      "gentilicio": "dominiqués/a",
+      "activo": true,
+      "orden": 31
+    },
+    {
+      "codigo_iso2": "KN",
+      "codigo_iso3": "KNA",
+      "codigo_num": "659",
+      "nombre": "San Cristóbal y Nieves",
+      "nombre_corto": "San Cristóbal y Nieves",
+      "gentilicio": "cristobaleño/a",
+      "activo": true,
+      "orden": 32
+    },
+    {
+      "codigo_iso2": "BS",
+      "codigo_iso3": "BHS",
+      "codigo_num": "044",
+      "nombre": "Mancomunidad de las Bahamas",
+      "nombre_corto": "Bahamas",
+      "gentilicio": "bahameño/a",
+      "activo": true,
+      "orden": 33
+    },
+    {
+      "codigo_iso2": "ES",
+      "codigo_iso3": "ESP",
+      "codigo_num": "724",
+      "nombre": "Reino de España",
+      "nombre_corto": "España",
+      "gentilicio": "español/a",
+      "activo": true,
+      "orden": 34
+    },
+    {
+      "codigo_iso2": "PT",
+      "codigo_iso3": "PRT",
+      "codigo_num": "620",
+      "nombre": "República Portuguesa",
+      "nombre_corto": "Portugal",
+      "gentilicio": "portugués/a",
+      "activo": true,
+      "orden": 35
+    },
+    {
+      "codigo_iso2": "FR",
+      "codigo_iso3": "FRA",
+      "codigo_num": "250",
+      "nombre": "República Francesa",
+      "nombre_corto": "Francia",
+      "gentilicio": "francés/a",
+      "activo": true,
+      "orden": 36
+    },
+    {
+      "codigo_iso2": "IT",
+      "codigo_iso3": "ITA",
+      "codigo_num": "380",
+      "nombre": "República Italiana",
+      "nombre_corto": "Italia",
+      "gentilicio": "italiano/a",
+      "activo": true,
+      "orden": 37
+    },
+    {
+      "codigo_iso2": "DE",
+      "codigo_iso3": "DEU",
+      "codigo_num": "276",
+      "nombre": "República Federal de Alemania",
+      "nombre_corto": "Alemania",
+      "gentilicio": "alemán/a",
+      "activo": true,
+      "orden": 38
+    },
+    {
+      "codigo_iso2": "GB",
+      "codigo_iso3": "GBR",
+      "codigo_num": "826",
+      "nombre": "Reino Unido de Gran Bretaña e Irlanda del Norte",
+      "nombre_corto": "Reino Unido",
+      "gentilicio": "británico/a",
+      "activo": true,
+      "orden": 39
+    },
+    {
+      "codigo_iso2": "NL",
+      "codigo_iso3": "NLD",
+      "codigo_num": "528",
+      "nombre": "Reino de los Países Bajos",
+      "nombre_corto": "Países Bajos",
+      "gentilicio": "neerlandés/a",
+      "activo": true,
+      "orden": 40
+    },
+    {
+      "codigo_iso2": "BE",
+      "codigo_iso3": "BEL",
+      "codigo_num": "056",
+      "nombre": "Reino de Bélgica",
+      "nombre_corto": "Bélgica",
+      "gentilicio": "belga",
+      "activo": true,
+      "orden": 41
+    },
+    {
+      "codigo_iso2": "CH",
+      "codigo_iso3": "CHE",
+      "codigo_num": "756",
+      "nombre": "Confederación Suiza",
+      "nombre_corto": "Suiza",
+      "gentilicio": "suizo/a",
+      "activo": true,
+      "orden": 42
+    },
+    {
+      "codigo_iso2": "AT",
+      "codigo_iso3": "AUT",
+      "codigo_num": "040",
+      "nombre": "República de Austria",
+      "nombre_corto": "Austria",
+      "gentilicio": "austríaco/a",
+      "activo": true,
+      "orden": 43
+    },
+    {
+      "codigo_iso2": "SE",
+      "codigo_iso3": "SWE",
+      "codigo_num": "752",
+      "nombre": "Reino de Suecia",
+      "nombre_corto": "Suecia",
+      "gentilicio": "sueco/a",
+      "activo": true,
+      "orden": 44
+    },
+    {
+      "codigo_iso2": "NO",
+      "codigo_iso3": "NOR",
+      "codigo_num": "578",
+      "nombre": "Reino de Noruega",
+      "nombre_corto": "Noruega",
+      "gentilicio": "noruego/a",
+      "activo": true,
+      "orden": 45
+    },
+    {
+      "codigo_iso2": "DK",
+      "codigo_iso3": "DNK",
+      "codigo_num": "208",
+      "nombre": "Reino de Dinamarca",
+      "nombre_corto": "Dinamarca",
+      "gentilicio": "danés/a",
+      "activo": true,
+      "orden": 46
+    },
+    {
+      "codigo_iso2": "FI",
+      "codigo_iso3": "FIN",
+      "codigo_num": "246",
+      "nombre": "República de Finlandia",
+      "nombre_corto": "Finlandia",
+      "gentilicio": "finlandés/a",
+      "activo": true,
+      "orden": 47
+    },
+    {
+      "codigo_iso2": "IE",
+      "codigo_iso3": "IRL",
+      "codigo_num": "372",
+      "nombre": "Irlanda",
+      "nombre_corto": "Irlanda",
+      "gentilicio": "irlandés/a",
+      "activo": true,
+      "orden": 48
+    },
+    {
+      "codigo_iso2": "IS",
+      "codigo_iso3": "ISL",
+      "codigo_num": "352",
+      "nombre": "Islandia",
+      "nombre_corto": "Islandia",
+      "gentilicio": "islandés/a",
+      "activo": true,
+      "orden": 49
+    },
+    {
+      "codigo_iso2": "PL",
+      "codigo_iso3": "POL",
+      "codigo_num": "616",
+      "nombre": "República de Polonia",
+      "nombre_corto": "Polonia",
+      "gentilicio": "polaco/a",
+      "activo": true,
+      "orden": 50
+    },
+    {
+      "codigo_iso2": "CZ",
+      "codigo_iso3": "CZE",
+      "codigo_num": "203",
+      "nombre": "República Checa",
+      "nombre_corto": "República Checa",
+      "gentilicio": "checo/a",
+      "activo": true,
+      "orden": 51
+    },
+    {
+      "codigo_iso2": "SK",
+      "codigo_iso3": "SVK",
+      "codigo_num": "703",
+      "nombre": "República Eslovaca",
+      "nombre_corto": "Eslovaquia",
+      "gentilicio": "eslovaco/a",
+      "activo": true,
+      "orden": 52
+    },
+    {
+      "codigo_iso2": "HU",
+      "codigo_iso3": "HUN",
+      "codigo_num": "348",
+      "nombre": "Hungría",
+      "nombre_corto": "Hungría",
+      "gentilicio": "húngaro/a",
+      "activo": true,
+      "orden": 53
+    },
+    {
+      "codigo_iso2": "RO",
+      "codigo_iso3": "ROU",
+      "codigo_num": "642",
+      "nombre": "Rumanía",
+      "nombre_corto": "Rumanía",
+      "gentilicio": "rumano/a",
+      "activo": true,
+      "orden": 54
+    },
+    {
+      "codigo_iso2": "BG",
+      "codigo_iso3": "BGR",
+      "codigo_num": "100",
+      "nombre": "República de Bulgaria",
+      "nombre_corto": "Bulgaria",
+      "gentilicio": "búlgaro/a",
+      "activo": true,
+      "orden": 55
+    },
+    {
+      "codigo_iso2": "HR",
+      "codigo_iso3": "HRV",
+      "codigo_num": "191",
+      "nombre": "República de Croacia",
+      "nombre_corto": "Croacia",
+      "gentilicio": "croata",
+      "activo": true,
+      "orden": 56
+    },
+    {
+      "codigo_iso2": "SI",
+      "codigo_iso3": "SVN",
+      "codigo_num": "705",
+      "nombre": "República de Eslovenia",
+      "nombre_corto": "Eslovenia",
+      "gentilicio": "esloveno/a",
+      "activo": true,
+      "orden": 57
+    },
+    {
+      "codigo_iso2": "RS",
+      "codigo_iso3": "SRB",
+      "codigo_num": "688",
+      "nombre": "República de Serbia",
+      "nombre_corto": "Serbia",
+      "gentilicio": "serbio/a",
+      "activo": true,
+      "orden": 58
+    },
+    {
+      "codigo_iso2": "BA",
+      "codigo_iso3": "BIH",
+      "codigo_num": "070",
+      "nombre": "Bosnia y Herzegovina",
+      "nombre_corto": "Bosnia y Herzegovina",
+      "gentilicio": "bosnio/a",
+      "activo": true,
+      "orden": 59
+    },
+    {
+      "codigo_iso2": "ME",
+      "codigo_iso3": "MNE",
+      "codigo_num": "499",
+      "nombre": "Montenegro",
+      "nombre_corto": "Montenegro",
+      "gentilicio": "montenegrino/a",
+      "activo": true,
+      "orden": 60
+    },
+    {
+      "codigo_iso2": "MK",
+      "codigo_iso3": "MKD",
+      "codigo_num": "807",
+      "nombre": "República de Macedonia del Norte",
+      "nombre_corto": "Macedonia del Norte",
+      "gentilicio": "macedonio/a",
+      "activo": true,
+      "orden": 61
+    },
+    {
+      "codigo_iso2": "AL",
+      "codigo_iso3": "ALB",
+      "codigo_num": "008",
+      "nombre": "República de Albania",
+      "nombre_corto": "Albania",
+      "gentilicio": "albanés/a",
+      "activo": true,
+      "orden": 62
+    },
+    {
+      "codigo_iso2": "GR",
+      "codigo_iso3": "GRC",
+      "codigo_num": "300",
+      "nombre": "República Helénica",
+      "nombre_corto": "Grecia",
+      "gentilicio": "griego/a",
+      "activo": true,
+      "orden": 63
+    },
+    {
+      "codigo_iso2": "LT",
+      "codigo_iso3": "LTU",
+      "codigo_num": "440",
+      "nombre": "República de Lituania",
+      "nombre_corto": "Lituania",
+      "gentilicio": "lituano/a",
+      "activo": true,
+      "orden": 64
+    },
+    {
+      "codigo_iso2": "LV",
+      "codigo_iso3": "LVA",
+      "codigo_num": "428",
+      "nombre": "República de Letonia",
+      "nombre_corto": "Letonia",
+      "gentilicio": "letón/a",
+      "activo": true,
+      "orden": 65
+    },
+    {
+      "codigo_iso2": "EE",
+      "codigo_iso3": "EST",
+      "codigo_num": "233",
+      "nombre": "República de Estonia",
+      "nombre_corto": "Estonia",
+      "gentilicio": "estonio/a",
+      "activo": true,
+      "orden": 66
+    },
+    {
+      "codigo_iso2": "UA",
+      "codigo_iso3": "UKR",
+      "codigo_num": "804",
+      "nombre": "Ucrania",
+      "nombre_corto": "Ucrania",
+      "gentilicio": "ucraniano/a",
+      "activo": true,
+      "orden": 67
+    },
+    {
+      "codigo_iso2": "MD",
+      "codigo_iso3": "MDA",
+      "codigo_num": "498",
+      "nombre": "República de Moldavia",
+      "nombre_corto": "Moldavia",
+      "gentilicio": "moldavo/a",
+      "activo": true,
+      "orden": 68
+    },
+    {
+      "codigo_iso2": "BY",
+      "codigo_iso3": "BLR",
+      "codigo_num": "112",
+      "nombre": "República de Bielorrusia",
+      "nombre_corto": "Bielorrusia",
+      "gentilicio": "bielorruso/a",
+      "activo": true,
+      "orden": 69
+    },
+    {
+      "codigo_iso2": "RU",
+      "codigo_iso3": "RUS",
+      "codigo_num": "643",
+      "nombre": "Federación de Rusia",
+      "nombre_corto": "Rusia",
+      "gentilicio": "ruso/a",
+      "activo": true,
+      "orden": 70
+    },
+    {
+      "codigo_iso2": "LU",
+      "codigo_iso3": "LUX",
+      "codigo_num": "442",
+      "nombre": "Gran Ducado de Luxemburgo",
+      "nombre_corto": "Luxemburgo",
+      "gentilicio": "luxemburgués/a",
+      "activo": true,
+      "orden": 71
+    },
+    {
+      "codigo_iso2": "MT",
+      "codigo_iso3": "MLT",
+      "codigo_num": "470",
+      "nombre": "República de Malta",
+      "nombre_corto": "Malta",
+      "gentilicio": "maltés/a",
+      "activo": true,
+      "orden": 72
+    },
+    {
+      "codigo_iso2": "CY",
+      "codigo_iso3": "CYP",
+      "codigo_num": "196",
+      "nombre": "República de Chipre",
+      "nombre_corto": "Chipre",
+      "gentilicio": "chipriota",
+      "activo": true,
+      "orden": 73
+    },
+    {
+      "codigo_iso2": "AD",
+      "codigo_iso3": "AND",
+      "codigo_num": "020",
+      "nombre": "Principado de Andorra",
+      "nombre_corto": "Andorra",
+      "gentilicio": "andorrano/a",
+      "activo": true,
+      "orden": 74
+    },
+    {
+      "codigo_iso2": "MC",
+      "codigo_iso3": "MCO",
+      "codigo_num": "492",
+      "nombre": "Principado de Mónaco",
+      "nombre_corto": "Mónaco",
+      "gentilicio": "monegasco/a",
+      "activo": true,
+      "orden": 75
+    },
+    {
+      "codigo_iso2": "LI",
+      "codigo_iso3": "LIE",
+      "codigo_num": "438",
+      "nombre": "Principado de Liechtenstein",
+      "nombre_corto": "Liechtenstein",
+      "gentilicio": "liechtensteiniano/a",
+      "activo": true,
+      "orden": 76
+    },
+    {
+      "codigo_iso2": "SM",
+      "codigo_iso3": "SMR",
+      "codigo_num": "674",
+      "nombre": "República de San Marino",
+      "nombre_corto": "San Marino",
+      "gentilicio": "sanmarinense",
+      "activo": true,
+      "orden": 77
+    },
+    {
+      "codigo_iso2": "VA",
+      "codigo_iso3": "VAT",
+      "codigo_num": "336",
+      "nombre": "Ciudad del Vaticano",
+      "nombre_corto": "Vaticano",
+      "gentilicio": "vaticano/a",
+      "activo": true,
+      "orden": 78
+    },
+    {
+      "codigo_iso2": "US",
+      "codigo_iso3": "USA",
+      "codigo_num": "840",
+      "nombre": "Estados Unidos de América",
+      "nombre_corto": "Estados Unidos",
+      "gentilicio": "estadounidense",
+      "activo": true,
+      "orden": 79
+    },
+    {
+      "codigo_iso2": "CA",
+      "codigo_iso3": "CAN",
+      "codigo_num": "124",
+      "nombre": "Canadá",
+      "nombre_corto": "Canadá",
+      "gentilicio": "canadiense",
+      "activo": true,
+      "orden": 80
+    },
+    {
+      "codigo_iso2": "CN",
+      "codigo_iso3": "CHN",
+      "codigo_num": "156",
+      "nombre": "República Popular China",
+      "nombre_corto": "China",
+      "gentilicio": "chino/a",
+      "activo": true,
+      "orden": 81
+    },
+    {
+      "codigo_iso2": "JP",
+      "codigo_iso3": "JPN",
+      "codigo_num": "392",
+      "nombre": "Japón",
+      "nombre_corto": "Japón",
+      "gentilicio": "japonés/a",
+      "activo": true,
+      "orden": 82
+    },
+    {
+      "codigo_iso2": "IN",
+      "codigo_iso3": "IND",
+      "codigo_num": "356",
+      "nombre": "República de la India",
+      "nombre_corto": "India",
+      "gentilicio": "indio/a",
+      "activo": true,
+      "orden": 83
+    },
+    {
+      "codigo_iso2": "KR",
+      "codigo_iso3": "KOR",
+      "codigo_num": "410",
+      "nombre": "República de Corea",
+      "nombre_corto": "Corea del Sur",
+      "gentilicio": "surcoreano/a",
+      "activo": true,
+      "orden": 84
+    },
+    {
+      "codigo_iso2": "KP",
+      "codigo_iso3": "PRK",
+      "codigo_num": "408",
+      "nombre": "República Popular Democrática de Corea",
+      "nombre_corto": "Corea del Norte",
+      "gentilicio": "norcoreano/a",
+      "activo": true,
+      "orden": 85
+    },
+    {
+      "codigo_iso2": "ID",
+      "codigo_iso3": "IDN",
+      "codigo_num": "360",
+      "nombre": "República de Indonesia",
+      "nombre_corto": "Indonesia",
+      "gentilicio": "indonesio/a",
+      "activo": true,
+      "orden": 86
+    },
+    {
+      "codigo_iso2": "PH",
+      "codigo_iso3": "PHL",
+      "codigo_num": "608",
+      "nombre": "República de Filipinas",
+      "nombre_corto": "Filipinas",
+      "gentilicio": "filipino/a",
+      "activo": true,
+      "orden": 87
+    },
+    {
+      "codigo_iso2": "MY",
+      "codigo_iso3": "MYS",
+      "codigo_num": "458",
+      "nombre": "Malasia",
+      "nombre_corto": "Malasia",
+      "gentilicio": "malayo/a",
+      "activo": true,
+      "orden": 88
+    },
+    {
+      "codigo_iso2": "SG",
+      "codigo_iso3": "SGP",
+      "codigo_num": "702",
+      "nombre": "República de Singapur",
+      "nombre_corto": "Singapur",
+      "gentilicio": "singapurense",
+      "activo": true,
+      "orden": 89
+    },
+    {
+      "codigo_iso2": "TH",
+      "codigo_iso3": "THA",
+      "codigo_num": "764",
+      "nombre": "Reino de Tailandia",
+      "nombre_corto": "Tailandia",
+      "gentilicio": "tailandés/a",
+      "activo": true,
+      "orden": 90
+    },
+    {
+      "codigo_iso2": "VN",
+      "codigo_iso3": "VNM",
+      "codigo_num": "704",
+      "nombre": "República Socialista de Vietnam",
+      "nombre_corto": "Vietnam",
+      "gentilicio": "vietnamita",
+      "activo": true,
+      "orden": 91
+    },
+    {
+      "codigo_iso2": "MM",
+      "codigo_iso3": "MMR",
+      "codigo_num": "104",
+      "nombre": "República de la Unión de Myanmar",
+      "nombre_corto": "Myanmar",
+      "gentilicio": "birmano/a",
+      "activo": true,
+      "orden": 92
+    },
+    {
+      "codigo_iso2": "KH",
+      "codigo_iso3": "KHM",
+      "codigo_num": "116",
+      "nombre": "Reino de Camboya",
+      "nombre_corto": "Camboya",
+      "gentilicio": "camboyano/a",
+      "activo": true,
+      "orden": 93
+    },
+    {
+      "codigo_iso2": "LA",
+      "codigo_iso3": "LAO",
+      "codigo_num": "418",
+      "nombre": "República Democrática Popular Lao",
+      "nombre_corto": "Laos",
+      "gentilicio": "laosiano/a",
+      "activo": true,
+      "orden": 94
+    },
+    {
+      "codigo_iso2": "BD",
+      "codigo_iso3": "BGD",
+      "codigo_num": "050",
+      "nombre": "República Popular de Bangladés",
+      "nombre_corto": "Bangladés",
+      "gentilicio": "bangladesí",
+      "activo": true,
+      "orden": 95
+    },
+    {
+      "codigo_iso2": "LK",
+      "codigo_iso3": "LKA",
+      "codigo_num": "144",
+      "nombre": "República Democrática Socialista de Sri Lanka",
+      "nombre_corto": "Sri Lanka",
+      "gentilicio": "esrilanqués/a",
+      "activo": true,
+      "orden": 96
+    },
+    {
+      "codigo_iso2": "NP",
+      "codigo_iso3": "NPL",
+      "codigo_num": "524",
+      "nombre": "República Democrática Federal de Nepal",
+      "nombre_corto": "Nepal",
+      "gentilicio": "nepalés/a",
+      "activo": true,
+      "orden": 97
+    },
+    {
+      "codigo_iso2": "BT",
+      "codigo_iso3": "BTN",
+      "codigo_num": "064",
+      "nombre": "Reino de Bután",
+      "nombre_corto": "Bután",
+      "gentilicio": "butanés/a",
+      "activo": true,
+      "orden": 98
+    },
+    {
+      "codigo_iso2": "PK",
+      "codigo_iso3": "PAK",
+      "codigo_num": "586",
+      "nombre": "República Islámica de Pakistán",
+      "nombre_corto": "Pakistán",
+      "gentilicio": "pakistaní",
+      "activo": true,
+      "orden": 99
+    },
+    {
+      "codigo_iso2": "AF",
+      "codigo_iso3": "AFG",
+      "codigo_num": "004",
+      "nombre": "República Islámica del Afganistán",
+      "nombre_corto": "Afganistán",
+      "gentilicio": "afgano/a",
+      "activo": true,
+      "orden": 100
+    },
+    {
+      "codigo_iso2": "IR",
+      "codigo_iso3": "IRN",
+      "codigo_num": "364",
+      "nombre": "República Islámica de Irán",
+      "nombre_corto": "Irán",
+      "gentilicio": "iraní",
+      "activo": true,
+      "orden": 101
+    },
+    {
+      "codigo_iso2": "IQ",
+      "codigo_iso3": "IRQ",
+      "codigo_num": "368",
+      "nombre": "República de Irak",
+      "nombre_corto": "Irak",
+      "gentilicio": "iraquí",
+      "activo": true,
+      "orden": 102
+    },
+    {
+      "codigo_iso2": "SY",
+      "codigo_iso3": "SYR",
+      "codigo_num": "760",
+      "nombre": "República Árabe Siria",
+      "nombre_corto": "Siria",
+      "gentilicio": "sirio/a",
+      "activo": true,
+      "orden": 103
+    },
+    {
+      "codigo_iso2": "LB",
+      "codigo_iso3": "LBN",
+      "codigo_num": "422",
+      "nombre": "República Libanesa",
+      "nombre_corto": "Líbano",
+      "gentilicio": "libanés/a",
+      "activo": true,
+      "orden": 104
+    },
+    {
+      "codigo_iso2": "JO",
+      "codigo_iso3": "JOR",
+      "codigo_num": "400",
+      "nombre": "Reino Hachemita de Jordania",
+      "nombre_corto": "Jordania",
+      "gentilicio": "jordano/a",
+      "activo": true,
+      "orden": 105
+    },
+    {
+      "codigo_iso2": "IL",
+      "codigo_iso3": "ISR",
+      "codigo_num": "376",
+      "nombre": "Estado de Israel",
+      "nombre_corto": "Israel",
+      "gentilicio": "israelí",
+      "activo": true,
+      "orden": 106
+    },
+    {
+      "codigo_iso2": "PS",
+      "codigo_iso3": "PSE",
+      "codigo_num": "275",
+      "nombre": "Estado de Palestina",
+      "nombre_corto": "Palestina",
+      "gentilicio": "palestino/a",
+      "activo": true,
+      "orden": 107
+    },
+    {
+      "codigo_iso2": "SA",
+      "codigo_iso3": "SAU",
+      "codigo_num": "682",
+      "nombre": "Reino de Arabia Saudita",
+      "nombre_corto": "Arabia Saudita",
+      "gentilicio": "saudí",
+      "activo": true,
+      "orden": 108
+    },
+    {
+      "codigo_iso2": "AE",
+      "codigo_iso3": "ARE",
+      "codigo_num": "784",
+      "nombre": "Emiratos Árabes Unidos",
+      "nombre_corto": "Emiratos Árabes Unidos",
+      "gentilicio": "emiratí",
+      "activo": true,
+      "orden": 109
+    },
+    {
+      "codigo_iso2": "QA",
+      "codigo_iso3": "QAT",
+      "codigo_num": "634",
+      "nombre": "Estado de Catar",
+      "nombre_corto": "Catar",
+      "gentilicio": "catarí",
+      "activo": true,
+      "orden": 110
+    },
+    {
+      "codigo_iso2": "KW",
+      "codigo_iso3": "KWT",
+      "codigo_num": "414",
+      "nombre": "Estado de Kuwait",
+      "nombre_corto": "Kuwait",
+      "gentilicio": "kuwaití",
+      "activo": true,
+      "orden": 111
+    },
+    {
+      "codigo_iso2": "BH",
+      "codigo_iso3": "BHR",
+      "codigo_num": "048",
+      "nombre": "Reino de Baréin",
+      "nombre_corto": "Baréin",
+      "gentilicio": "bareiní",
+      "activo": true,
+      "orden": 112
+    },
+    {
+      "codigo_iso2": "OM",
+      "codigo_iso3": "OMN",
+      "codigo_num": "512",
+      "nombre": "Sultanato de Omán",
+      "nombre_corto": "Omán",
+      "gentilicio": "omaní",
+      "activo": true,
+      "orden": 113
+    },
+    {
+      "codigo_iso2": "YE",
+      "codigo_iso3": "YEM",
+      "codigo_num": "887",
+      "nombre": "República del Yemen",
+      "nombre_corto": "Yemen",
+      "gentilicio": "yemení",
+      "activo": true,
+      "orden": 114
+    },
+    {
+      "codigo_iso2": "KZ",
+      "codigo_iso3": "KAZ",
+      "codigo_num": "398",
+      "nombre": "República de Kazajistán",
+      "nombre_corto": "Kazajistán",
+      "gentilicio": "kazajo/a",
+      "activo": true,
+      "orden": 115
+    },
+    {
+      "codigo_iso2": "UZ",
+      "codigo_iso3": "UZB",
+      "codigo_num": "860",
+      "nombre": "República de Uzbekistán",
+      "nombre_corto": "Uzbekistán",
+      "gentilicio": "uzbeko/a",
+      "activo": true,
+      "orden": 116
+    },
+    {
+      "codigo_iso2": "TM",
+      "codigo_iso3": "TKM",
+      "codigo_num": "795",
+      "nombre": "Turkmenistán",
+      "nombre_corto": "Turkmenistán",
+      "gentilicio": "turcomano/a",
+      "activo": true,
+      "orden": 117
+    },
+    {
+      "codigo_iso2": "TJ",
+      "codigo_iso3": "TJK",
+      "codigo_num": "762",
+      "nombre": "República de Tayikistán",
+      "nombre_corto": "Tayikistán",
+      "gentilicio": "tayiko/a",
+      "activo": true,
+      "orden": 118
+    },
+    {
+      "codigo_iso2": "KG",
+      "codigo_iso3": "KGZ",
+      "codigo_num": "417",
+      "nombre": "República Kirguisa",
+      "nombre_corto": "Kirguistán",
+      "gentilicio": "kirguís",
+      "activo": true,
+      "orden": 119
+    },
+    {
+      "codigo_iso2": "MN",
+      "codigo_iso3": "MNG",
+      "codigo_num": "496",
+      "nombre": "Mongolia",
+      "nombre_corto": "Mongolia",
+      "gentilicio": "mongol/a",
+      "activo": true,
+      "orden": 120
+    },
+    {
+      "codigo_iso2": "GE",
+      "codigo_iso3": "GEO",
+      "codigo_num": "268",
+      "nombre": "Georgia",
+      "nombre_corto": "Georgia",
+      "gentilicio": "georgiano/a",
+      "activo": true,
+      "orden": 121
+    },
+    {
+      "codigo_iso2": "AM",
+      "codigo_iso3": "ARM",
+      "codigo_num": "051",
+      "nombre": "República de Armenia",
+      "nombre_corto": "Armenia",
+      "gentilicio": "armenio/a",
+      "activo": true,
+      "orden": 122
+    },
+    {
+      "codigo_iso2": "AZ",
+      "codigo_iso3": "AZE",
+      "codigo_num": "031",
+      "nombre": "República de Azerbaiyán",
+      "nombre_corto": "Azerbaiyán",
+      "gentilicio": "azerbaiyano/a",
+      "activo": true,
+      "orden": 123
+    },
+    {
+      "codigo_iso2": "TR",
+      "codigo_iso3": "TUR",
+      "codigo_num": "792",
+      "nombre": "República de Türkiye",
+      "nombre_corto": "Turquía",
+      "gentilicio": "turco/a",
+      "activo": true,
+      "orden": 124
+    },
+    {
+      "codigo_iso2": "TL",
+      "codigo_iso3": "TLS",
+      "codigo_num": "626",
+      "nombre": "República Democrática de Timor Oriental",
+      "nombre_corto": "Timor Oriental",
+      "gentilicio": "timorense",
+      "activo": true,
+      "orden": 125
+    },
+    {
+      "codigo_iso2": "BN",
+      "codigo_iso3": "BRN",
+      "codigo_num": "096",
+      "nombre": "Brunéi Darussalam",
+      "nombre_corto": "Brunéi",
+      "gentilicio": "bruneano/a",
+      "activo": true,
+      "orden": 126
+    },
+    {
+      "codigo_iso2": "MV",
+      "codigo_iso3": "MDV",
+      "codigo_num": "462",
+      "nombre": "República de Maldivas",
+      "nombre_corto": "Maldivas",
+      "gentilicio": "maldivo/a",
+      "activo": true,
+      "orden": 127
+    },
+    {
+      "codigo_iso2": "AU",
+      "codigo_iso3": "AUS",
+      "codigo_num": "036",
+      "nombre": "Mancomunidad de Australia",
+      "nombre_corto": "Australia",
+      "gentilicio": "australiano/a",
+      "activo": true,
+      "orden": 128
+    },
+    {
+      "codigo_iso2": "NZ",
+      "codigo_iso3": "NZL",
+      "codigo_num": "554",
+      "nombre": "Nueva Zelanda",
+      "nombre_corto": "Nueva Zelanda",
+      "gentilicio": "neozelandés/a",
+      "activo": true,
+      "orden": 129
+    },
+    {
+      "codigo_iso2": "FJ",
+      "codigo_iso3": "FJI",
+      "codigo_num": "242",
+      "nombre": "República de Fiyi",
+      "nombre_corto": "Fiyi",
+      "gentilicio": "fiyiano/a",
+      "activo": true,
+      "orden": 130
+    },
+    {
+      "codigo_iso2": "PG",
+      "codigo_iso3": "PNG",
+      "codigo_num": "598",
+      "nombre": "Estado Independiente de Papúa Nueva Guinea",
+      "nombre_corto": "Papúa Nueva Guinea",
+      "gentilicio": "papú",
+      "activo": true,
+      "orden": 131
+    },
+    {
+      "codigo_iso2": "SB",
+      "codigo_iso3": "SLB",
+      "codigo_num": "090",
+      "nombre": "Islas Salomón",
+      "nombre_corto": "Islas Salomón",
+      "gentilicio": "salomonense",
+      "activo": true,
+      "orden": 132
+    },
+    {
+      "codigo_iso2": "VU",
+      "codigo_iso3": "VUT",
+      "codigo_num": "548",
+      "nombre": "República de Vanuatu",
+      "nombre_corto": "Vanuatu",
+      "gentilicio": "vanuatense",
+      "activo": true,
+      "orden": 133
+    },
+    {
+      "codigo_iso2": "WS",
+      "codigo_iso3": "WSM",
+      "codigo_num": "882",
+      "nombre": "Estado Independiente de Samoa",
+      "nombre_corto": "Samoa",
+      "gentilicio": "samoano/a",
+      "activo": true,
+      "orden": 134
+    },
+    {
+      "codigo_iso2": "TO",
+      "codigo_iso3": "TON",
+      "codigo_num": "776",
+      "nombre": "Reino de Tonga",
+      "nombre_corto": "Tonga",
+      "gentilicio": "tongano/a",
+      "activo": true,
+      "orden": 135
+    },
+    {
+      "codigo_iso2": "KI",
+      "codigo_iso3": "KIR",
+      "codigo_num": "296",
+      "nombre": "República de Kiribati",
+      "nombre_corto": "Kiribati",
+      "gentilicio": "kiribatiano/a",
+      "activo": true,
+      "orden": 136
+    },
+    {
+      "codigo_iso2": "FM",
+      "codigo_iso3": "FSM",
+      "codigo_num": "583",
+      "nombre": "Estados Federados de Micronesia",
+      "nombre_corto": "Micronesia",
+      "gentilicio": "micronesio/a",
+      "activo": true,
+      "orden": 137
+    },
+    {
+      "codigo_iso2": "MH",
+      "codigo_iso3": "MHL",
+      "codigo_num": "584",
+      "nombre": "República de las Islas Marshall",
+      "nombre_corto": "Islas Marshall",
+      "gentilicio": "marshalés/a",
+      "activo": true,
+      "orden": 138
+    },
+    {
+      "codigo_iso2": "PW",
+      "codigo_iso3": "PLW",
+      "codigo_num": "585",
+      "nombre": "República de Palaos",
+      "nombre_corto": "Palaos",
+      "gentilicio": "palauano/a",
+      "activo": true,
+      "orden": 139
+    },
+    {
+      "codigo_iso2": "NR",
+      "codigo_iso3": "NRU",
+      "codigo_num": "520",
+      "nombre": "República de Nauru",
+      "nombre_corto": "Nauru",
+      "gentilicio": "nauruano/a",
+      "activo": true,
+      "orden": 140
+    },
+    {
+      "codigo_iso2": "TV",
+      "codigo_iso3": "TUV",
+      "codigo_num": "798",
+      "nombre": "Tuvalu",
+      "nombre_corto": "Tuvalu",
+      "gentilicio": "tuvaluano/a",
+      "activo": true,
+      "orden": 141
+    },
+    {
+      "codigo_iso2": "NG",
+      "codigo_iso3": "NGA",
+      "codigo_num": "566",
+      "nombre": "República Federal de Nigeria",
+      "nombre_corto": "Nigeria",
+      "gentilicio": "nigeriano/a",
+      "activo": true,
+      "orden": 142
+    },
+    {
+      "codigo_iso2": "ET",
+      "codigo_iso3": "ETH",
+      "codigo_num": "231",
+      "nombre": "República Democrática Federal de Etiopía",
+      "nombre_corto": "Etiopía",
+      "gentilicio": "etíope",
+      "activo": true,
+      "orden": 143
+    },
+    {
+      "codigo_iso2": "EG",
+      "codigo_iso3": "EGY",
+      "codigo_num": "818",
+      "nombre": "República Árabe de Egipto",
+      "nombre_corto": "Egipto",
+      "gentilicio": "egipcio/a",
+      "activo": true,
+      "orden": 144
+    },
+    {
+      "codigo_iso2": "CD",
+      "codigo_iso3": "COD",
+      "codigo_num": "180",
+      "nombre": "República Democrática del Congo",
+      "nombre_corto": "RD Congo",
+      "gentilicio": "congoleño/a",
+      "activo": true,
+      "orden": 145
+    },
+    {
+      "codigo_iso2": "TZ",
+      "codigo_iso3": "TZA",
+      "codigo_num": "834",
+      "nombre": "República Unida de Tanzania",
+      "nombre_corto": "Tanzania",
+      "gentilicio": "tanzano/a",
+      "activo": true,
+      "orden": 146
+    },
+    {
+      "codigo_iso2": "KE",
+      "codigo_iso3": "KEN",
+      "codigo_num": "404",
+      "nombre": "República de Kenia",
+      "nombre_corto": "Kenia",
+      "gentilicio": "keniano/a",
+      "activo": true,
+      "orden": 147
+    },
+    {
+      "codigo_iso2": "ZA",
+      "codigo_iso3": "ZAF",
+      "codigo_num": "710",
+      "nombre": "República de Sudáfrica",
+      "nombre_corto": "Sudáfrica",
+      "gentilicio": "sudafricano/a",
+      "activo": true,
+      "orden": 148
+    },
+    {
+      "codigo_iso2": "DZ",
+      "codigo_iso3": "DZA",
+      "codigo_num": "012",
+      "nombre": "República Argelina Democrática y Popular",
+      "nombre_corto": "Argelia",
+      "gentilicio": "argelino/a",
+      "activo": true,
+      "orden": 149
+    },
+    {
+      "codigo_iso2": "MA",
+      "codigo_iso3": "MAR",
+      "codigo_num": "504",
+      "nombre": "Reino de Marruecos",
+      "nombre_corto": "Marruecos",
+      "gentilicio": "marroquí",
+      "activo": true,
+      "orden": 150
+    },
+    {
+      "codigo_iso2": "GH",
+      "codigo_iso3": "GHA",
+      "codigo_num": "288",
+      "nombre": "República de Ghana",
+      "nombre_corto": "Ghana",
+      "gentilicio": "ghanés/a",
+      "activo": true,
+      "orden": 151
+    },
+    {
+      "codigo_iso2": "CI",
+      "codigo_iso3": "CIV",
+      "codigo_num": "384",
+      "nombre": "República de Côte d'Ivoire",
+      "nombre_corto": "Costa de Marfil",
+      "gentilicio": "marfileño/a",
+      "activo": true,
+      "orden": 152
+    },
+    {
+      "codigo_iso2": "CM",
+      "codigo_iso3": "CMR",
+      "codigo_num": "120",
+      "nombre": "República de Camerún",
+      "nombre_corto": "Camerún",
+      "gentilicio": "camerunés/a",
+      "activo": true,
+      "orden": 153
+    },
+    {
+      "codigo_iso2": "SN",
+      "codigo_iso3": "SEN",
+      "codigo_num": "686",
+      "nombre": "República de Senegal",
+      "nombre_corto": "Senegal",
+      "gentilicio": "senegalés/a",
+      "activo": true,
+      "orden": 154
+    },
+    {
+      "codigo_iso2": "ZM",
+      "codigo_iso3": "ZMB",
+      "codigo_num": "894",
+      "nombre": "República de Zambia",
+      "nombre_corto": "Zambia",
+      "gentilicio": "zambiano/a",
+      "activo": true,
+      "orden": 155
+    },
+    {
+      "codigo_iso2": "ZW",
+      "codigo_iso3": "ZWE",
+      "codigo_num": "716",
+      "nombre": "República de Zimbabue",
+      "nombre_corto": "Zimbabue",
+      "gentilicio": "zimbabuense",
+      "activo": true,
+      "orden": 156
+    },
+    {
+      "codigo_iso2": "ML",
+      "codigo_iso3": "MLI",
+      "codigo_num": "466",
+      "nombre": "República de Malí",
+      "nombre_corto": "Malí",
+      "gentilicio": "maliense",
+      "activo": true,
+      "orden": 157
+    },
+    {
+      "codigo_iso2": "BF",
+      "codigo_iso3": "BFA",
+      "codigo_num": "854",
+      "nombre": "Burkina Faso",
+      "nombre_corto": "Burkina Faso",
+      "gentilicio": "burkinés/a",
+      "activo": true,
+      "orden": 158
+    },
+    {
+      "codigo_iso2": "NE",
+      "codigo_iso3": "NER",
+      "codigo_num": "562",
+      "nombre": "República del Níger",
+      "nombre_corto": "Níger",
+      "gentilicio": "nigerino/a",
+      "activo": true,
+      "orden": 159
+    },
+    {
+      "codigo_iso2": "TD",
+      "codigo_iso3": "TCD",
+      "codigo_num": "148",
+      "nombre": "República del Chad",
+      "nombre_corto": "Chad",
+      "gentilicio": "chadiano/a",
+      "activo": true,
+      "orden": 160
+    },
+    {
+      "codigo_iso2": "SO",
+      "codigo_iso3": "SOM",
+      "codigo_num": "706",
+      "nombre": "República Federal de Somalia",
+      "nombre_corto": "Somalia",
+      "gentilicio": "somalí",
+      "activo": true,
+      "orden": 161
+    },
+    {
+      "codigo_iso2": "MZ",
+      "codigo_iso3": "MOZ",
+      "codigo_num": "508",
+      "nombre": "República de Mozambique",
+      "nombre_corto": "Mozambique",
+      "gentilicio": "mozambiqueño/a",
+      "activo": true,
+      "orden": 162
+    },
+    {
+      "codigo_iso2": "MG",
+      "codigo_iso3": "MDG",
+      "codigo_num": "450",
+      "nombre": "República de Madagascar",
+      "nombre_corto": "Madagascar",
+      "gentilicio": "malgache",
+      "activo": true,
+      "orden": 163
+    },
+    {
+      "codigo_iso2": "AO",
+      "codigo_iso3": "AGO",
+      "codigo_num": "024",
+      "nombre": "República de Angola",
+      "nombre_corto": "Angola",
+      "gentilicio": "angoleño/a",
+      "activo": true,
+      "orden": 164
+    },
+    {
+      "codigo_iso2": "UG",
+      "codigo_iso3": "UGA",
+      "codigo_num": "800",
+      "nombre": "República de Uganda",
+      "nombre_corto": "Uganda",
+      "gentilicio": "ugandés/a",
+      "activo": true,
+      "orden": 165
+    },
+    {
+      "codigo_iso2": "SD",
+      "codigo_iso3": "SDN",
+      "codigo_num": "729",
+      "nombre": "República del Sudán",
+      "nombre_corto": "Sudán",
+      "gentilicio": "sudanés/a",
+      "activo": true,
+      "orden": 166
+    },
+    {
+      "codigo_iso2": "SS",
+      "codigo_iso3": "SSD",
+      "codigo_num": "728",
+      "nombre": "República de Sudán del Sur",
+      "nombre_corto": "Sudán del Sur",
+      "gentilicio": "sursudanés/a",
+      "activo": true,
+      "orden": 167
+    },
+    {
+      "codigo_iso2": "RW",
+      "codigo_iso3": "RWA",
+      "codigo_num": "646",
+      "nombre": "República de Ruanda",
+      "nombre_corto": "Ruanda",
+      "gentilicio": "ruandés/a",
+      "activo": true,
+      "orden": 168
+    },
+    {
+      "codigo_iso2": "MW",
+      "codigo_iso3": "MWI",
+      "codigo_num": "454",
+      "nombre": "República de Malaui",
+      "nombre_corto": "Malaui",
+      "gentilicio": "malauiano/a",
+      "activo": true,
+      "orden": 169
+    },
+    {
+      "codigo_iso2": "NA",
+      "codigo_iso3": "NAM",
+      "codigo_num": "516",
+      "nombre": "República de Namibia",
+      "nombre_corto": "Namibia",
+      "gentilicio": "namibio/a",
+      "activo": true,
+      "orden": 170
+    },
+    {
+      "codigo_iso2": "BW",
+      "codigo_iso3": "BWA",
+      "codigo_num": "072",
+      "nombre": "República de Botsuana",
+      "nombre_corto": "Botsuana",
+      "gentilicio": "botsuanés/a",
+      "activo": true,
+      "orden": 171
+    },
+    {
+      "codigo_iso2": "LS",
+      "codigo_iso3": "LSO",
+      "codigo_num": "426",
+      "nombre": "Reino de Lesoto",
+      "nombre_corto": "Lesoto",
+      "gentilicio": "lesotense",
+      "activo": true,
+      "orden": 172
+    },
+    {
+      "codigo_iso2": "SZ",
+      "codigo_iso3": "SWZ",
+      "codigo_num": "748",
+      "nombre": "Reino de Esuatini",
+      "nombre_corto": "Esuatini",
+      "gentilicio": "suazi",
+      "activo": true,
+      "orden": 173
+    },
+    {
+      "codigo_iso2": "MR",
+      "codigo_iso3": "MRT",
+      "codigo_num": "478",
+      "nombre": "República Islámica de Mauritania",
+      "nombre_corto": "Mauritania",
+      "gentilicio": "mauritano/a",
+      "activo": true,
+      "orden": 174
+    },
+    {
+      "codigo_iso2": "TN",
+      "codigo_iso3": "TUN",
+      "codigo_num": "788",
+      "nombre": "República de Túnez",
+      "nombre_corto": "Túnez",
+      "gentilicio": "tunecino/a",
+      "activo": true,
+      "orden": 175
+    },
+    {
+      "codigo_iso2": "LY",
+      "codigo_iso3": "LBY",
+      "codigo_num": "434",
+      "nombre": "Estado de Libia",
+      "nombre_corto": "Libia",
+      "gentilicio": "libio/a",
+      "activo": true,
+      "orden": 176
+    },
+    {
+      "codigo_iso2": "GN",
+      "codigo_iso3": "GIN",
+      "codigo_num": "324",
+      "nombre": "República de Guinea",
+      "nombre_corto": "Guinea",
+      "gentilicio": "guineano/a",
+      "activo": true,
+      "orden": 177
+    },
+    {
+      "codigo_iso2": "GW",
+      "codigo_iso3": "GNB",
+      "codigo_num": "624",
+      "nombre": "República de Guinea-Bissau",
+      "nombre_corto": "Guinea-Bissau",
+      "gentilicio": "guineano-bisauense",
+      "activo": true,
+      "orden": 178
+    },
+    {
+      "codigo_iso2": "GQ",
+      "codigo_iso3": "GNQ",
+      "codigo_num": "226",
+      "nombre": "República de Guinea Ecuatorial",
+      "nombre_corto": "Guinea Ecuatorial",
+      "gentilicio": "ecuatoguineano/a",
+      "activo": true,
+      "orden": 179
+    },
+    {
+      "codigo_iso2": "GA",
+      "codigo_iso3": "GAB",
+      "codigo_num": "266",
+      "nombre": "República Gabonesa",
+      "nombre_corto": "Gabón",
+      "gentilicio": "gabonés/a",
+      "activo": true,
+      "orden": 180
+    },
+    {
+      "codigo_iso2": "CG",
+      "codigo_iso3": "COG",
+      "codigo_num": "178",
+      "nombre": "República del Congo",
+      "nombre_corto": "Congo",
+      "gentilicio": "congoleño/a",
+      "activo": true,
+      "orden": 181
+    },
+    {
+      "codigo_iso2": "CF",
+      "codigo_iso3": "CAF",
+      "codigo_num": "140",
+      "nombre": "República Centroafricana",
+      "nombre_corto": "Rep. Centroafricana",
+      "gentilicio": "centroafricano/a",
+      "activo": true,
+      "orden": 182
+    },
+    {
+      "codigo_iso2": "BI",
+      "codigo_iso3": "BDI",
+      "codigo_num": "108",
+      "nombre": "República de Burundi",
+      "nombre_corto": "Burundi",
+      "gentilicio": "burundés/a",
+      "activo": true,
+      "orden": 183
+    },
+    {
+      "codigo_iso2": "DJ",
+      "codigo_iso3": "DJI",
+      "codigo_num": "262",
+      "nombre": "República de Yibuti",
+      "nombre_corto": "Yibuti",
+      "gentilicio": "yibutiano/a",
+      "activo": true,
+      "orden": 184
+    },
+    {
+      "codigo_iso2": "ER",
+      "codigo_iso3": "ERI",
+      "codigo_num": "232",
+      "nombre": "Estado de Eritrea",
+      "nombre_corto": "Eritrea",
+      "gentilicio": "eritreo/a",
+      "activo": true,
+      "orden": 185
+    },
+    {
+      "codigo_iso2": "CV",
+      "codigo_iso3": "CPV",
+      "codigo_num": "132",
+      "nombre": "República de Cabo Verde",
+      "nombre_corto": "Cabo Verde",
+      "gentilicio": "caboverdiano/a",
+      "activo": true,
+      "orden": 186
+    },
+    {
+      "codigo_iso2": "ST",
+      "codigo_iso3": "STP",
+      "codigo_num": "678",
+      "nombre": "República Democrática de Santo Tomé y Príncipe",
+      "nombre_corto": "Santo Tomé y Príncipe",
+      "gentilicio": "santotomense",
+      "activo": true,
+      "orden": 187
+    },
+    {
+      "codigo_iso2": "KM",
+      "codigo_iso3": "COM",
+      "codigo_num": "174",
+      "nombre": "Unión de las Comoras",
+      "nombre_corto": "Comoras",
+      "gentilicio": "comorense",
+      "activo": true,
+      "orden": 188
+    },
+    {
+      "codigo_iso2": "MU",
+      "codigo_iso3": "MUS",
+      "codigo_num": "480",
+      "nombre": "República de Mauricio",
+      "nombre_corto": "Mauricio",
+      "gentilicio": "mauriciano/a",
+      "activo": true,
+      "orden": 189
+    },
+    {
+      "codigo_iso2": "SC",
+      "codigo_iso3": "SYC",
+      "codigo_num": "690",
+      "nombre": "República de Seychelles",
+      "nombre_corto": "Seychelles",
+      "gentilicio": "seychelense",
+      "activo": true,
+      "orden": 190
+    },
+    {
+      "codigo_iso2": "GM",
+      "codigo_iso3": "GMB",
+      "codigo_num": "270",
+      "nombre": "República de Gambia",
+      "nombre_corto": "Gambia",
+      "gentilicio": "gambiano/a",
+      "activo": true,
+      "orden": 191
+    },
+    {
+      "codigo_iso2": "SL",
+      "codigo_iso3": "SLE",
+      "codigo_num": "694",
+      "nombre": "República de Sierra Leona",
+      "nombre_corto": "Sierra Leona",
+      "gentilicio": "sierraleonés/a",
+      "activo": true,
+      "orden": 192
+    },
+    {
+      "codigo_iso2": "LR",
+      "codigo_iso3": "LBR",
+      "codigo_num": "430",
+      "nombre": "República de Liberia",
+      "nombre_corto": "Liberia",
+      "gentilicio": "liberiano/a",
+      "activo": true,
+      "orden": 193
+    },
+    {
+      "codigo_iso2": "BJ",
+      "codigo_iso3": "BEN",
+      "codigo_num": "204",
+      "nombre": "República de Benín",
+      "nombre_corto": "Benín",
+      "gentilicio": "beninés/a",
+      "activo": true,
+      "orden": 194
+    },
+    {
+      "codigo_iso2": "TG",
+      "codigo_iso3": "TGO",
+      "codigo_num": "768",
+      "nombre": "República Togolesa",
+      "nombre_corto": "Togo",
+      "gentilicio": "togolés/a",
+      "activo": true,
+      "orden": 195
+    }
+  ],
+  "departments_colombia": [
+    {
+      "codigo_dane": "91",
+      "nombre": "Amazonas"
+    },
+    {
+      "codigo_dane": "05",
+      "nombre": "Antioquia"
+    },
+    {
+      "codigo_dane": "81",
+      "nombre": "Arauca"
+    },
+    {
+      "codigo_dane": "08",
+      "nombre": "Atlántico"
+    },
+    {
+      "codigo_dane": "11",
+      "nombre": "Bogotá D.C."
+    },
+    {
+      "codigo_dane": "13",
+      "nombre": "Bolívar"
+    },
+    {
+      "codigo_dane": "15",
+      "nombre": "Boyacá"
+    },
+    {
+      "codigo_dane": "17",
+      "nombre": "Caldas"
+    },
+    {
+      "codigo_dane": "18",
+      "nombre": "Caquetá"
+    },
+    {
+      "codigo_dane": "85",
+      "nombre": "Casanare"
+    },
+    {
+      "codigo_dane": "19",
+      "nombre": "Cauca"
+    },
+    {
+      "codigo_dane": "20",
+      "nombre": "Cesar"
+    },
+    {
+      "codigo_dane": "27",
+      "nombre": "Chocó"
+    },
+    {
+      "codigo_dane": "23",
+      "nombre": "Córdoba"
+    },
+    {
+      "codigo_dane": "25",
+      "nombre": "Cundinamarca"
+    },
+    {
+      "codigo_dane": "94",
+      "nombre": "Guainía"
+    },
+    {
+      "codigo_dane": "95",
+      "nombre": "Guaviare"
+    },
+    {
+      "codigo_dane": "41",
+      "nombre": "Huila"
+    },
+    {
+      "codigo_dane": "44",
+      "nombre": "La Guajira"
+    },
+    {
+      "codigo_dane": "47",
+      "nombre": "Magdalena"
+    },
+    {
+      "codigo_dane": "50",
+      "nombre": "Meta"
+    },
+    {
+      "codigo_dane": "52",
+      "nombre": "Nariño"
+    },
+    {
+      "codigo_dane": "54",
+      "nombre": "Norte de Santander"
+    },
+    {
+      "codigo_dane": "86",
+      "nombre": "Putumayo"
+    },
+    {
+      "codigo_dane": "63",
+      "nombre": "Quindío"
+    },
+    {
+      "codigo_dane": "66",
+      "nombre": "Risaralda"
+    },
+    {
+      "codigo_dane": "88",
+      "nombre": "San Andrés y Providencia"
+    },
+    {
+      "codigo_dane": "68",
+      "nombre": "Santander"
+    },
+    {
+      "codigo_dane": "70",
+      "nombre": "Sucre"
+    },
+    {
+      "codigo_dane": "73",
+      "nombre": "Tolima"
+    },
+    {
+      "codigo_dane": "76",
+      "nombre": "Valle del Cauca"
+    },
+    {
+      "codigo_dane": "99",
+      "nombre": "Vichada"
+    }
+  ],
+  "municipalities_colombia": [
+    [
+      "91001",
+      "Leticia",
+      true
+    ],
+    [
+      "91263",
+      "El Encanto",
+      false
+    ],
+    [
+      "91405",
+      "La Chorrera",
+      false
+    ],
+    [
+      "91407",
+      "La Pedrera",
+      false
+    ],
+    [
+      "91430",
+      "La Victoria",
+      false
+    ],
+    [
+      "91460",
+      "Mirití - Paraná",
+      false
+    ],
+    [
+      "91530",
+      "Puerto Alegría",
+      false
+    ],
+    [
+      "91536",
+      "Puerto Arica",
+      false
+    ],
+    [
+      "91540",
+      "Puerto Nariño",
+      false
+    ],
+    [
+      "91669",
+      "Puerto Santander",
+      false
+    ],
+    [
+      "91798",
+      "Tarapacá",
+      false
+    ],
+    [
+      "05001",
+      "Medellín",
+      true
+    ],
+    [
+      "05002",
+      "Abejorral",
+      false
+    ],
+    [
+      "05004",
+      "Abriaquí",
+      false
+    ],
+    [
+      "05021",
+      "Alejandría",
+      false
+    ],
+    [
+      "05030",
+      "Amagá",
+      false
+    ],
+    [
+      "05031",
+      "Amalfi",
+      false
+    ],
+    [
+      "05034",
+      "Andes",
+      false
+    ],
+    [
+      "05036",
+      "Angelópolis",
+      false
+    ],
+    [
+      "05038",
+      "Angostura",
+      false
+    ],
+    [
+      "05040",
+      "Anorí",
+      false
+    ],
+    [
+      "05042",
+      "Santafé de Antioquia",
+      false
+    ],
+    [
+      "05044",
+      "Anzá",
+      false
+    ],
+    [
+      "05045",
+      "Apartadó",
+      false
+    ],
+    [
+      "05051",
+      "Arboletes",
+      false
+    ],
+    [
+      "05055",
+      "Argelia",
+      false
+    ],
+    [
+      "05059",
+      "Armenia",
+      false
+    ],
+    [
+      "05079",
+      "Barbosa",
+      false
+    ],
+    [
+      "05086",
+      "Belmira",
+      false
+    ],
+    [
+      "05088",
+      "Bello",
+      false
+    ],
+    [
+      "05091",
+      "Betania",
+      false
+    ],
+    [
+      "05093",
+      "Betulia",
+      false
+    ],
+    [
+      "05101",
+      "Ciudad Bolívar",
+      false
+    ],
+    [
+      "05107",
+      "Briceño",
+      false
+    ],
+    [
+      "05113",
+      "Buriticá",
+      false
+    ],
+    [
+      "05120",
+      "Cáceres",
+      false
+    ],
+    [
+      "05125",
+      "Caicedo",
+      false
+    ],
+    [
+      "05129",
+      "Caldas",
+      false
+    ],
+    [
+      "05134",
+      "Campamento",
+      false
+    ],
+    [
+      "05138",
+      "Cañasgordas",
+      false
+    ],
+    [
+      "05142",
+      "Caracolí",
+      false
+    ],
+    [
+      "05145",
+      "Caramanta",
+      false
+    ],
+    [
+      "05147",
+      "Carepa",
+      false
+    ],
+    [
+      "05148",
+      "El Carmen de Viboral",
+      false
+    ],
+    [
+      "05150",
+      "Carolina",
+      false
+    ],
+    [
+      "05154",
+      "Caucasia",
+      false
+    ],
+    [
+      "05172",
+      "Chigorodó",
+      false
+    ],
+    [
+      "05190",
+      "Cisneros",
+      false
+    ],
+    [
+      "05197",
+      "Cocorná",
+      false
+    ],
+    [
+      "05206",
+      "Concepción",
+      false
+    ],
+    [
+      "05209",
+      "Concordia",
+      false
+    ],
+    [
+      "05212",
+      "Copacabana",
+      false
+    ],
+    [
+      "05234",
+      "Dabeiba",
+      false
+    ],
+    [
+      "05237",
+      "Donmatías",
+      false
+    ],
+    [
+      "05240",
+      "Ebéjico",
+      false
+    ],
+    [
+      "05250",
+      "El Bagre",
+      false
+    ],
+    [
+      "05264",
+      "Entrerríos",
+      false
+    ],
+    [
+      "05266",
+      "Envigado",
+      false
+    ],
+    [
+      "05282",
+      "Fredonia",
+      false
+    ],
+    [
+      "05284",
+      "Frontino",
+      false
+    ],
+    [
+      "05306",
+      "Giraldo",
+      false
+    ],
+    [
+      "05308",
+      "Girardota",
+      false
+    ],
+    [
+      "05310",
+      "Gómez Plata",
+      false
+    ],
+    [
+      "05313",
+      "Granada",
+      false
+    ],
+    [
+      "05315",
+      "Guadalupe",
+      false
+    ],
+    [
+      "05318",
+      "Guarne",
+      false
+    ],
+    [
+      "05321",
+      "Guatapé",
+      false
+    ],
+    [
+      "05347",
+      "Heliconia",
+      false
+    ],
+    [
+      "05353",
+      "Hispania",
+      false
+    ],
+    [
+      "05360",
+      "Itagüí",
+      false
+    ],
+    [
+      "05361",
+      "Ituango",
+      false
+    ],
+    [
+      "05364",
+      "Jardín",
+      false
+    ],
+    [
+      "05368",
+      "Jericó",
+      false
+    ],
+    [
+      "05376",
+      "La Ceja",
+      false
+    ],
+    [
+      "05380",
+      "La Estrella",
+      false
+    ],
+    [
+      "05390",
+      "La Pintada",
+      false
+    ],
+    [
+      "05400",
+      "La Unión",
+      false
+    ],
+    [
+      "05411",
+      "Liborina",
+      false
+    ],
+    [
+      "05425",
+      "Maceo",
+      false
+    ],
+    [
+      "05440",
+      "Marinilla",
+      false
+    ],
+    [
+      "05467",
+      "Montebello",
+      false
+    ],
+    [
+      "05475",
+      "Murindó",
+      false
+    ],
+    [
+      "05480",
+      "Mutatá",
+      false
+    ],
+    [
+      "05483",
+      "Nariño",
+      false
+    ],
+    [
+      "05490",
+      "Necoclí",
+      false
+    ],
+    [
+      "05495",
+      "Nechí",
+      false
+    ],
+    [
+      "05501",
+      "Olaya",
+      false
+    ],
+    [
+      "05541",
+      "Peñol",
+      false
+    ],
+    [
+      "05543",
+      "Peque",
+      false
+    ],
+    [
+      "05576",
+      "Pueblorrico",
+      false
+    ],
+    [
+      "05579",
+      "Puerto Berrío",
+      false
+    ],
+    [
+      "05585",
+      "Puerto Nare",
+      false
+    ],
+    [
+      "05591",
+      "Puerto Triunfo",
+      false
+    ],
+    [
+      "05604",
+      "Remedios",
+      false
+    ],
+    [
+      "05607",
+      "Retiro",
+      false
+    ],
+    [
+      "05615",
+      "Rionegro",
+      false
+    ],
+    [
+      "05628",
+      "Sabanalarga",
+      false
+    ],
+    [
+      "05631",
+      "Sabaneta",
+      false
+    ],
+    [
+      "05642",
+      "Salgar",
+      false
+    ],
+    [
+      "05647",
+      "San Andrés de Cuerquia",
+      false
+    ],
+    [
+      "05649",
+      "San Carlos",
+      false
+    ],
+    [
+      "05652",
+      "San Francisco",
+      false
+    ],
+    [
+      "05656",
+      "San Jerónimo",
+      false
+    ],
+    [
+      "05658",
+      "San José de la Montaña",
+      false
+    ],
+    [
+      "05659",
+      "San Juan de Urabá",
+      false
+    ],
+    [
+      "05660",
+      "San Luis",
+      false
+    ],
+    [
+      "05664",
+      "San Pedro de los Milagros",
+      false
+    ],
+    [
+      "05665",
+      "San Pedro de Urabá",
+      false
+    ],
+    [
+      "05667",
+      "San Rafael",
+      false
+    ],
+    [
+      "05670",
+      "San Roque",
+      false
+    ],
+    [
+      "05674",
+      "San Vicente Ferrer",
+      false
+    ],
+    [
+      "05679",
+      "Santa Bárbara",
+      false
+    ],
+    [
+      "05686",
+      "Santa Rosa de Osos",
+      false
+    ],
+    [
+      "05690",
+      "Santo Domingo",
+      false
+    ],
+    [
+      "05697",
+      "El Santuario",
+      false
+    ],
+    [
+      "05736",
+      "Segovia",
+      false
+    ],
+    [
+      "05756",
+      "Sonsón",
+      false
+    ],
+    [
+      "05761",
+      "Sopetrán",
+      false
+    ],
+    [
+      "05789",
+      "Támesis",
+      false
+    ],
+    [
+      "05790",
+      "Tarazá",
+      false
+    ],
+    [
+      "05792",
+      "Tarso",
+      false
+    ],
+    [
+      "05809",
+      "Titiribí",
+      false
+    ],
+    [
+      "05819",
+      "Toledo",
+      false
+    ],
+    [
+      "05837",
+      "Turbo",
+      false
+    ],
+    [
+      "05842",
+      "Uramita",
+      false
+    ],
+    [
+      "05847",
+      "Urrao",
+      false
+    ],
+    [
+      "05854",
+      "Valdivia",
+      false
+    ],
+    [
+      "05856",
+      "Valparaíso",
+      false
+    ],
+    [
+      "05858",
+      "Vegachí",
+      false
+    ],
+    [
+      "05861",
+      "Venecia",
+      false
+    ],
+    [
+      "05873",
+      "Vigía del Fuerte",
+      false
+    ],
+    [
+      "05885",
+      "Yalí",
+      false
+    ],
+    [
+      "05887",
+      "Yarumal",
+      false
+    ],
+    [
+      "05890",
+      "Yolombó",
+      false
+    ],
+    [
+      "05893",
+      "Yondó",
+      false
+    ],
+    [
+      "05895",
+      "Zaragoza",
+      false
+    ],
+    [
+      "81001",
+      "Arauca",
+      true
+    ],
+    [
+      "81065",
+      "Arauquita",
+      false
+    ],
+    [
+      "81220",
+      "Cravo Norte",
+      false
+    ],
+    [
+      "81300",
+      "Fortul",
+      false
+    ],
+    [
+      "81591",
+      "Puerto Rondón",
+      false
+    ],
+    [
+      "81736",
+      "Saravena",
+      false
+    ],
+    [
+      "81794",
+      "Tame",
+      false
+    ],
+    [
+      "08001",
+      "Barranquilla",
+      true
+    ],
+    [
+      "08078",
+      "Baranoa",
+      false
+    ],
+    [
+      "08137",
+      "Campo de la Cruz",
+      false
+    ],
+    [
+      "08141",
+      "Candelaria",
+      false
+    ],
+    [
+      "08296",
+      "Galapa",
+      false
+    ],
+    [
+      "08372",
+      "Juan de Acosta",
+      false
+    ],
+    [
+      "08421",
+      "Luruaco",
+      false
+    ],
+    [
+      "08433",
+      "Malambo",
+      false
+    ],
+    [
+      "08436",
+      "Manatí",
+      false
+    ],
+    [
+      "08520",
+      "Palmar de Varela",
+      false
+    ],
+    [
+      "08549",
+      "Piojó",
+      false
+    ],
+    [
+      "08558",
+      "Polonuevo",
+      false
+    ],
+    [
+      "08560",
+      "Ponedera",
+      false
+    ],
+    [
+      "08573",
+      "Puerto Colombia",
+      false
+    ],
+    [
+      "08606",
+      "Repelón",
+      false
+    ],
+    [
+      "08634",
+      "Sabanagrande",
+      false
+    ],
+    [
+      "08638",
+      "Sabanalarga",
+      false
+    ],
+    [
+      "08675",
+      "Santa Lucía",
+      false
+    ],
+    [
+      "08685",
+      "Santo Tomás",
+      false
+    ],
+    [
+      "08758",
+      "Soledad",
+      false
+    ],
+    [
+      "08770",
+      "Suan",
+      false
+    ],
+    [
+      "08832",
+      "Tubará",
+      false
+    ],
+    [
+      "08849",
+      "Usiacurí",
+      false
+    ],
+    [
+      "11001",
+      "Bogotá D.C.",
+      true
+    ],
+    [
+      "13001",
+      "Cartagena",
+      true
+    ],
+    [
+      "13006",
+      "Achí",
+      false
+    ],
+    [
+      "13030",
+      "Altos del Rosario",
+      false
+    ],
+    [
+      "13042",
+      "Arenal",
+      false
+    ],
+    [
+      "13052",
+      "Arjona",
+      false
+    ],
+    [
+      "13062",
+      "Arroyohondo",
+      false
+    ],
+    [
+      "13074",
+      "Barranco de Loba",
+      false
+    ],
+    [
+      "13140",
+      "Calamar",
+      false
+    ],
+    [
+      "13160",
+      "Cantagallo",
+      false
+    ],
+    [
+      "13188",
+      "Cicuco",
+      false
+    ],
+    [
+      "13212",
+      "Córdoba",
+      false
+    ],
+    [
+      "13222",
+      "Clemencia",
+      false
+    ],
+    [
+      "13244",
+      "El Carmen de Bolívar",
+      false
+    ],
+    [
+      "13248",
+      "El Guamo",
+      false
+    ],
+    [
+      "13268",
+      "El Peñón",
+      false
+    ],
+    [
+      "13300",
+      "Hatillo de Loba",
+      false
+    ],
+    [
+      "13430",
+      "Magangué",
+      false
+    ],
+    [
+      "13433",
+      "Mahates",
+      false
+    ],
+    [
+      "13440",
+      "Margarita",
+      false
+    ],
+    [
+      "13442",
+      "María la Baja",
+      false
+    ],
+    [
+      "13458",
+      "Montecristo",
+      false
+    ],
+    [
+      "13468",
+      "Mompox",
+      false
+    ],
+    [
+      "13473",
+      "Morales",
+      false
+    ],
+    [
+      "13490",
+      "Norosí",
+      false
+    ],
+    [
+      "13549",
+      "Pinillos",
+      false
+    ],
+    [
+      "13580",
+      "Regidor",
+      false
+    ],
+    [
+      "13600",
+      "Río Viejo",
+      false
+    ],
+    [
+      "13620",
+      "San Cristóbal",
+      false
+    ],
+    [
+      "13647",
+      "San Estanislao",
+      false
+    ],
+    [
+      "13650",
+      "San Fernando",
+      false
+    ],
+    [
+      "13654",
+      "San Jacinto",
+      false
+    ],
+    [
+      "13655",
+      "San Jacinto del Cauca",
+      false
+    ],
+    [
+      "13657",
+      "San Juan Nepomuceno",
+      false
+    ],
+    [
+      "13667",
+      "San Martín de Loba",
+      false
+    ],
+    [
+      "13670",
+      "San Pablo",
+      false
+    ],
+    [
+      "13673",
+      "Santa Catalina",
+      false
+    ],
+    [
+      "13683",
+      "Santa Rosa",
+      false
+    ],
+    [
+      "13688",
+      "Santa Rosa del Sur",
+      false
+    ],
+    [
+      "13744",
+      "Simití",
+      false
+    ],
+    [
+      "13760",
+      "Soplaviento",
+      false
+    ],
+    [
+      "13780",
+      "Talaigua Nuevo",
+      false
+    ],
+    [
+      "13810",
+      "Tiquisio",
+      false
+    ],
+    [
+      "13836",
+      "Turbaco",
+      false
+    ],
+    [
+      "13838",
+      "Turbaná",
+      false
+    ],
+    [
+      "13873",
+      "Villanueva",
+      false
+    ],
+    [
+      "13894",
+      "Zambrano",
+      false
+    ],
+    [
+      "15001",
+      "Tunja",
+      true
+    ],
+    [
+      "15022",
+      "Almeida",
+      false
+    ],
+    [
+      "15047",
+      "Aquitania",
+      false
+    ],
+    [
+      "15051",
+      "Arcabuco",
+      false
+    ],
+    [
+      "15087",
+      "Belén",
+      false
+    ],
+    [
+      "15090",
+      "Berbeo",
+      false
+    ],
+    [
+      "15092",
+      "Betéitiva",
+      false
+    ],
+    [
+      "15097",
+      "Boavita",
+      false
+    ],
+    [
+      "15104",
+      "Boyacá",
+      false
+    ],
+    [
+      "15106",
+      "Briceño",
+      false
+    ],
+    [
+      "15109",
+      "Buenavista",
+      false
+    ],
+    [
+      "15114",
+      "Busbanzá",
+      false
+    ],
+    [
+      "15131",
+      "Caldas",
+      false
+    ],
+    [
+      "15135",
+      "Campohermoso",
+      false
+    ],
+    [
+      "15162",
+      "Cerinza",
+      false
+    ],
+    [
+      "15172",
+      "Chinavita",
+      false
+    ],
+    [
+      "15176",
+      "Chiquinquirá",
+      false
+    ],
+    [
+      "15180",
+      "Chiscas",
+      false
+    ],
+    [
+      "15183",
+      "Chita",
+      false
+    ],
+    [
+      "15185",
+      "Chitaraque",
+      false
+    ],
+    [
+      "15187",
+      "Chivatá",
+      false
+    ],
+    [
+      "15189",
+      "Ciénega",
+      false
+    ],
+    [
+      "15204",
+      "Cómbita",
+      false
+    ],
+    [
+      "15212",
+      "Coper",
+      false
+    ],
+    [
+      "15215",
+      "Corrales",
+      false
+    ],
+    [
+      "15218",
+      "Covarachía",
+      false
+    ],
+    [
+      "15223",
+      "Cubará",
+      false
+    ],
+    [
+      "15224",
+      "Cucaita",
+      false
+    ],
+    [
+      "15226",
+      "Cuítiva",
+      false
+    ],
+    [
+      "15232",
+      "Chíquiza",
+      false
+    ],
+    [
+      "15236",
+      "Chivor",
+      false
+    ],
+    [
+      "15238",
+      "Duitama",
+      false
+    ],
+    [
+      "15244",
+      "El Cocuy",
+      false
+    ],
+    [
+      "15248",
+      "El Espino",
+      false
+    ],
+    [
+      "15272",
+      "Firavitoba",
+      false
+    ],
+    [
+      "15276",
+      "Floresta",
+      false
+    ],
+    [
+      "15293",
+      "Gachantivá",
+      false
+    ],
+    [
+      "15296",
+      "Gámeza",
+      false
+    ],
+    [
+      "15299",
+      "Garagoa",
+      false
+    ],
+    [
+      "15317",
+      "Guacamayas",
+      false
+    ],
+    [
+      "15322",
+      "Guateque",
+      false
+    ],
+    [
+      "15325",
+      "Guayatá",
+      false
+    ],
+    [
+      "15332",
+      "Güicán de la Sierra",
+      false
+    ],
+    [
+      "15362",
+      "Iza",
+      false
+    ],
+    [
+      "15367",
+      "Jenesano",
+      false
+    ],
+    [
+      "15368",
+      "Jericó",
+      false
+    ],
+    [
+      "15377",
+      "La Capilla",
+      false
+    ],
+    [
+      "15380",
+      "La Victoria",
+      false
+    ],
+    [
+      "15401",
+      "La Uvita",
+      false
+    ],
+    [
+      "15403",
+      "Villa de Leyva",
+      false
+    ],
+    [
+      "15407",
+      "Labranzagrande",
+      false
+    ],
+    [
+      "15425",
+      "Macanal",
+      false
+    ],
+    [
+      "15442",
+      "Maripí",
+      false
+    ],
+    [
+      "15455",
+      "Miraflores",
+      false
+    ],
+    [
+      "15464",
+      "Mongua",
+      false
+    ],
+    [
+      "15466",
+      "Monguí",
+      false
+    ],
+    [
+      "15469",
+      "Moniquirá",
+      false
+    ],
+    [
+      "15476",
+      "Motavita",
+      false
+    ],
+    [
+      "15480",
+      "Muzo",
+      false
+    ],
+    [
+      "15491",
+      "Nobsa",
+      false
+    ],
+    [
+      "15494",
+      "Nuevo Colón",
+      false
+    ],
+    [
+      "15500",
+      "Oicatá",
+      false
+    ],
+    [
+      "15507",
+      "Otanche",
+      false
+    ],
+    [
+      "15511",
+      "Pachavita",
+      false
+    ],
+    [
+      "15514",
+      "Páez",
+      false
+    ],
+    [
+      "15516",
+      "Paipa",
+      false
+    ],
+    [
+      "15518",
+      "Pajarito",
+      false
+    ],
+    [
+      "15522",
+      "Panqueba",
+      false
+    ],
+    [
+      "15531",
+      "Pauna",
+      false
+    ],
+    [
+      "15533",
+      "Paya",
+      false
+    ],
+    [
+      "15537",
+      "Paz de Río",
+      false
+    ],
+    [
+      "15542",
+      "Pesca",
+      false
+    ],
+    [
+      "15550",
+      "Pisba",
+      false
+    ],
+    [
+      "15572",
+      "Puerto Boyacá",
+      false
+    ],
+    [
+      "15580",
+      "Quípama",
+      false
+    ],
+    [
+      "15599",
+      "Ramiriquí",
+      false
+    ],
+    [
+      "15600",
+      "Ráquira",
+      false
+    ],
+    [
+      "15621",
+      "Rondón",
+      false
+    ],
+    [
+      "15632",
+      "Saboyá",
+      false
+    ],
+    [
+      "15638",
+      "Sáchica",
+      false
+    ],
+    [
+      "15646",
+      "Samacá",
+      false
+    ],
+    [
+      "15660",
+      "San Eduardo",
+      false
+    ],
+    [
+      "15664",
+      "San José de Pare",
+      false
+    ],
+    [
+      "15667",
+      "San Luis de Gaceno",
+      false
+    ],
+    [
+      "15673",
+      "San Mateo",
+      false
+    ],
+    [
+      "15676",
+      "San Miguel de Sema",
+      false
+    ],
+    [
+      "15681",
+      "San Pablo de Borbur",
+      false
+    ],
+    [
+      "15686",
+      "Santana",
+      false
+    ],
+    [
+      "15690",
+      "Santa María",
+      false
+    ],
+    [
+      "15693",
+      "Santa Rosa de Viterbo",
+      false
+    ],
+    [
+      "15696",
+      "Santa Sofía",
+      false
+    ],
+    [
+      "15720",
+      "Sativanorte",
+      false
+    ],
+    [
+      "15723",
+      "Sativasur",
+      false
+    ],
+    [
+      "15740",
+      "Siachoque",
+      false
+    ],
+    [
+      "15753",
+      "Soatá",
+      false
+    ],
+    [
+      "15755",
+      "Socotá",
+      false
+    ],
+    [
+      "15757",
+      "Socha",
+      false
+    ],
+    [
+      "15759",
+      "Sogamoso",
+      false
+    ],
+    [
+      "15761",
+      "Somondoco",
+      false
+    ],
+    [
+      "15762",
+      "Sora",
+      false
+    ],
+    [
+      "15763",
+      "Sotaquirá",
+      false
+    ],
+    [
+      "15764",
+      "Soracá",
+      false
+    ],
+    [
+      "15774",
+      "Susacón",
+      false
+    ],
+    [
+      "15776",
+      "Sutamarchán",
+      false
+    ],
+    [
+      "15778",
+      "Sutatenza",
+      false
+    ],
+    [
+      "15790",
+      "Tasco",
+      false
+    ],
+    [
+      "15798",
+      "Tenza",
+      false
+    ],
+    [
+      "15804",
+      "Tibaná",
+      false
+    ],
+    [
+      "15806",
+      "Tibasosa",
+      false
+    ],
+    [
+      "15808",
+      "Tinjacá",
+      false
+    ],
+    [
+      "15810",
+      "Tipacoque",
+      false
+    ],
+    [
+      "15814",
+      "Toca",
+      false
+    ],
+    [
+      "15816",
+      "Togüí",
+      false
+    ],
+    [
+      "15820",
+      "Tópaga",
+      false
+    ],
+    [
+      "15822",
+      "Tota",
+      false
+    ],
+    [
+      "15832",
+      "Tununguá",
+      false
+    ],
+    [
+      "15835",
+      "Turmequé",
+      false
+    ],
+    [
+      "15837",
+      "Tuta",
+      false
+    ],
+    [
+      "15839",
+      "Tutazá",
+      false
+    ],
+    [
+      "15842",
+      "Úmbita",
+      false
+    ],
+    [
+      "15861",
+      "Ventaquemada",
+      false
+    ],
+    [
+      "15879",
+      "Viracachá",
+      false
+    ],
+    [
+      "15897",
+      "Zetaquira",
+      false
+    ],
+    [
+      "17001",
+      "Manizales",
+      true
+    ],
+    [
+      "17013",
+      "Aguadas",
+      false
+    ],
+    [
+      "17042",
+      "Anserma",
+      false
+    ],
+    [
+      "17050",
+      "Aranzazu",
+      false
+    ],
+    [
+      "17088",
+      "Belalcázar",
+      false
+    ],
+    [
+      "17174",
+      "Chinchiná",
+      false
+    ],
+    [
+      "17272",
+      "Filadelfia",
+      false
+    ],
+    [
+      "17380",
+      "La Dorada",
+      false
+    ],
+    [
+      "17388",
+      "La Merced",
+      false
+    ],
+    [
+      "17433",
+      "Manzanares",
+      false
+    ],
+    [
+      "17442",
+      "Marmato",
+      false
+    ],
+    [
+      "17444",
+      "Marquetalia",
+      false
+    ],
+    [
+      "17446",
+      "Marulanda",
+      false
+    ],
+    [
+      "17486",
+      "Neira",
+      false
+    ],
+    [
+      "17495",
+      "Norcasia",
+      false
+    ],
+    [
+      "17513",
+      "Pácora",
+      false
+    ],
+    [
+      "17524",
+      "Palestina",
+      false
+    ],
+    [
+      "17541",
+      "Pensilvania",
+      false
+    ],
+    [
+      "17614",
+      "Riosucio",
+      false
+    ],
+    [
+      "17616",
+      "Risaralda",
+      false
+    ],
+    [
+      "17653",
+      "Salamina",
+      false
+    ],
+    [
+      "17662",
+      "Samaná",
+      false
+    ],
+    [
+      "17665",
+      "San José",
+      false
+    ],
+    [
+      "17777",
+      "Supía",
+      false
+    ],
+    [
+      "17867",
+      "Victoria",
+      false
+    ],
+    [
+      "17873",
+      "Villamaría",
+      false
+    ],
+    [
+      "17877",
+      "Viterbo",
+      false
+    ],
+    [
+      "18001",
+      "Florencia",
+      true
+    ],
+    [
+      "18029",
+      "Albania",
+      false
+    ],
+    [
+      "18094",
+      "Belén de los Andaquíes",
+      false
+    ],
+    [
+      "18150",
+      "Cartagena del Chairá",
+      false
+    ],
+    [
+      "18205",
+      "Curillo",
+      false
+    ],
+    [
+      "18247",
+      "El Doncello",
+      false
+    ],
+    [
+      "18256",
+      "El Paujil",
+      false
+    ],
+    [
+      "18410",
+      "La Montañita",
+      false
+    ],
+    [
+      "18460",
+      "Milán",
+      false
+    ],
+    [
+      "18479",
+      "Morelia",
+      false
+    ],
+    [
+      "18592",
+      "Puerto Rico",
+      false
+    ],
+    [
+      "18610",
+      "San José del Fragua",
+      false
+    ],
+    [
+      "18753",
+      "San Vicente del Caguán",
+      false
+    ],
+    [
+      "18756",
+      "Solano",
+      false
+    ],
+    [
+      "18785",
+      "Solita",
+      false
+    ],
+    [
+      "18860",
+      "Valparaíso",
+      false
+    ],
+    [
+      "85001",
+      "Yopal",
+      true
+    ],
+    [
+      "85010",
+      "Aguazul",
+      false
+    ],
+    [
+      "85015",
+      "Chámeza",
+      false
+    ],
+    [
+      "85125",
+      "Hato Corozal",
+      false
+    ],
+    [
+      "85136",
+      "La Salina",
+      false
+    ],
+    [
+      "85139",
+      "Maní",
+      false
+    ],
+    [
+      "85162",
+      "Monterrey",
+      false
+    ],
+    [
+      "85225",
+      "Nunchía",
+      false
+    ],
+    [
+      "85230",
+      "Orocué",
+      false
+    ],
+    [
+      "85250",
+      "Paz de Ariporo",
+      false
+    ],
+    [
+      "85263",
+      "Pore",
+      false
+    ],
+    [
+      "85279",
+      "Recetor",
+      false
+    ],
+    [
+      "85300",
+      "Sabanalarga",
+      false
+    ],
+    [
+      "85315",
+      "Sácama",
+      false
+    ],
+    [
+      "85325",
+      "San Luis de Palenque",
+      false
+    ],
+    [
+      "85400",
+      "Támara",
+      false
+    ],
+    [
+      "85410",
+      "Tauramena",
+      false
+    ],
+    [
+      "85430",
+      "Trinidad",
+      false
+    ],
+    [
+      "85440",
+      "Villanueva",
+      false
+    ],
+    [
+      "19001",
+      "Popayán",
+      true
+    ],
+    [
+      "19022",
+      "Almaguer",
+      false
+    ],
+    [
+      "19050",
+      "Argelia",
+      false
+    ],
+    [
+      "19075",
+      "Balboa",
+      false
+    ],
+    [
+      "19100",
+      "Bolívar",
+      false
+    ],
+    [
+      "19110",
+      "Buenos Aires",
+      false
+    ],
+    [
+      "19130",
+      "Cajibío",
+      false
+    ],
+    [
+      "19137",
+      "Caldono",
+      false
+    ],
+    [
+      "19142",
+      "Caloto",
+      false
+    ],
+    [
+      "19212",
+      "Corinto",
+      false
+    ],
+    [
+      "19256",
+      "El Tambo",
+      false
+    ],
+    [
+      "19290",
+      "Florencia",
+      false
+    ],
+    [
+      "19300",
+      "Guachené",
+      false
+    ],
+    [
+      "19318",
+      "Guapi",
+      false
+    ],
+    [
+      "19355",
+      "Inzá",
+      false
+    ],
+    [
+      "19364",
+      "Jambaló",
+      false
+    ],
+    [
+      "19392",
+      "La Sierra",
+      false
+    ],
+    [
+      "19397",
+      "La Vega",
+      false
+    ],
+    [
+      "19418",
+      "López de Micay",
+      false
+    ],
+    [
+      "19450",
+      "Mercaderes",
+      false
+    ],
+    [
+      "19455",
+      "Miranda",
+      false
+    ],
+    [
+      "19473",
+      "Morales",
+      false
+    ],
+    [
+      "19513",
+      "Padilla",
+      false
+    ],
+    [
+      "19517",
+      "Páez",
+      false
+    ],
+    [
+      "19532",
+      "Patía",
+      false
+    ],
+    [
+      "19533",
+      "Piamonte",
+      false
+    ],
+    [
+      "19548",
+      "Piendamó",
+      false
+    ],
+    [
+      "19573",
+      "Puerto Tejada",
+      false
+    ],
+    [
+      "19585",
+      "Puracé",
+      false
+    ],
+    [
+      "19622",
+      "Rosas",
+      false
+    ],
+    [
+      "19693",
+      "San Sebastián",
+      false
+    ],
+    [
+      "19698",
+      "Santander de Quilichao",
+      false
+    ],
+    [
+      "19701",
+      "Santa Rosa",
+      false
+    ],
+    [
+      "19743",
+      "Silvia",
+      false
+    ],
+    [
+      "19760",
+      "Sotara",
+      false
+    ],
+    [
+      "19780",
+      "Suárez",
+      false
+    ],
+    [
+      "19785",
+      "Sucre",
+      false
+    ],
+    [
+      "19807",
+      "Timbío",
+      false
+    ],
+    [
+      "19809",
+      "Timbiquí",
+      false
+    ],
+    [
+      "19821",
+      "Toribío",
+      false
+    ],
+    [
+      "19824",
+      "Totoró",
+      false
+    ],
+    [
+      "19845",
+      "Villa Rica",
+      false
+    ],
+    [
+      "20001",
+      "Valledupar",
+      true
+    ],
+    [
+      "20011",
+      "Aguachica",
+      false
+    ],
+    [
+      "20013",
+      "Agustín Codazzi",
+      false
+    ],
+    [
+      "20032",
+      "Astrea",
+      false
+    ],
+    [
+      "20045",
+      "Becerril",
+      false
+    ],
+    [
+      "20060",
+      "Bosconia",
+      false
+    ],
+    [
+      "20175",
+      "Chimichagua",
+      false
+    ],
+    [
+      "20178",
+      "Chiriguaná",
+      false
+    ],
+    [
+      "20228",
+      "Curumaní",
+      false
+    ],
+    [
+      "20238",
+      "El Copey",
+      false
+    ],
+    [
+      "20250",
+      "El Paso",
+      false
+    ],
+    [
+      "20295",
+      "Gamarra",
+      false
+    ],
+    [
+      "20310",
+      "González",
+      false
+    ],
+    [
+      "20383",
+      "La Gloria",
+      false
+    ],
+    [
+      "20400",
+      "La Jagua de Ibirico",
+      false
+    ],
+    [
+      "20443",
+      "Manaure Balcón del Cesar",
+      false
+    ],
+    [
+      "20517",
+      "Pailitas",
+      false
+    ],
+    [
+      "20550",
+      "Pelaya",
+      false
+    ],
+    [
+      "20570",
+      "Pueblo Bello",
+      false
+    ],
+    [
+      "20614",
+      "Río de Oro",
+      false
+    ],
+    [
+      "20621",
+      "La Paz",
+      false
+    ],
+    [
+      "20710",
+      "San Alberto",
+      false
+    ],
+    [
+      "20750",
+      "San Diego",
+      false
+    ],
+    [
+      "20770",
+      "San Martín",
+      false
+    ],
+    [
+      "20787",
+      "Tamalameque",
+      false
+    ],
+    [
+      "27001",
+      "Quibdó",
+      true
+    ],
+    [
+      "27006",
+      "Acandí",
+      false
+    ],
+    [
+      "27025",
+      "Alto Baudó",
+      false
+    ],
+    [
+      "27050",
+      "Atrato",
+      false
+    ],
+    [
+      "27073",
+      "Bagadó",
+      false
+    ],
+    [
+      "27075",
+      "Bahía Solano",
+      false
+    ],
+    [
+      "27077",
+      "Bajo Baudó",
+      false
+    ],
+    [
+      "27086",
+      "Belén de Bajirá",
+      false
+    ],
+    [
+      "27099",
+      "Bojayá",
+      false
+    ],
+    [
+      "27135",
+      "El Cantón del San Pablo",
+      false
+    ],
+    [
+      "27150",
+      "Carmen del Darién",
+      false
+    ],
+    [
+      "27160",
+      "Cértegui",
+      false
+    ],
+    [
+      "27205",
+      "Condoto",
+      false
+    ],
+    [
+      "27245",
+      "El Carmen de Atrato",
+      false
+    ],
+    [
+      "27250",
+      "El Litoral del San Juan",
+      false
+    ],
+    [
+      "27361",
+      "Istmina",
+      false
+    ],
+    [
+      "27372",
+      "Juradó",
+      false
+    ],
+    [
+      "27413",
+      "Lloró",
+      false
+    ],
+    [
+      "27425",
+      "Medio Atrato",
+      false
+    ],
+    [
+      "27430",
+      "Medio Baudó",
+      false
+    ],
+    [
+      "27450",
+      "Medio San Juan",
+      false
+    ],
+    [
+      "27491",
+      "Nóvita",
+      false
+    ],
+    [
+      "27495",
+      "Nuquí",
+      false
+    ],
+    [
+      "27580",
+      "Río Iro",
+      false
+    ],
+    [
+      "27600",
+      "Río Quito",
+      false
+    ],
+    [
+      "27615",
+      "Riosucio",
+      false
+    ],
+    [
+      "27660",
+      "San José del Palmar",
+      false
+    ],
+    [
+      "27745",
+      "Sipí",
+      false
+    ],
+    [
+      "27787",
+      "Tadó",
+      false
+    ],
+    [
+      "27800",
+      "Unguía",
+      false
+    ],
+    [
+      "27810",
+      "Unión Panamericana",
+      false
+    ],
+    [
+      "23001",
+      "Montería",
+      true
+    ],
+    [
+      "23068",
+      "Ayapel",
+      false
+    ],
+    [
+      "23079",
+      "Buenavista",
+      false
+    ],
+    [
+      "23090",
+      "Canalete",
+      false
+    ],
+    [
+      "23162",
+      "Cereté",
+      false
+    ],
+    [
+      "23168",
+      "Chimá",
+      false
+    ],
+    [
+      "23182",
+      "Chinú",
+      false
+    ],
+    [
+      "23189",
+      "Ciénaga de Oro",
+      false
+    ],
+    [
+      "23300",
+      "Cotorra",
+      false
+    ],
+    [
+      "23350",
+      "La Apartada",
+      false
+    ],
+    [
+      "23417",
+      "Lorica",
+      false
+    ],
+    [
+      "23419",
+      "Los Córdobas",
+      false
+    ],
+    [
+      "23464",
+      "Momil",
+      false
+    ],
+    [
+      "23466",
+      "Montelíbano",
+      false
+    ],
+    [
+      "23500",
+      "Moñitos",
+      false
+    ],
+    [
+      "23555",
+      "Planeta Rica",
+      false
+    ],
+    [
+      "23570",
+      "Pueblo Nuevo",
+      false
+    ],
+    [
+      "23574",
+      "Puerto Escondido",
+      false
+    ],
+    [
+      "23580",
+      "Puerto Libertador",
+      false
+    ],
+    [
+      "23586",
+      "Purísima de la Concepción",
+      false
+    ],
+    [
+      "23660",
+      "Sahagún",
+      false
+    ],
+    [
+      "23670",
+      "San Andrés de Sotavento",
+      false
+    ],
+    [
+      "23672",
+      "San Antero",
+      false
+    ],
+    [
+      "23675",
+      "San Bernardo del Viento",
+      false
+    ],
+    [
+      "23678",
+      "San Carlos",
+      false
+    ],
+    [
+      "23682",
+      "San José de Uré",
+      false
+    ],
+    [
+      "23686",
+      "San Pelayo",
+      false
+    ],
+    [
+      "23807",
+      "Tierralta",
+      false
+    ],
+    [
+      "23815",
+      "Tuchín",
+      false
+    ],
+    [
+      "23855",
+      "Valencia",
+      false
+    ],
+    [
+      "25001",
+      "Agua de Dios",
+      false
+    ],
+    [
+      "25019",
+      "Albán",
+      false
+    ],
+    [
+      "25035",
+      "Anapoima",
+      false
+    ],
+    [
+      "25040",
+      "Anolaima",
+      false
+    ],
+    [
+      "25053",
+      "Arbeláez",
+      false
+    ],
+    [
+      "25086",
+      "Beltrán",
+      false
+    ],
+    [
+      "25095",
+      "Bituima",
+      false
+    ],
+    [
+      "25099",
+      "Bojacá",
+      false
+    ],
+    [
+      "25120",
+      "Cabrera",
+      false
+    ],
+    [
+      "25123",
+      "Cachipay",
+      false
+    ],
+    [
+      "25126",
+      "Cajicá",
+      false
+    ],
+    [
+      "25148",
+      "Caparrapí",
+      false
+    ],
+    [
+      "25154",
+      "Cáqueza",
+      false
+    ],
+    [
+      "25168",
+      "Carmen de Carupa",
+      false
+    ],
+    [
+      "25175",
+      "Chaguaní",
+      false
+    ],
+    [
+      "25178",
+      "Chía",
+      false
+    ],
+    [
+      "25181",
+      "Chipaque",
+      false
+    ],
+    [
+      "25183",
+      "Choachí",
+      false
+    ],
+    [
+      "25185",
+      "Chocontá",
+      false
+    ],
+    [
+      "25200",
+      "Cogua",
+      false
+    ],
+    [
+      "25214",
+      "Cota",
+      false
+    ],
+    [
+      "25224",
+      "Cucunubá",
+      false
+    ],
+    [
+      "25245",
+      "El Colegio",
+      false
+    ],
+    [
+      "25258",
+      "El Peñón",
+      false
+    ],
+    [
+      "25260",
+      "El Rosal",
+      false
+    ],
+    [
+      "25269",
+      "Facatativá",
+      false
+    ],
+    [
+      "25279",
+      "Fómeque",
+      false
+    ],
+    [
+      "25281",
+      "Fosca",
+      false
+    ],
+    [
+      "25286",
+      "Funza",
+      false
+    ],
+    [
+      "25288",
+      "Fúquene",
+      false
+    ],
+    [
+      "25290",
+      "Fusagasugá",
+      false
+    ],
+    [
+      "25293",
+      "Gachalá",
+      false
+    ],
+    [
+      "25295",
+      "Gachancipá",
+      false
+    ],
+    [
+      "25297",
+      "Gachetá",
+      false
+    ],
+    [
+      "25299",
+      "Gama",
+      false
+    ],
+    [
+      "25307",
+      "Girardot",
+      false
+    ],
+    [
+      "25312",
+      "Granada",
+      false
+    ],
+    [
+      "25317",
+      "Guachetá",
+      false
+    ],
+    [
+      "25320",
+      "Guaduas",
+      false
+    ],
+    [
+      "25322",
+      "Guasca",
+      false
+    ],
+    [
+      "25324",
+      "Guataquí",
+      false
+    ],
+    [
+      "25326",
+      "Guatavita",
+      false
+    ],
+    [
+      "25328",
+      "Guayabal de Síquima",
+      false
+    ],
+    [
+      "25335",
+      "Guayabetal",
+      false
+    ],
+    [
+      "25339",
+      "Gutiérrez",
+      false
+    ],
+    [
+      "25368",
+      "Jerusalén",
+      false
+    ],
+    [
+      "25372",
+      "Junín",
+      false
+    ],
+    [
+      "25377",
+      "La Calera",
+      false
+    ],
+    [
+      "25386",
+      "La Mesa",
+      false
+    ],
+    [
+      "25394",
+      "La Palma",
+      false
+    ],
+    [
+      "25398",
+      "La Peña",
+      false
+    ],
+    [
+      "25402",
+      "La Vega",
+      false
+    ],
+    [
+      "25407",
+      "Lenguazaque",
+      false
+    ],
+    [
+      "25426",
+      "Macheta",
+      false
+    ],
+    [
+      "25430",
+      "Madrid",
+      false
+    ],
+    [
+      "25436",
+      "Manta",
+      false
+    ],
+    [
+      "25438",
+      "Medina",
+      false
+    ],
+    [
+      "25473",
+      "Mosquera",
+      false
+    ],
+    [
+      "25483",
+      "Nariño",
+      false
+    ],
+    [
+      "25486",
+      "Nemocón",
+      false
+    ],
+    [
+      "25488",
+      "Nilo",
+      false
+    ],
+    [
+      "25489",
+      "Nimaima",
+      false
+    ],
+    [
+      "25491",
+      "Nocaima",
+      false
+    ],
+    [
+      "25506",
+      "Venecia",
+      false
+    ],
+    [
+      "25513",
+      "Pacho",
+      false
+    ],
+    [
+      "25518",
+      "Paime",
+      false
+    ],
+    [
+      "25524",
+      "Pandi",
+      false
+    ],
+    [
+      "25530",
+      "Paratebueno",
+      false
+    ],
+    [
+      "25535",
+      "Pasca",
+      false
+    ],
+    [
+      "25572",
+      "Puerto Salgar",
+      false
+    ],
+    [
+      "25580",
+      "Pulí",
+      false
+    ],
+    [
+      "25592",
+      "Quebradanegra",
+      false
+    ],
+    [
+      "25594",
+      "Quetame",
+      false
+    ],
+    [
+      "25596",
+      "Quipile",
+      false
+    ],
+    [
+      "25599",
+      "Apulo",
+      false
+    ],
+    [
+      "25612",
+      "Ricaurte",
+      false
+    ],
+    [
+      "25645",
+      "San Antonio del Tequendama",
+      false
+    ],
+    [
+      "25649",
+      "San Bernardo",
+      false
+    ],
+    [
+      "25653",
+      "San Cayetano",
+      false
+    ],
+    [
+      "25658",
+      "San Francisco",
+      false
+    ],
+    [
+      "25662",
+      "San Juan de Río Seco",
+      false
+    ],
+    [
+      "25718",
+      "Sasaima",
+      false
+    ],
+    [
+      "25736",
+      "Sesquilé",
+      false
+    ],
+    [
+      "25740",
+      "Sibaté",
+      false
+    ],
+    [
+      "25743",
+      "Silvania",
+      false
+    ],
+    [
+      "25745",
+      "Simijaca",
+      false
+    ],
+    [
+      "25754",
+      "Soacha",
+      false
+    ],
+    [
+      "25758",
+      "Sopó",
+      false
+    ],
+    [
+      "25769",
+      "Subachoque",
+      false
+    ],
+    [
+      "25772",
+      "Suesca",
+      false
+    ],
+    [
+      "25777",
+      "Supatá",
+      false
+    ],
+    [
+      "25779",
+      "Susa",
+      false
+    ],
+    [
+      "25781",
+      "Sutatausa",
+      false
+    ],
+    [
+      "25785",
+      "Tabio",
+      false
+    ],
+    [
+      "25793",
+      "Tausa",
+      false
+    ],
+    [
+      "25797",
+      "Tena",
+      false
+    ],
+    [
+      "25799",
+      "Tenjo",
+      false
+    ],
+    [
+      "25805",
+      "Tibacuy",
+      false
+    ],
+    [
+      "25807",
+      "Tibirita",
+      false
+    ],
+    [
+      "25815",
+      "Tocaima",
+      false
+    ],
+    [
+      "25817",
+      "Tocancipá",
+      false
+    ],
+    [
+      "25823",
+      "Topaipí",
+      false
+    ],
+    [
+      "25839",
+      "Ubalá",
+      false
+    ],
+    [
+      "25841",
+      "Ubaque",
+      false
+    ],
+    [
+      "25843",
+      "Villa de San Diego de Ubaté",
+      false
+    ],
+    [
+      "25845",
+      "Une",
+      false
+    ],
+    [
+      "25851",
+      "Útica",
+      false
+    ],
+    [
+      "25862",
+      "Vergara",
+      false
+    ],
+    [
+      "25867",
+      "Vianí",
+      false
+    ],
+    [
+      "25871",
+      "Villagómez",
+      false
+    ],
+    [
+      "25873",
+      "Villapinzón",
+      false
+    ],
+    [
+      "25875",
+      "Villeta",
+      false
+    ],
+    [
+      "25878",
+      "Viotá",
+      false
+    ],
+    [
+      "25885",
+      "Yacopí",
+      false
+    ],
+    [
+      "25898",
+      "Zipacón",
+      false
+    ],
+    [
+      "25899",
+      "Zipaquirá",
+      false
+    ],
+    [
+      "94001",
+      "Inírida",
+      true
+    ],
+    [
+      "94343",
+      "Barranco Minas",
+      false
+    ],
+    [
+      "94663",
+      "Mapiripana",
+      false
+    ],
+    [
+      "94888",
+      "San Felipe",
+      false
+    ],
+    [
+      "94885",
+      "Puerto Colombia",
+      false
+    ],
+    [
+      "94873",
+      "La Guadalupe",
+      false
+    ],
+    [
+      "94884",
+      "Cacahual",
+      false
+    ],
+    [
+      "94886",
+      "Pana Pana",
+      false
+    ],
+    [
+      "95001",
+      "San José del Guaviare",
+      true
+    ],
+    [
+      "95015",
+      "Calamar",
+      false
+    ],
+    [
+      "95025",
+      "El Retorno",
+      false
+    ],
+    [
+      "95200",
+      "Miraflores",
+      false
+    ],
+    [
+      "41001",
+      "Neiva",
+      true
+    ],
+    [
+      "41006",
+      "Acevedo",
+      false
+    ],
+    [
+      "41013",
+      "Agrado",
+      false
+    ],
+    [
+      "41016",
+      "Aipe",
+      false
+    ],
+    [
+      "41020",
+      "Algeciras",
+      false
+    ],
+    [
+      "41026",
+      "Altamira",
+      false
+    ],
+    [
+      "41078",
+      "Baraya",
+      false
+    ],
+    [
+      "41132",
+      "Campoalegre",
+      false
+    ],
+    [
+      "41206",
+      "Colombia",
+      false
+    ],
+    [
+      "41244",
+      "Elías",
+      false
+    ],
+    [
+      "41298",
+      "Garzón",
+      false
+    ],
+    [
+      "41306",
+      "Gigante",
+      false
+    ],
+    [
+      "41319",
+      "Guadalupe",
+      false
+    ],
+    [
+      "41349",
+      "Hobo",
+      false
+    ],
+    [
+      "41357",
+      "Iquira",
+      false
+    ],
+    [
+      "41359",
+      "Isnos",
+      false
+    ],
+    [
+      "41378",
+      "La Argentina",
+      false
+    ],
+    [
+      "41396",
+      "La Plata",
+      false
+    ],
+    [
+      "41483",
+      "Nátaga",
+      false
+    ],
+    [
+      "41503",
+      "Oporapa",
+      false
+    ],
+    [
+      "41518",
+      "Paicol",
+      false
+    ],
+    [
+      "41524",
+      "Palermo",
+      false
+    ],
+    [
+      "41530",
+      "Palestina",
+      false
+    ],
+    [
+      "41548",
+      "Pital",
+      false
+    ],
+    [
+      "41551",
+      "Pitalito",
+      false
+    ],
+    [
+      "41615",
+      "Rivera",
+      false
+    ],
+    [
+      "41660",
+      "Saladoblanco",
+      false
+    ],
+    [
+      "41668",
+      "San Agustín",
+      false
+    ],
+    [
+      "41676",
+      "Santa María",
+      false
+    ],
+    [
+      "41770",
+      "Suaza",
+      false
+    ],
+    [
+      "41791",
+      "Tarqui",
+      false
+    ],
+    [
+      "41797",
+      "Tesalia",
+      false
+    ],
+    [
+      "41799",
+      "Tello",
+      false
+    ],
+    [
+      "41801",
+      "Teruel",
+      false
+    ],
+    [
+      "41807",
+      "Timaná",
+      false
+    ],
+    [
+      "41872",
+      "Villavieja",
+      false
+    ],
+    [
+      "41885",
+      "Yaguará",
+      false
+    ],
+    [
+      "44001",
+      "Riohacha",
+      true
+    ],
+    [
+      "44035",
+      "Albania",
+      false
+    ],
+    [
+      "44078",
+      "Barrancas",
+      false
+    ],
+    [
+      "44090",
+      "Dibulla",
+      false
+    ],
+    [
+      "44098",
+      "Distracción",
+      false
+    ],
+    [
+      "44110",
+      "El Molino",
+      false
+    ],
+    [
+      "44279",
+      "Fonseca",
+      false
+    ],
+    [
+      "44378",
+      "Hatonuevo",
+      false
+    ],
+    [
+      "44420",
+      "La Jagua del Pilar",
+      false
+    ],
+    [
+      "44430",
+      "Maicao",
+      false
+    ],
+    [
+      "44560",
+      "Manaure",
+      false
+    ],
+    [
+      "44650",
+      "San Juan del Cesar",
+      false
+    ],
+    [
+      "44847",
+      "Uribia",
+      false
+    ],
+    [
+      "44855",
+      "Urumita",
+      false
+    ],
+    [
+      "44874",
+      "Villanueva",
+      false
+    ],
+    [
+      "47001",
+      "Santa Marta",
+      true
+    ],
+    [
+      "47030",
+      "Algarrobo",
+      false
+    ],
+    [
+      "47053",
+      "Aracataca",
+      false
+    ],
+    [
+      "47058",
+      "Ariguaní",
+      false
+    ],
+    [
+      "47161",
+      "Cerro de San Antonio",
+      false
+    ],
+    [
+      "47170",
+      "Chivolo",
+      false
+    ],
+    [
+      "47189",
+      "Ciénaga",
+      false
+    ],
+    [
+      "47205",
+      "Concordia",
+      false
+    ],
+    [
+      "47245",
+      "El Banco",
+      false
+    ],
+    [
+      "47258",
+      "El Piñón",
+      false
+    ],
+    [
+      "47268",
+      "El Retén",
+      false
+    ],
+    [
+      "47288",
+      "Fundación",
+      false
+    ],
+    [
+      "47318",
+      "Guamal",
+      false
+    ],
+    [
+      "47460",
+      "Nueva Granada",
+      false
+    ],
+    [
+      "47541",
+      "Pedraza",
+      false
+    ],
+    [
+      "47545",
+      "Pijiño del Carmen",
+      false
+    ],
+    [
+      "47551",
+      "Pivijay",
+      false
+    ],
+    [
+      "47555",
+      "Plato",
+      false
+    ],
+    [
+      "47570",
+      "Pueblo Viejo",
+      false
+    ],
+    [
+      "47605",
+      "Remolino",
+      false
+    ],
+    [
+      "47660",
+      "Sabanas de San Ángel",
+      false
+    ],
+    [
+      "47675",
+      "Salamina",
+      false
+    ],
+    [
+      "47692",
+      "San Sebastián de Buenavista",
+      false
+    ],
+    [
+      "47703",
+      "San Zenón",
+      false
+    ],
+    [
+      "47707",
+      "Santa Ana",
+      false
+    ],
+    [
+      "47720",
+      "Santa Bárbara de Pinto",
+      false
+    ],
+    [
+      "47745",
+      "Sitionuevo",
+      false
+    ],
+    [
+      "47798",
+      "Tenerife",
+      false
+    ],
+    [
+      "47960",
+      "Zapayán",
+      false
+    ],
+    [
+      "47980",
+      "Zona Bananera",
+      false
+    ],
+    [
+      "50001",
+      "Villavicencio",
+      true
+    ],
+    [
+      "50006",
+      "Acacías",
+      false
+    ],
+    [
+      "50110",
+      "Barranca de Upía",
+      false
+    ],
+    [
+      "50124",
+      "Cabuyaro",
+      false
+    ],
+    [
+      "50150",
+      "Castilla la Nueva",
+      false
+    ],
+    [
+      "50223",
+      "Cubarral",
+      false
+    ],
+    [
+      "50226",
+      "Cumaral",
+      false
+    ],
+    [
+      "50245",
+      "El Calvario",
+      false
+    ],
+    [
+      "50251",
+      "El Castillo",
+      false
+    ],
+    [
+      "50270",
+      "El Dorado",
+      false
+    ],
+    [
+      "50287",
+      "Fuente de Oro",
+      false
+    ],
+    [
+      "50313",
+      "Granada",
+      false
+    ],
+    [
+      "50318",
+      "Guamal",
+      false
+    ],
+    [
+      "50325",
+      "Mapiripán",
+      false
+    ],
+    [
+      "50330",
+      "Mesetas",
+      false
+    ],
+    [
+      "50350",
+      "La Macarena",
+      false
+    ],
+    [
+      "50370",
+      "Uribe",
+      false
+    ],
+    [
+      "50400",
+      "Lejanías",
+      false
+    ],
+    [
+      "50450",
+      "Puerto Concordia",
+      false
+    ],
+    [
+      "50568",
+      "Puerto Gaitán",
+      false
+    ],
+    [
+      "50573",
+      "Puerto López",
+      false
+    ],
+    [
+      "50577",
+      "Puerto Lleras",
+      false
+    ],
+    [
+      "50590",
+      "Puerto Rico",
+      false
+    ],
+    [
+      "50606",
+      "Restrepo",
+      false
+    ],
+    [
+      "50680",
+      "San Carlos de Guaroa",
+      false
+    ],
+    [
+      "50683",
+      "San Juan de Arama",
+      false
+    ],
+    [
+      "50686",
+      "San Juanito",
+      false
+    ],
+    [
+      "50689",
+      "San Martín",
+      false
+    ],
+    [
+      "50711",
+      "Vistahermosa",
+      false
+    ],
+    [
+      "52001",
+      "Pasto",
+      true
+    ],
+    [
+      "52019",
+      "Albán",
+      false
+    ],
+    [
+      "52022",
+      "Aldana",
+      false
+    ],
+    [
+      "52036",
+      "Ancuyá",
+      false
+    ],
+    [
+      "52051",
+      "Arboleda",
+      false
+    ],
+    [
+      "52079",
+      "Barbacoas",
+      false
+    ],
+    [
+      "52083",
+      "Belén",
+      false
+    ],
+    [
+      "52110",
+      "Buesaco",
+      false
+    ],
+    [
+      "52203",
+      "Colón",
+      false
+    ],
+    [
+      "52207",
+      "Consacá",
+      false
+    ],
+    [
+      "52210",
+      "Contadero",
+      false
+    ],
+    [
+      "52215",
+      "Córdoba",
+      false
+    ],
+    [
+      "52224",
+      "Cuaspud",
+      false
+    ],
+    [
+      "52227",
+      "Cumbal",
+      false
+    ],
+    [
+      "52233",
+      "Cumbitara",
+      false
+    ],
+    [
+      "52240",
+      "Chachagüí",
+      false
+    ],
+    [
+      "52250",
+      "El Charco",
+      false
+    ],
+    [
+      "52254",
+      "El Peñol",
+      false
+    ],
+    [
+      "52256",
+      "El Rosario",
+      false
+    ],
+    [
+      "52258",
+      "El Tablón de Gómez",
+      false
+    ],
+    [
+      "52260",
+      "El Tambo",
+      false
+    ],
+    [
+      "52287",
+      "Funes",
+      false
+    ],
+    [
+      "52317",
+      "Guachucal",
+      false
+    ],
+    [
+      "52320",
+      "Guaitarilla",
+      false
+    ],
+    [
+      "52323",
+      "Gualmatán",
+      false
+    ],
+    [
+      "52352",
+      "Iles",
+      false
+    ],
+    [
+      "52354",
+      "Imués",
+      false
+    ],
+    [
+      "52356",
+      "Ipiales",
+      false
+    ],
+    [
+      "52378",
+      "La Cruz",
+      false
+    ],
+    [
+      "52381",
+      "La Florida",
+      false
+    ],
+    [
+      "52385",
+      "La Llanada",
+      false
+    ],
+    [
+      "52390",
+      "La Tola",
+      false
+    ],
+    [
+      "52399",
+      "La Unión",
+      false
+    ],
+    [
+      "52405",
+      "Leiva",
+      false
+    ],
+    [
+      "52411",
+      "Linares",
+      false
+    ],
+    [
+      "52418",
+      "Los Andes",
+      false
+    ],
+    [
+      "52427",
+      "Magüí",
+      false
+    ],
+    [
+      "52435",
+      "Mallama",
+      false
+    ],
+    [
+      "52473",
+      "Mosquera",
+      false
+    ],
+    [
+      "52480",
+      "Nariño",
+      false
+    ],
+    [
+      "52490",
+      "Olaya Herrera",
+      false
+    ],
+    [
+      "52506",
+      "Ospina",
+      false
+    ],
+    [
+      "52520",
+      "Francisco Pizarro",
+      false
+    ],
+    [
+      "52540",
+      "Policarpa",
+      false
+    ],
+    [
+      "52560",
+      "Potosí",
+      false
+    ],
+    [
+      "52565",
+      "Providencia",
+      false
+    ],
+    [
+      "52573",
+      "Puerres",
+      false
+    ],
+    [
+      "52585",
+      "Pupiales",
+      false
+    ],
+    [
+      "52612",
+      "Ricaurte",
+      false
+    ],
+    [
+      "52621",
+      "Roberto Payán",
+      false
+    ],
+    [
+      "52678",
+      "Samaniego",
+      false
+    ],
+    [
+      "52683",
+      "Sandoná",
+      false
+    ],
+    [
+      "52685",
+      "San Bernardo",
+      false
+    ],
+    [
+      "52687",
+      "San Lorenzo",
+      false
+    ],
+    [
+      "52693",
+      "San Pablo",
+      false
+    ],
+    [
+      "52694",
+      "San Pedro de Cartago",
+      false
+    ],
+    [
+      "52696",
+      "Santa Bárbara",
+      false
+    ],
+    [
+      "52699",
+      "Santacruz",
+      false
+    ],
+    [
+      "52720",
+      "Sapuyes",
+      false
+    ],
+    [
+      "52786",
+      "Taminango",
+      false
+    ],
+    [
+      "52788",
+      "Tangua",
+      false
+    ],
+    [
+      "52835",
+      "Tumaco",
+      false
+    ],
+    [
+      "52838",
+      "Túquerres",
+      false
+    ],
+    [
+      "52885",
+      "Yacuanquer",
+      false
+    ],
+    [
+      "54001",
+      "Cúcuta",
+      true
+    ],
+    [
+      "54003",
+      "Ábrego",
+      false
+    ],
+    [
+      "54051",
+      "Arboledas",
+      false
+    ],
+    [
+      "54099",
+      "Bochalema",
+      false
+    ],
+    [
+      "54109",
+      "Bucarasica",
+      false
+    ],
+    [
+      "54125",
+      "Cácota",
+      false
+    ],
+    [
+      "54128",
+      "Cáchira",
+      false
+    ],
+    [
+      "54172",
+      "Chinácota",
+      false
+    ],
+    [
+      "54174",
+      "Chitagá",
+      false
+    ],
+    [
+      "54206",
+      "Convención",
+      false
+    ],
+    [
+      "54223",
+      "Cucutilla",
+      false
+    ],
+    [
+      "54239",
+      "Durania",
+      false
+    ],
+    [
+      "54245",
+      "El Carmen",
+      false
+    ],
+    [
+      "54250",
+      "El Tarra",
+      false
+    ],
+    [
+      "54261",
+      "El Zulia",
+      false
+    ],
+    [
+      "54313",
+      "Gramalote",
+      false
+    ],
+    [
+      "54344",
+      "Hacarí",
+      false
+    ],
+    [
+      "54347",
+      "Herrán",
+      false
+    ],
+    [
+      "54377",
+      "Labateca",
+      false
+    ],
+    [
+      "54385",
+      "La Esperanza",
+      false
+    ],
+    [
+      "54398",
+      "La Playa",
+      false
+    ],
+    [
+      "54405",
+      "Los Patios",
+      false
+    ],
+    [
+      "54418",
+      "Lourdes",
+      false
+    ],
+    [
+      "54480",
+      "Mutiscua",
+      false
+    ],
+    [
+      "54498",
+      "Ocaña",
+      false
+    ],
+    [
+      "54518",
+      "Pamplona",
+      false
+    ],
+    [
+      "54520",
+      "Pamplonita",
+      false
+    ],
+    [
+      "54553",
+      "Puerto Santander",
+      false
+    ],
+    [
+      "54599",
+      "Ragonvalia",
+      false
+    ],
+    [
+      "54660",
+      "Salazar",
+      false
+    ],
+    [
+      "54670",
+      "San Calixto",
+      false
+    ],
+    [
+      "54673",
+      "San Cayetano",
+      false
+    ],
+    [
+      "54680",
+      "Santiago",
+      false
+    ],
+    [
+      "54720",
+      "Sardinata",
+      false
+    ],
+    [
+      "54743",
+      "Silos",
+      false
+    ],
+    [
+      "54800",
+      "Teorama",
+      false
+    ],
+    [
+      "54810",
+      "Tibú",
+      false
+    ],
+    [
+      "54820",
+      "Toledo",
+      false
+    ],
+    [
+      "54871",
+      "Villa Caro",
+      false
+    ],
+    [
+      "54874",
+      "Villa del Rosario",
+      false
+    ],
+    [
+      "86001",
+      "Mocoa",
+      true
+    ],
+    [
+      "86045",
+      "Colón",
+      false
+    ],
+    [
+      "86219",
+      "Orito",
+      false
+    ],
+    [
+      "86320",
+      "Puerto Asís",
+      false
+    ],
+    [
+      "86568",
+      "Puerto Caicedo",
+      false
+    ],
+    [
+      "86569",
+      "Puerto Guzmán",
+      false
+    ],
+    [
+      "86571",
+      "Puerto Leguízamo",
+      false
+    ],
+    [
+      "86573",
+      "Sibundoy",
+      false
+    ],
+    [
+      "86749",
+      "San Francisco",
+      false
+    ],
+    [
+      "86755",
+      "San Miguel",
+      false
+    ],
+    [
+      "86757",
+      "Santiago",
+      false
+    ],
+    [
+      "86760",
+      "Valle del Guamuez",
+      false
+    ],
+    [
+      "86865",
+      "Villagarzón",
+      false
+    ],
+    [
+      "63001",
+      "Armenia",
+      true
+    ],
+    [
+      "63111",
+      "Buenavista",
+      false
+    ],
+    [
+      "63130",
+      "Calarcá",
+      false
+    ],
+    [
+      "63190",
+      "Circasia",
+      false
+    ],
+    [
+      "63212",
+      "Córdoba",
+      false
+    ],
+    [
+      "63272",
+      "Filandia",
+      false
+    ],
+    [
+      "63302",
+      "Génova",
+      false
+    ],
+    [
+      "63401",
+      "La Tebaida",
+      false
+    ],
+    [
+      "63470",
+      "Montenegro",
+      false
+    ],
+    [
+      "63548",
+      "Pijao",
+      false
+    ],
+    [
+      "63594",
+      "Quimbaya",
+      false
+    ],
+    [
+      "63690",
+      "Salento",
+      false
+    ],
+    [
+      "66001",
+      "Pereira",
+      true
+    ],
+    [
+      "66045",
+      "Apía",
+      false
+    ],
+    [
+      "66075",
+      "Balboa",
+      false
+    ],
+    [
+      "66088",
+      "Belén de Umbría",
+      false
+    ],
+    [
+      "66170",
+      "Dosquebradas",
+      false
+    ],
+    [
+      "66318",
+      "Guática",
+      false
+    ],
+    [
+      "66383",
+      "La Celia",
+      false
+    ],
+    [
+      "66400",
+      "La Virginia",
+      false
+    ],
+    [
+      "66440",
+      "Marsella",
+      false
+    ],
+    [
+      "66456",
+      "Mistrató",
+      false
+    ],
+    [
+      "66572",
+      "Pueblo Rico",
+      false
+    ],
+    [
+      "66594",
+      "Quinchía",
+      false
+    ],
+    [
+      "66682",
+      "Santa Rosa de Cabal",
+      false
+    ],
+    [
+      "66687",
+      "Santuario",
+      false
+    ],
+    [
+      "88001",
+      "San Andrés",
+      true
+    ],
+    [
+      "88564",
+      "Providencia",
+      false
+    ],
+    [
+      "68001",
+      "Bucaramanga",
+      true
+    ],
+    [
+      "68013",
+      "Aguada",
+      false
+    ],
+    [
+      "68020",
+      "Albania",
+      false
+    ],
+    [
+      "68051",
+      "Aratoca",
+      false
+    ],
+    [
+      "68077",
+      "Barbosa",
+      false
+    ],
+    [
+      "68079",
+      "Barichara",
+      false
+    ],
+    [
+      "68081",
+      "Barrancabermeja",
+      false
+    ],
+    [
+      "68092",
+      "Betulia",
+      false
+    ],
+    [
+      "68101",
+      "Bolívar",
+      false
+    ],
+    [
+      "68121",
+      "Cabrera",
+      false
+    ],
+    [
+      "68132",
+      "California",
+      false
+    ],
+    [
+      "68147",
+      "Capitanejo",
+      false
+    ],
+    [
+      "68152",
+      "Carcasí",
+      false
+    ],
+    [
+      "68160",
+      "Cepitá",
+      false
+    ],
+    [
+      "68162",
+      "Cerrito",
+      false
+    ],
+    [
+      "68167",
+      "Charalá",
+      false
+    ],
+    [
+      "68169",
+      "Charta",
+      false
+    ],
+    [
+      "68176",
+      "Chima",
+      false
+    ],
+    [
+      "68179",
+      "Chipatá",
+      false
+    ],
+    [
+      "68190",
+      "Cimitarra",
+      false
+    ],
+    [
+      "68207",
+      "Concepción",
+      false
+    ],
+    [
+      "68209",
+      "Confines",
+      false
+    ],
+    [
+      "68211",
+      "Contratación",
+      false
+    ],
+    [
+      "68217",
+      "Coromoro",
+      false
+    ],
+    [
+      "68229",
+      "Curití",
+      false
+    ],
+    [
+      "68235",
+      "El Carmen de Chucurí",
+      false
+    ],
+    [
+      "68245",
+      "El Guacamayo",
+      false
+    ],
+    [
+      "68250",
+      "El Peñón",
+      false
+    ],
+    [
+      "68255",
+      "El Playón",
+      false
+    ],
+    [
+      "68264",
+      "Encino",
+      false
+    ],
+    [
+      "68266",
+      "Enciso",
+      false
+    ],
+    [
+      "68271",
+      "Florián",
+      false
+    ],
+    [
+      "68276",
+      "Floridablanca",
+      false
+    ],
+    [
+      "68296",
+      "Galán",
+      false
+    ],
+    [
+      "68298",
+      "Gámbita",
+      false
+    ],
+    [
+      "68307",
+      "Girón",
+      false
+    ],
+    [
+      "68318",
+      "Guaca",
+      false
+    ],
+    [
+      "68320",
+      "Guadalupe",
+      false
+    ],
+    [
+      "68322",
+      "Guapotá",
+      false
+    ],
+    [
+      "68324",
+      "Guavatá",
+      false
+    ],
+    [
+      "68327",
+      "Güepsa",
+      false
+    ],
+    [
+      "68344",
+      "Hato",
+      false
+    ],
+    [
+      "68368",
+      "Jesús María",
+      false
+    ],
+    [
+      "68370",
+      "Jordán",
+      false
+    ],
+    [
+      "68377",
+      "La Belleza",
+      false
+    ],
+    [
+      "68385",
+      "Landázuri",
+      false
+    ],
+    [
+      "68397",
+      "La Paz",
+      false
+    ],
+    [
+      "68406",
+      "Lebrija",
+      false
+    ],
+    [
+      "68418",
+      "Los Santos",
+      false
+    ],
+    [
+      "68425",
+      "Macaravita",
+      false
+    ],
+    [
+      "68432",
+      "Málaga",
+      false
+    ],
+    [
+      "68444",
+      "Matanza",
+      false
+    ],
+    [
+      "68464",
+      "Mogotes",
+      false
+    ],
+    [
+      "68468",
+      "Molagavita",
+      false
+    ],
+    [
+      "68498",
+      "Ocamonte",
+      false
+    ],
+    [
+      "68500",
+      "Oiba",
+      false
+    ],
+    [
+      "68502",
+      "Onzaga",
+      false
+    ],
+    [
+      "68522",
+      "Palmar",
+      false
+    ],
+    [
+      "68524",
+      "Palmas del Socorro",
+      false
+    ],
+    [
+      "68533",
+      "Páramo",
+      false
+    ],
+    [
+      "68547",
+      "Piedecuesta",
+      false
+    ],
+    [
+      "68549",
+      "Pinchote",
+      false
+    ],
+    [
+      "68572",
+      "Puente Nacional",
+      false
+    ],
+    [
+      "68573",
+      "Puerto Parra",
+      false
+    ],
+    [
+      "68575",
+      "Puerto Wilches",
+      false
+    ],
+    [
+      "68615",
+      "Rionegro",
+      false
+    ],
+    [
+      "68655",
+      "Sabana de Torres",
+      false
+    ],
+    [
+      "68669",
+      "San Andrés",
+      false
+    ],
+    [
+      "68673",
+      "San Benito",
+      false
+    ],
+    [
+      "68679",
+      "San Gil",
+      false
+    ],
+    [
+      "68682",
+      "San Joaquín",
+      false
+    ],
+    [
+      "68684",
+      "San José de Miranda",
+      false
+    ],
+    [
+      "68686",
+      "San Miguel",
+      false
+    ],
+    [
+      "68689",
+      "San Vicente de Chucurí",
+      false
+    ],
+    [
+      "68705",
+      "Santa Bárbara",
+      false
+    ],
+    [
+      "68720",
+      "Santa Helena del Opón",
+      false
+    ],
+    [
+      "68745",
+      "Simacota",
+      false
+    ],
+    [
+      "68755",
+      "Socorro",
+      false
+    ],
+    [
+      "68770",
+      "Suaita",
+      false
+    ],
+    [
+      "68773",
+      "Sucre",
+      false
+    ],
+    [
+      "68780",
+      "Suratá",
+      false
+    ],
+    [
+      "68820",
+      "Tona",
+      false
+    ],
+    [
+      "68855",
+      "Valle de San José",
+      false
+    ],
+    [
+      "68861",
+      "Vélez",
+      false
+    ],
+    [
+      "68867",
+      "Vetas",
+      false
+    ],
+    [
+      "68872",
+      "Villanueva",
+      false
+    ],
+    [
+      "68895",
+      "Zapatoca",
+      false
+    ],
+    [
+      "70001",
+      "Sincelejo",
+      true
+    ],
+    [
+      "70110",
+      "Buenavista",
+      false
+    ],
+    [
+      "70124",
+      "Caimito",
+      false
+    ],
+    [
+      "70130",
+      "Chalán",
+      false
+    ],
+    [
+      "70204",
+      "Colosó",
+      false
+    ],
+    [
+      "70215",
+      "Corozal",
+      false
+    ],
+    [
+      "70221",
+      "Coveñas",
+      false
+    ],
+    [
+      "70230",
+      "El Roble",
+      false
+    ],
+    [
+      "70233",
+      "Galeras",
+      false
+    ],
+    [
+      "70235",
+      "Guaranda",
+      false
+    ],
+    [
+      "70265",
+      "La Unión",
+      false
+    ],
+    [
+      "70400",
+      "Los Palmitos",
+      false
+    ],
+    [
+      "70418",
+      "Majagual",
+      false
+    ],
+    [
+      "70473",
+      "Morroa",
+      false
+    ],
+    [
+      "70508",
+      "Ovejas",
+      false
+    ],
+    [
+      "70523",
+      "Palmito",
+      false
+    ],
+    [
+      "70670",
+      "Sampués",
+      false
+    ],
+    [
+      "70678",
+      "San Benito Abad",
+      false
+    ],
+    [
+      "70702",
+      "San Juan de Betulia",
+      false
+    ],
+    [
+      "70708",
+      "San Marcos",
+      false
+    ],
+    [
+      "70713",
+      "San Onofre",
+      false
+    ],
+    [
+      "70717",
+      "San Pedro",
+      false
+    ],
+    [
+      "70742",
+      "San Luis de Sincé",
+      false
+    ],
+    [
+      "70771",
+      "Santiago de Tolú",
+      false
+    ],
+    [
+      "70820",
+      "Toluviejo",
+      false
+    ],
+    [
+      "70823",
+      "Tolú Viejo",
+      false
+    ],
+    [
+      "73001",
+      "Ibagué",
+      true
+    ],
+    [
+      "73024",
+      "Alpujarra",
+      false
+    ],
+    [
+      "73026",
+      "Alvarado",
+      false
+    ],
+    [
+      "73030",
+      "Ambalema",
+      false
+    ],
+    [
+      "73043",
+      "Anzoátegui",
+      false
+    ],
+    [
+      "73055",
+      "Armero",
+      false
+    ],
+    [
+      "73067",
+      "Ataco",
+      false
+    ],
+    [
+      "73124",
+      "Cajamarca",
+      false
+    ],
+    [
+      "73148",
+      "Carmen de Apicalá",
+      false
+    ],
+    [
+      "73152",
+      "Casabianca",
+      false
+    ],
+    [
+      "73168",
+      "Chaparral",
+      false
+    ],
+    [
+      "73200",
+      "Coello",
+      false
+    ],
+    [
+      "73217",
+      "Coyaima",
+      false
+    ],
+    [
+      "73226",
+      "Cunday",
+      false
+    ],
+    [
+      "73236",
+      "Dolores",
+      false
+    ],
+    [
+      "73268",
+      "Espinal",
+      false
+    ],
+    [
+      "73270",
+      "Falan",
+      false
+    ],
+    [
+      "73275",
+      "Flandes",
+      false
+    ],
+    [
+      "73283",
+      "Fresno",
+      false
+    ],
+    [
+      "73319",
+      "Guamo",
+      false
+    ],
+    [
+      "73347",
+      "Herveo",
+      false
+    ],
+    [
+      "73349",
+      "Honda",
+      false
+    ],
+    [
+      "73352",
+      "Icononzo",
+      false
+    ],
+    [
+      "73408",
+      "Lérida",
+      false
+    ],
+    [
+      "73411",
+      "Líbano",
+      false
+    ],
+    [
+      "73443",
+      "Mariquita",
+      false
+    ],
+    [
+      "73449",
+      "Melgar",
+      false
+    ],
+    [
+      "73461",
+      "Murillo",
+      false
+    ],
+    [
+      "73483",
+      "Natagaima",
+      false
+    ],
+    [
+      "73504",
+      "Ortega",
+      false
+    ],
+    [
+      "73520",
+      "Palocabildo",
+      false
+    ],
+    [
+      "73547",
+      "Piedras",
+      false
+    ],
+    [
+      "73555",
+      "Planadas",
+      false
+    ],
+    [
+      "73563",
+      "Prado",
+      false
+    ],
+    [
+      "73585",
+      "Purificación",
+      false
+    ],
+    [
+      "73616",
+      "Rioblanco",
+      false
+    ],
+    [
+      "73622",
+      "Roncesvalles",
+      false
+    ],
+    [
+      "73624",
+      "Rovira",
+      false
+    ],
+    [
+      "73671",
+      "Saldaña",
+      false
+    ],
+    [
+      "73675",
+      "San Antonio",
+      false
+    ],
+    [
+      "73678",
+      "San Luis",
+      false
+    ],
+    [
+      "73686",
+      "Santa Isabel",
+      false
+    ],
+    [
+      "73770",
+      "Suárez",
+      false
+    ],
+    [
+      "73854",
+      "Valle de San Juan",
+      false
+    ],
+    [
+      "73861",
+      "Venadillo",
+      false
+    ],
+    [
+      "73870",
+      "Villahermosa",
+      false
+    ],
+    [
+      "73873",
+      "Villarrica",
+      false
+    ],
+    [
+      "76001",
+      "Cali",
+      true
+    ],
+    [
+      "76020",
+      "Alcalá",
+      false
+    ],
+    [
+      "76036",
+      "Andalucía",
+      false
+    ],
+    [
+      "76041",
+      "Ansermanuevo",
+      false
+    ],
+    [
+      "76054",
+      "Argelia",
+      false
+    ],
+    [
+      "76100",
+      "Bolívar",
+      false
+    ],
+    [
+      "76109",
+      "Buenaventura",
+      false
+    ],
+    [
+      "76111",
+      "Guadalajara de Buga",
+      false
+    ],
+    [
+      "76113",
+      "Bugalagrande",
+      false
+    ],
+    [
+      "76122",
+      "Caicedonia",
+      false
+    ],
+    [
+      "76126",
+      "Calima",
+      false
+    ],
+    [
+      "76130",
+      "Candelaria",
+      false
+    ],
+    [
+      "76147",
+      "Cartago",
+      false
+    ],
+    [
+      "76233",
+      "Dagua",
+      false
+    ],
+    [
+      "76243",
+      "El Águila",
+      false
+    ],
+    [
+      "76246",
+      "El Cairo",
+      false
+    ],
+    [
+      "76248",
+      "El Cerrito",
+      false
+    ],
+    [
+      "76250",
+      "El Dovio",
+      false
+    ],
+    [
+      "76275",
+      "Florida",
+      false
+    ],
+    [
+      "76306",
+      "Ginebra",
+      false
+    ],
+    [
+      "76318",
+      "Guacarí",
+      false
+    ],
+    [
+      "76364",
+      "Jamundí",
+      false
+    ],
+    [
+      "76377",
+      "La Cumbre",
+      false
+    ],
+    [
+      "76400",
+      "La Unión",
+      false
+    ],
+    [
+      "76403",
+      "La Victoria",
+      false
+    ],
+    [
+      "76497",
+      "Obando",
+      false
+    ],
+    [
+      "76520",
+      "Palmira",
+      false
+    ],
+    [
+      "76563",
+      "Pradera",
+      false
+    ],
+    [
+      "76606",
+      "Restrepo",
+      false
+    ],
+    [
+      "76616",
+      "Riofrío",
+      false
+    ],
+    [
+      "76622",
+      "Roldanillo",
+      false
+    ],
+    [
+      "76670",
+      "San Pedro",
+      false
+    ],
+    [
+      "76736",
+      "Sevilla",
+      false
+    ],
+    [
+      "76823",
+      "Toro",
+      false
+    ],
+    [
+      "76828",
+      "Trujillo",
+      false
+    ],
+    [
+      "76834",
+      "Tuluá",
+      false
+    ],
+    [
+      "76845",
+      "Ulloa",
+      false
+    ],
+    [
+      "76863",
+      "Versalles",
+      false
+    ],
+    [
+      "76869",
+      "Vijes",
+      false
+    ],
+    [
+      "76890",
+      "Yotoco",
+      false
+    ],
+    [
+      "76892",
+      "Yumbo",
+      false
+    ],
+    [
+      "76895",
+      "Zarzal",
+      false
+    ],
+    [
+      "97001",
+      "Mitú",
+      true
+    ],
+    [
+      "97161",
+      "Carurú",
+      false
+    ],
+    [
+      "97511",
+      "Pacoa",
+      false
+    ],
+    [
+      "97666",
+      "Taraira",
+      false
+    ],
+    [
+      "97777",
+      "Yavaraté",
+      false
+    ],
+    [
+      "97889",
+      "Papunaua",
+      false
+    ],
+    [
+      "99001",
+      "Puerto Carreño",
+      true
+    ],
+    [
+      "99524",
+      "La Primavera",
+      false
+    ],
+    [
+      "99624",
+      "Santa Rosalía",
+      false
+    ],
+    [
+      "99773",
+      "Cumaribo",
+      false
+    ]
+  ],
+  "sexes": [
+    {
+      "codigo": "M",
+      "nombre": "Masculino",
+      "activo": true,
+      "orden": 1
+    },
+    {
+      "codigo": "F",
+      "nombre": "Femenino",
+      "activo": true,
+      "orden": 2
+    }
+  ]
+}

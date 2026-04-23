@@ -11,6 +11,7 @@
     "db:down": "node scripts/db-down.mjs",
     "db:init": "node scripts/db-init.mjs",
     "db:seed": "node scripts/db-seed.mjs",
+    "db:seed:catalogs": "node scripts/seed-catalogs.mjs",
     "user:super": "node scripts/create-superuser.mjs"
   },
   "dependencies": {

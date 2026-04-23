@@ -315,6 +315,7 @@ export async function getHomeData() {
                   category,
                   status,
                   COALESCE(status_mode, 'auto') as "statusMode",
+                  COALESCE(max_events_per_athlete, 1)::int as "maxEventsPerAthlete",
                   COALESCE(open_date::text, '') as "openDate",
                   COALESCE(close_date::text, '') as "closeDate",
                   location,
@@ -322,6 +323,8 @@ export async function getHomeData() {
                   description,
                   requirements,
                   categories,
+                  COALESCE(disciplines, '[]'::jsonb) as disciplines,
+                  COALESCE(events, '[]'::jsonb) as events,
                   COALESCE(image_url, '') as "imageUrl"
            FROM convocatorias
            ORDER BY COALESCE(open_date, created_at) DESC`
@@ -336,6 +339,7 @@ export async function getHomeData() {
           `SELECT title,
                   category,
                   status,
+                  1::int as "maxEventsPerAthlete",
                   COALESCE(open_date::text, '') as "openDate",
                   COALESCE(close_date::text, '') as "closeDate",
                   location,
@@ -343,6 +347,8 @@ export async function getHomeData() {
                   description,
                   requirements,
                   categories,
+                  '[]'::jsonb as disciplines,
+                  '[]'::jsonb as events,
                   COALESCE(image_url, '') as "imageUrl"
            FROM convocatorias
            ORDER BY COALESCE(open_date, created_at) DESC`
@@ -355,12 +361,15 @@ export async function getHomeData() {
           openDate: r.openDate ?? '',
           status: computeConvocatoriaStatus({ openDate: r.openDate, closeDate: r.closeDate }),
           statusMode: 'auto',
+          maxEventsPerAthlete: Math.max(1, Number(r.maxEventsPerAthlete ?? 1) || 1),
           closeDate: r.closeDate ?? '',
           location: r.location ?? '',
           audience: r.audience ?? '',
           description: r.description ?? '',
           requirements: Array.isArray(r.requirements) ? r.requirements : [],
           categories: Array.isArray(r.categories) ? r.categories : [],
+          disciplines: Array.isArray(r.disciplines) ? r.disciplines : [],
+          events: Array.isArray(r.events) ? r.events : [],
           imageUrl: r.imageUrl || undefined
         };
       });

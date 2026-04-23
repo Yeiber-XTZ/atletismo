@@ -31,7 +31,10 @@ export const GET: APIRoute = async ({ cookies, request }) => {
     const header = [
       'id',
       'club_id',
+      'athlete_id',
       'athlete_name',
+      'discipline',
+      'event_name',
       'convocatoria_title',
       'convocatoria_slug',
       'submitted_by_user_id',
@@ -48,7 +51,10 @@ export const GET: APIRoute = async ({ cookies, request }) => {
         [
           row.id,
           row.clubId,
+          row.athleteId ?? '',
           row.athleteName,
+          row.discipline ?? '',
+          row.eventName ?? '',
           row.convocatoriaTitle,
           row.convocatoriaSlug,
           row.submittedByUserId ?? '',

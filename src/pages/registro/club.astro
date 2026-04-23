@@ -3,15 +3,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import FooterKinetic from '../../components/FooterKinetic.astro';
 import { getHomeData } from '../../lib/content';
+import { listGeoCatalogs } from '../../lib/catalogs';
 
 const data = await getHomeData();
 const { settings } = data;
+const geoCatalog = await listGeoCatalogs();
+const geoCountries = geoCatalog.countries ?? [];
+const geoDepartments = geoCatalog.departments ?? [];
+const geoMunicipalities = geoCatalog.municipalities ?? [];
 const success = Astro.url.searchParams.get('success');
 const error = Astro.url.searchParams.get('error');
 const radicado = Astro.url.searchParams.get('radicado');
 const errorMessage = Astro.url.searchParams.get('message');
 ---
-<BaseLayout title="Registro Club | Liga de Atletismo del Chocó" description="Solicitud de afiliación/registro de club ante la Liga.">
+<BaseLayout title="Registro Club | Liga de Atletismo del Choco" description="Solicitud de afiliacion/registro de club ante la Liga.">
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
   <main class="pt-[72px]">
@@ -28,7 +33,7 @@ const errorMessage = Astro.url.searchParams.get('message');
           <span class="page-breadcrumb-current">Club</span>
         </nav>
         <h1 class="page-title">Registro de Club</h1>
-        <p class="page-subtitle">Radica tu solicitud. La Liga revisará documentos y notificará el estado de aprobación.</p>
+        <p class="page-subtitle">Radica tu solicitud. La Liga revisara documentos y notificara el estado de aprobacion.</p>
       </div>
     </section>
 
@@ -46,12 +51,30 @@ const errorMessage = Astro.url.searchParams.get('message');
               <input class="form-input" type="email" name="email" required placeholder="club@correo.com" />
             </div>
             <div>
-              <label class="form-label">Teléfono *</label>
+              <label class="form-label">Telefono *</label>
               <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+\\-\\s()]{7,20}$" inputmode="tel" />
             </div>
             <div>
+              <label class="form-label">Pais *</label>
+              <select class="form-input js-geo-country" name="countryIso2" required>
+                <option value="">Selecciona pais</option>
+                {geoCountries.map((country) => (
+                  <option value={country.iso2} selected={country.iso2 === 'CO'}>{country.shortName}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Departamento *</label>
+              <select class="form-input js-geo-department" name="departmentCode" required>
+                <option value="">Selecciona departamento</option>
+              </select>
+            </div>
+            <div>
               <label class="form-label">Municipio *</label>
-              <input class="form-input" type="text" name="municipality" required placeholder="Quibdó, Istmina, ..." />
+              <select class="form-input js-geo-municipality" name="municipalityCode" required>
+                <option value="">Selecciona municipio</option>
+              </select>
+              <input type="hidden" name="municipality" class="js-geo-municipality-name" />
             </div>
             <div>
               <label class="form-label">NIT (si aplica)</label>
@@ -63,7 +86,7 @@ const errorMessage = Astro.url.searchParams.get('message');
             </div>
             <div class="md:col-span-2">
               <label class="form-label">Documento de reconocimiento deportivo (URL o referencia)</label>
-              <input class="form-input" type="text" name="recognitionDoc" placeholder="URL / número de resolución / referencia" />
+              <input class="form-input" type="text" name="recognitionDoc" placeholder="URL / numero de resolucion / referencia" />
             </div>
             <div class="md:col-span-2">
               <label class="form-label">Logo (opcional)</label>
@@ -74,8 +97,8 @@ const errorMessage = Astro.url.searchParams.get('message');
               <textarea class="form-input form-textarea" name="documents" placeholder="Estatutos, acta, certificados, etc."></textarea>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">Contraseña *</label>
-              <input class="form-input" type="password" name="password" required minlength="8" maxlength="200" placeholder="Mínimo 8 caracteres" />
+              <label class="form-label">Contrasena *</label>
+              <input class="form-input" type="password" name="password" required minlength="8" maxlength="200" placeholder="Minimo 8 caracteres" />
             </div>
           </div>
 
@@ -103,7 +126,9 @@ const errorMessage = Astro.url.searchParams.get('message');
     </div>
   </dialog>
 
-  <script>
+  <script is:inline define:vars={{ geoDepartments, geoMunicipalities }}>
+    const GEO_DEPARTMENTS = geoDepartments;
+    const GEO_MUNICIPALITIES = geoMunicipalities;
     const modal = document.getElementById('registroModal');
     const modalTitle = document.getElementById('registroModalTitle');
     const modalMessage = document.getElementById('registroModalMessage');
@@ -148,11 +173,77 @@ const errorMessage = Astro.url.searchParams.get('message');
     const phoneInput = form?.querySelector('input[name="phone"]');
     const nitInput = form?.querySelector('input[name="nit"]');
     const passwordInput = form?.querySelector('input[name="password"]');
+    const countrySelect = form?.querySelector('.js-geo-country');
+    const departmentSelect = form?.querySelector('.js-geo-department');
+    const municipalitySelect = form?.querySelector('.js-geo-municipality');
+    const municipalityNameInput = form?.querySelector('.js-geo-municipality-name');
+
+    const normalizeCode = (value) => String(value || '').trim().toUpperCase();
+    const matchesCode = (left, right) => {
+      const a = normalizeCode(left);
+      const b = normalizeCode(right);
+      if (!a || !b) return false;
+      return a === b || a.startsWith(b) || b.startsWith(a);
+    };
+
+    const fillSelect = (selectEl, items, placeholder, selectedValue, valueKey, labelKey) => {
+      if (!(selectEl instanceof HTMLSelectElement)) return;
+      selectEl.innerHTML = '';
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = placeholder;
+      selectEl.appendChild(ph);
+      items.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = String(item?.[valueKey] ?? '');
+        option.textContent = String(item?.[labelKey] ?? '');
+        if (selectedValue && option.value === String(selectedValue)) option.selected = true;
+        selectEl.appendChild(option);
+      });
+    };
+
+    const syncMunicipalityName = () => {
+      if (!(municipalitySelect instanceof HTMLSelectElement) || !(municipalityNameInput instanceof HTMLInputElement)) return;
+      municipalityNameInput.value = municipalitySelect.value
+        ? (municipalitySelect.options[municipalitySelect.selectedIndex]?.text || '')
+        : '';
+    };
+
+    const initGeo = () => {
+      if (!(countrySelect instanceof HTMLSelectElement) || !(departmentSelect instanceof HTMLSelectElement) || !(municipalitySelect instanceof HTMLSelectElement)) return;
+      const countryCode = normalizeCode(countrySelect.value || 'CO');
+      if (!countrySelect.value) countrySelect.value = countryCode;
+      const deps = GEO_DEPARTMENTS.filter((item) => matchesCode(item.countryIso2, countryCode));
+      fillSelect(departmentSelect, deps, 'Selecciona departamento', departmentSelect.value || '', 'code', 'name');
+      const depCode = normalizeCode(departmentSelect.value || '');
+      const muns = GEO_MUNICIPALITIES.filter((item) => matchesCode(item.departmentCode, depCode));
+      fillSelect(municipalitySelect, muns, 'Selecciona municipio', municipalitySelect.value || '', 'code', 'name');
+      syncMunicipalityName();
+    };
+
+    countrySelect?.addEventListener('change', () => {
+      if (!(departmentSelect instanceof HTMLSelectElement) || !(municipalitySelect instanceof HTMLSelectElement)) return;
+      const countryCode = normalizeCode(countrySelect.value || '');
+      const deps = GEO_DEPARTMENTS.filter((item) => matchesCode(item.countryIso2, countryCode));
+      fillSelect(departmentSelect, deps, 'Selecciona departamento', '', 'code', 'name');
+      fillSelect(municipalitySelect, [], 'Selecciona municipio', '', 'code', 'name');
+      syncMunicipalityName();
+    });
+
+    departmentSelect?.addEventListener('change', () => {
+      if (!(departmentSelect instanceof HTMLSelectElement) || !(municipalitySelect instanceof HTMLSelectElement)) return;
+      const depCode = normalizeCode(departmentSelect.value || '');
+      const muns = GEO_MUNICIPALITIES.filter((item) => matchesCode(item.departmentCode, depCode));
+      fillSelect(municipalitySelect, muns, 'Selecciona municipio', '', 'code', 'name');
+      syncMunicipalityName();
+    });
+
+    municipalitySelect?.addEventListener('change', syncMunicipalityName);
 
     const validateEmail = () => {
       const value = (emailInput?.value || '').trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        setFieldError(emailInput, 'Ingresa un correo válido (ejemplo@correo.com).');
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) {
+        setFieldError(emailInput, 'Ingresa un correo valido (ejemplo@correo.com).');
         return false;
       }
       clearFieldError(emailInput);
@@ -161,8 +252,8 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     const validatePhone = () => {
       const value = (phoneInput?.value || '').trim();
-      if (!/^[0-9+\-\s()]{7,20}$/.test(value)) {
-        setFieldError(phoneInput, 'El teléfono solo puede tener números y símbolos válidos (+ - ( )).');
+      if (!/^[0-9+\\-\\s()]{7,20}$/.test(value)) {
+        setFieldError(phoneInput, 'El telefono solo puede tener numeros y simbolos validos (+ - ( )).');
         return false;
       }
       clearFieldError(phoneInput);
@@ -172,7 +263,7 @@ const errorMessage = Astro.url.searchParams.get('message');
     const validateNit = () => {
       const value = (nitInput?.value || '').trim();
       if (value && !/^[0-9-]{5,20}$/.test(value)) {
-        setFieldError(nitInput, 'El NIT solo puede contener números y guiones.');
+        setFieldError(nitInput, 'El NIT solo puede contener numeros y guiones.');
         return false;
       }
       clearFieldError(nitInput);
@@ -182,23 +273,45 @@ const errorMessage = Astro.url.searchParams.get('message');
     const validatePassword = () => {
       const value = passwordInput?.value || '';
       if (value.length < 8) {
-        setFieldError(passwordInput, 'La contraseña debe tener al menos 8 caracteres.');
+        setFieldError(passwordInput, 'La contrasena debe tener al menos 8 caracteres.');
         return false;
       }
       clearFieldError(passwordInput);
       return true;
     };
 
+    const validateGeo = () => {
+      if (!(countrySelect instanceof HTMLSelectElement) || !(departmentSelect instanceof HTMLSelectElement) || !(municipalitySelect instanceof HTMLSelectElement)) return true;
+      let valid = true;
+      if (!countrySelect.value) {
+        setFieldError(countrySelect, 'Selecciona un pais.');
+        valid = false;
+      } else clearFieldError(countrySelect);
+      if (!departmentSelect.value) {
+        setFieldError(departmentSelect, 'Selecciona un departamento.');
+        valid = false;
+      } else clearFieldError(departmentSelect);
+      if (!municipalitySelect.value) {
+        setFieldError(municipalitySelect, 'Selecciona un municipio.');
+        valid = false;
+      } else clearFieldError(municipalitySelect);
+      syncMunicipalityName();
+      return valid;
+    };
+
     emailInput?.addEventListener('input', validateEmail);
     phoneInput?.addEventListener('input', validatePhone);
     nitInput?.addEventListener('input', validateNit);
     passwordInput?.addEventListener('input', validatePassword);
+    countrySelect?.addEventListener('change', validateGeo);
+    departmentSelect?.addEventListener('change', validateGeo);
+    municipalitySelect?.addEventListener('change', validateGeo);
 
     form?.addEventListener('submit', (event) => {
-      const isValid = [validateEmail(), validatePhone(), validateNit(), validatePassword()].every(Boolean);
+      const isValid = [validateEmail(), validatePhone(), validateNit(), validatePassword(), validateGeo()].every(Boolean);
       if (!isValid) {
         event.preventDefault();
-        showModal('Dato inválido', 'Corrige los campos marcados en rojo para continuar.');
+        showModal('Dato invalido', 'Corrige los campos marcados en rojo para continuar.');
       }
     });
 
@@ -206,7 +319,7 @@ const errorMessage = Astro.url.searchParams.get('message');
       event.preventDefault();
       const target = event.target;
       const label = target?.closest('div')?.querySelector('label')?.textContent?.replace('*', '').trim() || 'campo';
-      showModal('Dato inválido', `Revisa el campo "${label}" y vuelve a intentarlo.`);
+      showModal('Dato invalido', `Revisa el campo "${label}" y vuelve a intentarlo.`);
     }, true);
 
     const flags = document.getElementById('registroFlags');
@@ -218,7 +331,9 @@ const errorMessage = Astro.url.searchParams.get('message');
     if (successValue && radicadoValue) {
       showModal('Registro enviado', `Tu solicitud fue enviada correctamente. Radicado: ${radicadoValue}.`);
     } else if (errorValue) {
-      showModal('No se pudo enviar', errorMessageValue || 'Revisa los datos del formulario e inténtalo nuevamente.');
+      showModal('No se pudo enviar', errorMessageValue || 'Revisa los datos del formulario e intentalo nuevamente.');
     }
+
+    initGeo();
   </script>
 </BaseLayout>

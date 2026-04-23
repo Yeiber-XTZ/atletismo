@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { logAudit } from '../../../lib/audit';
 import { getUserFromCookies } from '../../../lib/auth';
 import { getClubByOwnerUserId } from '../../../lib/clubs';
+import { listGeoCatalogs } from '../../../lib/catalogs';
 import { hasPermission } from '../../../lib/rbac';
 import { createAthlete, deleteAthlete, getAthleteEffectiveClubId, updateAthlete } from '../../../lib/athletes-admin';
 import { saveFileUpload } from '../../../lib/file-upload';
@@ -12,10 +13,13 @@ const athleteBaseSchema = z.object({
   lastName: z.string().min(2).max(120),
   document: z.string().min(5).max(30).regex(/^[0-9A-Za-z.-]+$/),
   documentType: z.string().min(2).max(10),
-  gender: z.string().min(1).max(20),
+  sexCode: z.string().min(1).max(20),
   birthdate: z.string().min(4).max(20),
   email: z.string().email().max(180).optional().or(z.literal('')),
-  municipality: z.string().min(2).max(80),
+  countryIso2: z.string().max(2).optional().or(z.literal('')),
+  departmentCode: z.string().max(10).optional().or(z.literal('')),
+  municipalityCode: z.string().max(10).optional().or(z.literal('')),
+  municipality: z.string().max(80).optional().or(z.literal('')),
   coach: z.string().max(120).optional().or(z.literal('')),
   eps: z.string().max(120).optional().or(z.literal('')),
   emergencyContact: z.string().max(120).optional().or(z.literal('')),
@@ -55,6 +59,20 @@ function parseDisciplines(raw: string) {
   );
 }
 
+let geoCatalogCachePromise: ReturnType<typeof listGeoCatalogs> | null = null;
+async function resolveMunicipalityNameByCode(codeRaw: string, fallbackNameRaw: string) {
+  const fallbackName = String(fallbackNameRaw ?? '').trim();
+  const code = String(codeRaw ?? '').trim();
+  if (!code) return fallbackName;
+
+  geoCatalogCachePromise ??= listGeoCatalogs();
+  const geoCatalog = await geoCatalogCachePromise;
+  const municipalities = Array.isArray(geoCatalog.municipalities) ? geoCatalog.municipalities : [];
+  const byCode = municipalities.find((item) => String(item.code ?? '').trim() === code);
+  if (byCode?.name) return String(byCode.name).trim();
+  return fallbackName;
+}
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   const user = await getUserFromCookies(cookies);
   if (!user) {
@@ -75,16 +93,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       lastName: String(form.get('lastName') ?? ''),
       document: String(form.get('document') ?? ''),
       documentType: String(form.get('documentType') ?? 'CC'),
-      gender: String(form.get('gender') ?? ''),
+      sexCode: String(form.get('sexCode') ?? ''),
       birthdate: String(form.get('birthdate') ?? ''),
       email: String(form.get('email') ?? ''),
+      countryIso2: String(form.get('countryIso2') ?? ''),
+      departmentCode: String(form.get('departmentCode') ?? ''),
+      municipalityCode: String(form.get('municipalityCode') ?? ''),
       municipality: String(form.get('municipality') ?? ''),
       coach: String(form.get('coach') ?? ''),
       eps: String(form.get('eps') ?? ''),
       emergencyContact: String(form.get('emergencyContact') ?? ''),
       photoUrl: String(form.get('photoUrl') ?? ''),
       status: String(form.get('status') ?? 'active'),
-      disciplines: String(form.get('disciplines') ?? ''),
+      disciplines: form.getAll('disciplines').map((value) => String(value ?? '').trim()).join('\n'),
       clubId: form.get('clubId')
     });
     if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
@@ -101,16 +122,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       resolvedPhotoUrl = uploadPath ?? resolvedPhotoUrl;
     }
 
+    const municipalityName = await resolveMunicipalityNameByCode(
+      parsed.data.municipalityCode ?? '',
+      parsed.data.municipality ?? ''
+    );
+    if (!municipalityName) {
+      return Response.redirect(new URL('/admin?tab=athletes&error=missing_municipality', request.url), 302);
+    }
+
     try {
       const athleteId = await createAthlete({
         firstName: parsed.data.firstName.trim(),
         lastName: parsed.data.lastName.trim(),
         document: parsed.data.document.trim(),
         documentType: parsed.data.documentType.trim(),
-        gender: parsed.data.gender.trim(),
+        sexCode: parsed.data.sexCode.trim(),
         birthdate: parsed.data.birthdate.trim(),
         email: parsed.data.email?.trim() || '',
-        municipality: parsed.data.municipality.trim(),
+        countryIso2: parsed.data.countryIso2?.trim() || '',
+        departmentCode: parsed.data.departmentCode?.trim() || '',
+        municipalityCode: parsed.data.municipalityCode?.trim() || '',
+        municipality: municipalityName,
         coach: parsed.data.coach?.trim() || '',
         eps: parsed.data.eps?.trim() || '',
         emergencyContact: parsed.data.emergencyContact?.trim() || '',
@@ -143,16 +175,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       lastName: String(form.get('lastName') ?? ''),
       document: String(form.get('document') ?? ''),
       documentType: String(form.get('documentType') ?? 'CC'),
-      gender: String(form.get('gender') ?? ''),
+      sexCode: String(form.get('sexCode') ?? ''),
       birthdate: String(form.get('birthdate') ?? ''),
       email: String(form.get('email') ?? ''),
+      countryIso2: String(form.get('countryIso2') ?? ''),
+      departmentCode: String(form.get('departmentCode') ?? ''),
+      municipalityCode: String(form.get('municipalityCode') ?? ''),
       municipality: String(form.get('municipality') ?? ''),
       coach: String(form.get('coach') ?? ''),
       eps: String(form.get('eps') ?? ''),
       emergencyContact: String(form.get('emergencyContact') ?? ''),
       photoUrl: String(form.get('photoUrl') ?? ''),
       status: String(form.get('status') ?? 'active'),
-      disciplines: String(form.get('disciplines') ?? ''),
+      disciplines: form.getAll('disciplines').map((value) => String(value ?? '').trim()).join('\n'),
       clubId: form.get('clubId')
     });
     if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
@@ -177,16 +212,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       resolvedPhotoUrl = uploadPath ?? resolvedPhotoUrl;
     }
 
+    const municipalityName = await resolveMunicipalityNameByCode(
+      parsed.data.municipalityCode ?? '',
+      parsed.data.municipality ?? ''
+    );
+    if (!municipalityName) {
+      return Response.redirect(new URL('/admin?tab=athletes&error=missing_municipality', request.url), 302);
+    }
+
     try {
       await updateAthlete(parsed.data.id, {
         firstName: parsed.data.firstName.trim(),
         lastName: parsed.data.lastName.trim(),
         document: parsed.data.document.trim(),
         documentType: parsed.data.documentType.trim(),
-        gender: parsed.data.gender.trim(),
+        sexCode: parsed.data.sexCode.trim(),
         birthdate: parsed.data.birthdate.trim(),
         email: parsed.data.email?.trim() || '',
-        municipality: parsed.data.municipality.trim(),
+        countryIso2: parsed.data.countryIso2?.trim() || '',
+        departmentCode: parsed.data.departmentCode?.trim() || '',
+        municipalityCode: parsed.data.municipalityCode?.trim() || '',
+        municipality: municipalityName,
         coach: parsed.data.coach?.trim() || '',
         eps: parsed.data.eps?.trim() || '',
         emergencyContact: parsed.data.emergencyContact?.trim() || '',
