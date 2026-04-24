@@ -107,6 +107,10 @@ const effectiveConvocatoriaDisciplineNormSet = (() => {
   return convocatoriaDisciplineNormSet;
 })();
 const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsPerAthlete ?? 1) || 1);
+const heroImage =
+  String((convocatoria as any)?.imageUrl ?? '').trim() ||
+  String(data?.hero?.imageUrl ?? '').trim() ||
+  'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1600&auto=format&fit=crop';
 ---
 <BaseLayout
   title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Choco`}
@@ -180,18 +184,13 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
                   Maximo pruebas por deportista: <strong class="text-[#0f172a]">{maxEventsPerAthlete}</strong>
                 </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </section>
 
               <div class="mt-8 flex flex-col gap-3">
                 {user?.role === 'CLUB' ? (
                   effectiveClubId ? (
                     <a href="#postulacion-club-panel" class="btn-primary">
                       <span class="material-symbols-outlined">how_to_reg</span>
-                      Abrir panel de postulación
+                      Abrir panel de postulacion
                     </a>
                   ) : (
                     <div class="alert warn">
@@ -226,12 +225,11 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
                       <span class="material-symbols-outlined">person_add</span>
                       Registro Club
                     </a>
-                  </div>
+                  </>
                 )}
 
-                <p class="post-note">El estado de la postulaciÃ³n se consulta en el panel del club.</p>
+                <p class="post-note">El estado de tu postulacion se consulta en el panel del club.</p>
               </div>
-              <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulacion se consulta en el panel del club.</p>
             </aside>
           </div>
           {user?.role === 'CLUB' && effectiveClubId ? (
