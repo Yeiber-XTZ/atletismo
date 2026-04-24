@@ -34,9 +34,10 @@ async function ensureClubLinkedForUser(input: {
 
   const upsert = await db.query(
     `INSERT INTO clubs (name, municipality, status, owner_id, coach, contact_email, contact_phone, logo_url)
-     VALUES ($1, $2, 'En revisión', $3, $4, $5, $6, $7)
+     VALUES ($1, $2, 'Activo', $3, $4, $5, $6, $7)
      ON CONFLICT (name)
      DO UPDATE SET
+       status = 'Activo',
        owner_id = COALESCE(clubs.owner_id, EXCLUDED.owner_id),
        municipality = CASE
          WHEN COALESCE(clubs.municipality, '') = '' THEN EXCLUDED.municipality

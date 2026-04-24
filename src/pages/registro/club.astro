@@ -40,6 +40,66 @@ const errorMessage = Astro.url.searchParams.get('message');
       <div class="clubreg-container">
         <form method="POST" action="/api/registro" encType="multipart/form-data" class="clubreg-form">
           <input type="hidden" name="profile" value="club" />
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="md:col-span-2">
+              <label class="form-label">Nombre legal del club *</label>
+              <input class="form-input" type="text" name="name" required placeholder="Nombre del club" />
+            </div>
+            <div>
+              <label class="form-label">Correo oficial del club *</label>
+              <input class="form-input" type="email" name="email" required placeholder="club@correo.com" />
+            </div>
+            <div>
+              <label class="form-label">Telefono *</label>
+              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+() -]{7,20}$" inputmode="tel" />
+            </div>
+            <div>
+              <label class="form-label">Pais *</label>
+              <select class="form-input js-geo-country" name="countryIso2" required>
+                <option value="">Selecciona pais</option>
+                {geoCountries.map((country) => (
+                  <option value={country.iso2} selected={country.iso2 === 'CO'}>{country.shortName}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Departamento *</label>
+              <select class="form-input js-geo-department" name="departmentCode" required>
+                <option value="">Selecciona departamento</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Municipio *</label>
+              <select class="form-input js-geo-municipality" name="municipalityCode" required>
+                <option value="">Selecciona municipio</option>
+              </select>
+              <input type="hidden" name="municipality" class="js-geo-municipality-name" />
+            </div>
+            <div>
+              <label class="form-label">NIT (si aplica)</label>
+              <input class="form-input" type="text" name="nit" placeholder="NIT" pattern="^[0-9-]{5,20}$" inputmode="numeric" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Representante legal *</label>
+              <input class="form-input" type="text" name="legalRepresentative" required placeholder="Nombre completo" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Documento de reconocimiento deportivo (URL o referencia)</label>
+              <input class="form-input" type="text" name="recognitionDoc" placeholder="URL / numero de resolucion / referencia" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Logo (opcional)</label>
+              <input class="form-input" type="file" name="logoFile" accept="image/*" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Documentos anexos (lista/URLs)</label>
+              <textarea class="form-input form-textarea" name="documents" placeholder="Estatutos, acta, certificados, etc."></textarea>
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">Contrasena *</label>
+              <input class="form-input" type="password" name="password" required minlength="8" maxlength="200" placeholder="Minimo 8 caracteres" />
+            </div>
+          </div>
 
           <article class="clubreg-card">
             <header class="clubreg-card-head head-accent-yellow">
@@ -380,7 +440,7 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     const validatePhone = () => {
       const value = (phoneInput?.value || '').trim();
-      if (!/^[0-9+\-\s()]{7,20}$/.test(value)) {
+      if (!/^[0-9+() -]{7,20}$/.test(value)) {
         setFieldError(phoneInput, 'El telefono solo puede tener numeros y simbolos validos (+ - ( )).');
         return false;
       }
