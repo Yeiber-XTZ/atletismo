@@ -157,7 +157,7 @@ const asambleaAttendanceSummary = canManageAsambleas
   ? await summarizeAssemblyAttendance()
   : { total: 0, byStatus: [] };
 const asambleaMeetingsSummary = canManageAsambleas ? await summarizeAssemblyMeetings() : [];
-const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAnalytics() : null;
+const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA' || user.role === 'ORGANO_ADMIN') ? await getAdminAnalytics() : null;
 const alerts = canViewAlerts ? await getAdminAlerts() : [];
 const notificationsManaged = canManageNotifications ? await listNotifications() : [];
 const notificationsForUser = canViewNotifications && user?.role ? await listNotificationsForRole(user.role) : [];
@@ -243,7 +243,10 @@ const operationalPulseClass =
       : 'bg-red-100 text-red-800 border-red-200';
 const todayIso = new Date().toISOString().slice(0, 10);
 const convocatoriasAbiertas = (data.convocatorias ?? []).filter((item) => String(item.status ?? '').toLowerCase().includes('abierta')).length;
-const clubesActivos = (data.clubs ?? []).filter((item) => String(item.status ?? '').toLowerCase().includes('activo')).length;
+const clubesActivos = (data.clubs ?? []).filter((item) => {
+  const status = String(item.status ?? '').toLowerCase();
+  return status.includes('activo') || status.includes('aprobado');
+}).length;
 const proximasCompetencias = (data.competencias ?? []).filter((item) => {
   const value = String(item.date ?? '').trim();
   return value && value >= todayIso;
@@ -544,6 +547,22 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         <span>{errorMessage}</span>
       </div>
     ) : null}
+    <div id="csv-export-modal" class="fixed inset-0 z-[110] hidden items-center justify-center bg-slate-900/40 p-4" aria-hidden="true">
+      <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h5 id="csv-export-modal-title" class="text-base font-bold text-slate-800">Exportación CSV</h5>
+          <button id="csv-export-modal-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50" aria-label="Cerrar">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+        <div class="px-5 py-4">
+          <p id="csv-export-modal-message" class="text-sm text-slate-600">Estado de la exportación.</p>
+        </div>
+        <div class="flex justify-end border-t border-slate-100 px-5 py-4">
+          <button id="csv-export-modal-ok" type="button" class="admin-btn admin-btn-primary">Entendido</button>
+        </div>
+      </div>
+    </div>
 
     {contentTab === 'perfil' ? (
       <section class="admin-card">
@@ -2891,9 +2910,20 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 </a>
               </div>
               <div class="md:col-span-5 flex justify-end">
+                <button
+                  type="button"
+                  class="admin-btn admin-btn-secondary js-export-postulations-csv"
+                  data-export-url={`/postulaciones.csv?status=${encodeURIComponent(postulationStatusFilter)}&q=${encodeURIComponent(postulationQuery)}`}
+                >
+                  <span class="material-symbols-outlined">download</span>
+                  Exportar CSV
+                </button>
                 <a
                   class="admin-btn admin-btn-secondary"
                   href={`/postulaciones.csv?status=${encodeURIComponent(postulationStatusFilter)}&q=${encodeURIComponent(postulationQuery)}`}
+                  style="display:none"
+                  aria-hidden="true"
+                  tabindex="-1"
                 >
                   <span class="material-symbols-outlined">download</span>
                   Exportar CSV
@@ -4546,6 +4576,105 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
 
         bindAll();
         setTimeout(bindAll, 0);
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const state = globalThis.__adminCsvExportState || (globalThis.__adminCsvExportState = { bound: false });
+        if (state.bound) return;
+        state.bound = true;
+
+        const modal = document.getElementById('csv-export-modal');
+        const modalTitle = document.getElementById('csv-export-modal-title');
+        const modalMessage = document.getElementById('csv-export-modal-message');
+        const closeBtn = document.getElementById('csv-export-modal-close');
+        const okBtn = document.getElementById('csv-export-modal-ok');
+
+        const closeModal = () => {
+          if (!(modal instanceof HTMLElement)) return;
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          modal.setAttribute('aria-hidden', 'true');
+        };
+
+        const openModal = (title, message) => {
+          if (!(modal instanceof HTMLElement)) return;
+          if (modalTitle instanceof HTMLElement) modalTitle.textContent = title;
+          if (modalMessage instanceof HTMLElement) modalMessage.textContent = message;
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          modal.setAttribute('aria-hidden', 'false');
+        };
+
+        closeBtn?.addEventListener('click', closeModal);
+        okBtn?.addEventListener('click', closeModal);
+        modal?.addEventListener('click', (event) => {
+          if (event.target === modal) closeModal();
+        });
+
+        const getFilename = (contentDisposition) => {
+          const raw = String(contentDisposition || '');
+          const match = raw.match(/filename=\"?([^\";]+)\"?/i);
+          if (!match?.[1]) return `postulaciones-${new Date().toISOString().slice(0, 10)}.csv`;
+          return match[1];
+        };
+
+        document.addEventListener('click', async (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          const button = target.closest('.js-export-postulations-csv');
+          if (!(button instanceof HTMLButtonElement)) return;
+          event.preventDefault();
+
+          const exportUrl = String(button.dataset.exportUrl || '').trim();
+          if (!exportUrl) {
+            openModal('Exportación CSV', 'No se pudo iniciar la exportación. Intenta nuevamente.');
+            return;
+          }
+
+          button.disabled = true;
+          const previousLabel = button.innerHTML;
+          button.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Exportando...';
+          try {
+            const response = await fetch(exportUrl, { method: 'GET', credentials: 'same-origin' });
+            if (!response.ok) {
+              if (response.status === 401) {
+                openModal('Sesión expirada', 'Debes iniciar sesión nuevamente para exportar el CSV.');
+                return;
+              }
+              if (response.status === 403) {
+                openModal('Acceso denegado', 'Tu rol no tiene permisos para exportar postulaciones en CSV.');
+                return;
+              }
+              openModal('Error de exportación', 'No se pudo generar el archivo CSV en este momento.');
+              return;
+            }
+
+            const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+            if (!contentType.includes('text/csv')) {
+              openModal('Error de exportación', 'La respuesta no corresponde a un archivo CSV válido.');
+              return;
+            }
+
+            const blob = await response.blob();
+            const filename = getFilename(response.headers.get('content-disposition'));
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(blobUrl);
+
+            openModal('Exportación completada', 'El archivo CSV se descargó correctamente.');
+          } catch (error) {
+            openModal('Error de exportación', 'No fue posible exportar el CSV. Revisa tu conexión e intenta nuevamente.');
+          } finally {
+            button.disabled = false;
+            button.innerHTML = previousLabel;
+          }
+        });
       })();
     </script>
     <script is:inline>
