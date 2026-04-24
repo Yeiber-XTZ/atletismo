@@ -48,14 +48,12 @@ const activeTab = navAliases[requestedTab] ?? requestedTab;
 const contentTab = tabAliases[requestedTab] ?? requestedTab;
 const saved = Astro.url.searchParams.get('saved');
 const error = Astro.url.searchParams.get('error');
-<<<<<<< HEAD
 const settingsViewParam = (Astro.url.searchParams.get('settingsView') ?? '').trim().toLowerCase();
 const settingsViews = new Set(['general', 'hero', 'home']);
 const settingsView = settingsViews.has(settingsViewParam) ? settingsViewParam : '';
 const ligaViewParam = (Astro.url.searchParams.get('ligaView') ?? '').trim().toLowerCase();
 const ligaViews = new Set(['hero', 'info', 'estructura']);
 const ligaView = ligaViews.has(ligaViewParam) ? ligaViewParam : '';
-=======
 const errorMessages: Record<string, string> = {
   invalid_schema: 'Hay campos inválidos o incompletos. Revisa el formulario.',
   missing_club: 'Tu usuario no tiene club asociado para registrar atletas.',
@@ -63,7 +61,6 @@ const errorMessages: Record<string, string> = {
   duplicate_document: 'Ya existe un atleta con ese número de documento.'
 };
 const errorMessage = error ? (errorMessages[error] ?? 'Error al guardar los cambios') : '';
->>>>>>> 42d45f5663921116ac0765d520c7dd7e0dce8f8c
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
 const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
 const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
@@ -244,6 +241,99 @@ const operationalPulseClass =
     : operationalPulse === 'En seguimiento'
       ? 'bg-amber-100 text-amber-800 border-amber-200'
       : 'bg-red-100 text-red-800 border-red-200';
+const todayIso = new Date().toISOString().slice(0, 10);
+const convocatoriasAbiertas = (data.convocatorias ?? []).filter((item) => String(item.status ?? '').toLowerCase().includes('abierta')).length;
+const clubesActivos = (data.clubs ?? []).filter((item) => String(item.status ?? '').toLowerCase().includes('activo')).length;
+const proximasCompetencias = (data.competencias ?? []).filter((item) => {
+  const value = String(item.date ?? '').trim();
+  return value && value >= todayIso;
+}).length;
+const metricCards = [
+  {
+    label: 'Convocatorias Abiertas',
+    value: convocatoriasAbiertas,
+    growth: `${data.convocatorias?.length ?? 0} total`,
+    color: 'text-emerald-700 bg-emerald-100',
+    progress: Math.min(100, Math.round((convocatoriasAbiertas / Math.max(1, data.convocatorias?.length ?? 1)) * 100))
+  },
+  {
+    label: 'Clubes Activos',
+    value: clubesActivos,
+    growth: `${data.clubs?.length ?? 0} registrados`,
+    color: 'text-amber-700 bg-amber-100',
+    progress: Math.min(100, Math.round((clubesActivos / Math.max(1, data.clubs?.length ?? 1)) * 100))
+  },
+  {
+    label: 'Competencias Proximas',
+    value: proximasCompetencias,
+    growth: 'Calendario vigente',
+    color: 'text-sky-700 bg-sky-100',
+    progress: Math.min(100, Math.round((proximasCompetencias / Math.max(1, data.competencias?.length ?? 1)) * 100))
+  },
+  {
+    label: 'Radicados Pendientes',
+    value: registrationRadicados.length,
+    growth: 'Solicitudes por revisar',
+    color: 'text-violet-700 bg-violet-100',
+    progress: Math.min(100, Math.round((registrationRadicados.length / Math.max(1, users.length || 1)) * 100))
+  }
+];
+const trendRows = (analytics?.last7Days ?? []).map((day) => ({
+  day: String(day.day ?? '').slice(5),
+  postulations: Number(day.postulations ?? 0),
+  pqrs: Number(day.pqrs ?? 0)
+}));
+const trendMax = Math.max(1, ...trendRows.map((row) => Math.max(row.postulations, row.pqrs)));
+const buildLinePoints = (values: number[]) => {
+  if (values.length === 0) return '';
+  if (values.length === 1) {
+    const y = 90 - Math.round((values[0] / Math.max(1, trendMax)) * 70);
+    return `6,${Math.max(12, Math.min(90, y))}`;
+  }
+  return values
+    .map((value, index) => {
+      const x = 6 + (index * 88) / (values.length - 1);
+      const y = 90 - Math.round((value / Math.max(1, trendMax)) * 70);
+      return `${x.toFixed(2)},${Math.max(12, Math.min(90, y)).toFixed(2)}`;
+    })
+    .join(' ');
+};
+const trendPostLinePoints = buildLinePoints(trendRows.map((row) => row.postulations));
+const trendPqrsLinePoints = buildLinePoints(trendRows.map((row) => row.pqrs));
+const distributionRows = [
+  { label: 'Convocatorias', value: Number(analytics?.totals.convocatorias ?? 0), color: '#5AAC32' },
+  { label: 'Competencias', value: Number(analytics?.totals.competencias ?? 0), color: '#E7D916' },
+  { label: 'Clubes', value: Number(analytics?.totals.clubes ?? 0), color: '#6dad90' },
+  { label: 'Documentos', value: Number(analytics?.totals.documents ?? 0), color: '#e2e8f0' }
+];
+const distributionTotal = distributionRows.reduce((acc, row) => acc + row.value, 0);
+const distributionConic = (() => {
+  if (!distributionTotal) return 'conic-gradient(#e2e8f0 0 100%)';
+  let cursor = 0;
+  const segments: string[] = [];
+  for (const row of distributionRows) {
+    const portion = (row.value / distributionTotal) * 100;
+    const start = cursor;
+    const end = cursor + portion;
+    segments.push(`${row.color} ${start}% ${end}%`);
+    cursor = end;
+  }
+  return `conic-gradient(${segments.join(', ')})`;
+})();
+const recentOperationalRows = [
+  ...(data.competencias ?? []).slice(0, 2).map((item) => ({
+    title: String(item.title ?? ''),
+    context: `Competencia - ${String(item.location ?? 'Sin ubicación')}`,
+    status: String(item.status ?? 'Confirmado'),
+    value: String(item.date ?? '')
+  })),
+  ...(data.convocatorias ?? []).slice(0, 2).map((item) => ({
+    title: String(item.title ?? ''),
+    context: `Convocatoria - ${String(item.category ?? 'General')}`,
+    status: String(item.status ?? 'Abierta'),
+    value: `${String(item.openDate ?? '')} / ${String(item.closeDate ?? '')}`
+  }))
+].slice(0, 4);
 
 const filteredPostulations = postulations.filter((p) => {
   if (postulationStatusFilter !== 'all' && p.status !== postulationStatusFilter) return false;
@@ -1891,23 +1981,23 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
 
-          <div class="overflow-auto rounded-xl border border-gray-200">
-            <table class="min-w-[1300px] w-full text-sm">
+          <div class="overflow-x-auto rounded-xl border border-gray-200">
+            <table class="min-w-[980px] w-full text-sm table-fixed">
               <thead class="bg-gray-50 text-gray-600">
                 <tr>
-                  <th class="text-left p-3 font-medium">Atleta</th>
-                  <th class="text-left p-3 font-medium">Documento</th>
-                  <th class="text-left p-3 font-medium">Club</th>
-                  <th class="text-left p-3 font-medium">Datos</th>
-                  <th class="text-left p-3 font-medium">Disciplinas</th>
-                  <th class="text-left p-3 font-medium">Acciones</th>
+                  <th class="w-[190px] text-left p-3 font-medium">Atleta</th>
+                  <th class="w-[140px] text-left p-3 font-medium">Documento</th>
+                  <th class="w-[130px] text-left p-3 font-medium">Club</th>
+                  <th class="w-[160px] text-left p-3 font-medium">Datos</th>
+                  <th class="w-[150px] text-left p-3 font-medium">Disciplinas</th>
+                  <th class="w-[170px] text-left p-3 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
                 {athletes.map((a) => (
                   <tr>
                     <td class="p-3 align-top">
-                      <div class="flex items-center gap-3">
+                      <div class="flex items-center gap-3 min-w-0">
                         <div class="h-10 w-10 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
                           {a.photoUrl ? (
                             <img src={a.photoUrl} alt={a.fullName} class="h-full w-full object-cover" />
@@ -1915,7 +2005,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                             <div class="flex h-full w-full items-center justify-center text-xs text-gray-400">N/A</div>
                           )}
                         </div>
-                        <div>
+                        <div class="min-w-0">
                           <div class="font-semibold text-gray-800">{a.fullName}</div>
                           <div class="text-xs text-gray-500">#{a.id} · {a.gender} · {a.birthdate || '-'}</div>
                         </div>
@@ -1935,105 +2025,116 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       <div class="text-xs text-gray-600">Emergencia: {a.emergencyContact || '-'}</div>
                     </td>
                     <td class="p-3 align-top">
-                      <div class="text-xs text-gray-700 whitespace-pre-wrap">{a.disciplines.join(', ') || '-'}</div>
+                      <div class="text-xs text-gray-700 whitespace-pre-wrap break-words">{a.disciplines.join(', ') || '-'}</div>
                     </td>
-                    <td class="p-3 align-top">
-                      <form method="POST" action="/api/admin/athletes" encType="multipart/form-data" class="grid gap-2">
-                        <input type="hidden" name="intent" value="update" />
-                        <input type="hidden" name="id" value={a.id} />
-                        <div class="grid grid-cols-2 gap-2">
-                          <input class="admin-input" name="firstName" value={a.firstName} required />
-                          <input class="admin-input" name="lastName" value={a.lastName} required />
-                          <select class="admin-input" name="documentType">
-                            <option value="CC" selected={a.documentType === 'CC'}>CC</option>
-                            <option value="TI" selected={a.documentType === 'TI'}>TI</option>
-                            <option value="CE" selected={a.documentType === 'CE'}>CE</option>
-                            <option value="PP" selected={a.documentType === 'PP'}>PP</option>
-                          </select>
-                          <input class="admin-input" name="document" value={a.document} required />
-                          <select class="admin-input" name="sexCode">
-                            {sexCatalog.map((sex) => (
-                              <option value={sex.code} selected={a.sexCode === sex.code || a.gender === sex.code}>{sex.name}</option>
-                            ))}
-                          </select>
-                          <input class="admin-input" type="date" name="birthdate" value={a.birthdate} required />
-                          <input class="admin-input" type="email" name="email" value={a.email} placeholder="Email" />
-                          <select class="admin-input js-geo-country" name="countryIso2" data-geo-scope={`edit-${a.id}`}>
-                            <option value="">Selecciona país</option>
-                            {geoCountries.map((country) => (
-                              <option value={country.iso2} selected={a.countryIso2 === country.iso2}>{country.shortName}</option>
-                            ))}
-                          </select>
-                          <select class="admin-input js-geo-department" name="departmentCode" data-geo-scope={`edit-${a.id}`} data-selected={a.departmentCode}>
-                            <option value="">Selecciona departamento</option>
-                          </select>
-                          <select class="admin-input js-geo-municipality" name="municipalityCode" data-geo-scope={`edit-${a.id}`} data-selected={a.municipalityCode}>
-                            <option value="">Selecciona municipio</option>
-                          </select>
-                          <input type="hidden" name="municipality" value={a.municipalityName || a.municipality} class="js-geo-municipality-name" data-geo-scope={`edit-${a.id}`} />
-                          <input class="admin-input" name="coach" value={a.coach} placeholder="Coach" />
-                          <input class="admin-input" name="eps" value={a.eps} placeholder="EPS" />
-                          <input class="admin-input" name="emergencyContact" value={a.emergencyContact} placeholder="Emergencia" />
-                          <input class="admin-input" type="file" name="photoFile" accept="image/*" />
-                          <input type="hidden" name="photoUrl" value={a.photoUrl || ''} />
-                          <select class="admin-input" name="status">
-                            <option value="active" selected={a.status === 'active'}>Activo</option>
-                            <option value="inactive" selected={a.status === 'inactive'}>Inactivo</option>
-                          </select>
-                          {canManageAllAthletes ? (
-                            <select class="admin-input col-span-2" name="clubId" required>
-                              <option value="">Selecciona club</option>
-                              {clubsWithId.map((club) => (
-                                <option value={String(club.id)} selected={Number(a.clubId ?? 0) === club.id}>#{club.id} · {club.name}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input type="hidden" name="clubId" value={String(ownClubId || '')} />
-                          )}
-                          <div class="col-span-2 rounded-xl border border-gray-300 bg-gray-50 js-discipline-picker">
-                            <button
-                              type="button"
-                              class="js-discipline-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
-                              aria-expanded="false"
-                            >
-                              <span>Selección disciplinas</span>
-                              <span class="js-discipline-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
-                            </button>
-                            <div class="js-discipline-panel hidden max-h-36 overflow-auto border-t border-gray-300 p-2">
-                              <div class="grid gap-1">
-                                {athleticsDisciplineNames
-                                  .slice()
-                                  .sort((x, y) => x.localeCompare(y, 'es-CO'))
-                                  .map((disciplineName) => (
-                                    <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-800 hover:bg-white">
-                                      <input
-                                        type="checkbox"
-                                        name="disciplines"
-                                        value={disciplineName}
-                                        checked={a.disciplines.includes(disciplineName)}
-                                      />
-                                      <span>{disciplineName}</span>
-                                    </label>
+                    <td class="p-3 align-top w-[170px] relative">
+                      <details class="rounded-xl border border-gray-200 bg-gray-50 js-athlete-edit-details">
+                        <summary class="list-none cursor-pointer px-3 py-2 text-sm font-semibold text-gray-700 flex items-center justify-between gap-2">
+                          <span class="inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">edit</span>
+                            Editar atleta
+                          </span>
+                          <span class="material-symbols-outlined text-base">expand_more</span>
+                        </summary>
+                        <div class="border-t border-gray-200 p-3 bg-white lg:absolute lg:right-0 lg:top-full lg:mt-2 lg:w-[920px] lg:max-w-[calc(100vw-340px)] lg:rounded-xl lg:border lg:shadow-xl lg:z-20">
+                          <form id={`athlete-update-${a.id}`} method="POST" action="/api/admin/athletes" encType="multipart/form-data" class="grid gap-3 min-w-0">
+                            <input type="hidden" name="intent" value="update" />
+                            <input type="hidden" name="id" value={a.id} />
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                              <input class="admin-input min-w-0" name="firstName" value={a.firstName} required />
+                              <input class="admin-input min-w-0" name="lastName" value={a.lastName} required />
+                              <select class="admin-input min-w-0" name="documentType">
+                                <option value="CC" selected={a.documentType === 'CC'}>CC</option>
+                                <option value="TI" selected={a.documentType === 'TI'}>TI</option>
+                                <option value="CE" selected={a.documentType === 'CE'}>CE</option>
+                                <option value="PP" selected={a.documentType === 'PP'}>PP</option>
+                              </select>
+                              <input class="admin-input min-w-0" name="document" value={a.document} required />
+                              <select class="admin-input min-w-0" name="sexCode">
+                                {sexCatalog.map((sex) => (
+                                  <option value={sex.code} selected={a.sexCode === sex.code || a.gender === sex.code}>{sex.name}</option>
+                                ))}
+                              </select>
+                              <input class="admin-input min-w-0" type="date" name="birthdate" value={a.birthdate} required />
+                              <input class="admin-input min-w-0" type="email" name="email" value={a.email} placeholder="Email" />
+                              <select class="admin-input min-w-0 js-geo-country" name="countryIso2" data-geo-scope={`edit-${a.id}`}>
+                                <option value="">Selecciona país</option>
+                                {geoCountries.map((country) => (
+                                  <option value={country.iso2} selected={a.countryIso2 === country.iso2}>{country.shortName}</option>
+                                ))}
+                              </select>
+                              <select class="admin-input min-w-0 js-geo-department" name="departmentCode" data-geo-scope={`edit-${a.id}`} data-selected={a.departmentCode}>
+                                <option value="">Selecciona departamento</option>
+                              </select>
+                              <select class="admin-input min-w-0 js-geo-municipality" name="municipalityCode" data-geo-scope={`edit-${a.id}`} data-selected={a.municipalityCode}>
+                                <option value="">Selecciona municipio</option>
+                              </select>
+                              <input type="hidden" name="municipality" value={a.municipalityName || a.municipality} class="js-geo-municipality-name" data-geo-scope={`edit-${a.id}`} />
+                              <input class="admin-input min-w-0" name="coach" value={a.coach} placeholder="Coach" />
+                              <input class="admin-input min-w-0" name="eps" value={a.eps} placeholder="EPS" />
+                              <input class="admin-input min-w-0" name="emergencyContact" value={a.emergencyContact} placeholder="Emergencia" />
+                              <input class="admin-input min-w-0" type="file" name="photoFile" accept="image/*" />
+                              <input type="hidden" name="photoUrl" value={a.photoUrl || ''} />
+                              <select class="admin-input min-w-0" name="status">
+                                <option value="active" selected={a.status === 'active'}>Activo</option>
+                                <option value="inactive" selected={a.status === 'inactive'}>Inactivo</option>
+                              </select>
+                              {canManageAllAthletes ? (
+                                <select class="admin-input min-w-0" name="clubId" required>
+                                  <option value="">Selecciona club</option>
+                                  {clubsWithId.map((club) => (
+                                    <option value={String(club.id)} selected={Number(a.clubId ?? 0) === club.id}>#{club.id} · {club.name}</option>
                                   ))}
+                                </select>
+                              ) : (
+                                <input type="hidden" name="clubId" value={String(ownClubId || '')} />
+                              )}
+                              <div class="rounded-xl border border-gray-300 bg-gray-50 js-discipline-picker md:col-span-2 xl:col-span-3">
+                                <button
+                                  type="button"
+                                  class="js-discipline-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                                  aria-expanded="false"
+                                >
+                                  <span>Selección disciplinas</span>
+                                  <span class="js-discipline-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                                </button>
+                                <div class="js-discipline-panel hidden max-h-36 overflow-auto border-t border-gray-300 p-2">
+                                  <div class="grid gap-1">
+                                    {athleticsDisciplineNames
+                                      .slice()
+                                      .sort((x, y) => x.localeCompare(y, 'es-CO'))
+                                      .map((disciplineName) => (
+                                        <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-800 hover:bg-white">
+                                          <input
+                                            type="checkbox"
+                                            name="disciplines"
+                                            value={disciplineName}
+                                            checked={a.disciplines.includes(disciplineName)}
+                                          />
+                                          <span>{disciplineName}</span>
+                                        </label>
+                                      ))}
+                                  </div>
+                                </div>
                               </div>
                             </div>
+                          </form>
+                          <div class="mt-3 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
+                            <form method="POST" action="/api/admin/athletes" onsubmit="return confirm('¿Eliminar atleta? Esta acción no se puede deshacer.');">
+                              <input type="hidden" name="intent" value="delete" />
+                              <input type="hidden" name="id" value={a.id} />
+                              <button class="admin-btn admin-btn-danger w-full sm:w-auto" type="submit">
+                                <span class="material-symbols-outlined">delete</span>
+                                Eliminar
+                              </button>
+                            </form>
+                            <button class="admin-btn admin-btn-primary w-full sm:w-auto" type="submit" form={`athlete-update-${a.id}`}>
+                              <span class="material-symbols-outlined">save</span>
+                              Guardar cambios
+                            </button>
                           </div>
                         </div>
-                        <div class="flex gap-2">
-                          <button class="admin-btn admin-btn-primary flex-1" type="submit">
-                            <span class="material-symbols-outlined">save</span>
-                            Guardar
-                          </button>
-                        </div>
-                      </form>
-                      <form method="POST" action="/api/admin/athletes" class="mt-2" onsubmit="return confirm('¿Eliminar atleta? Esta acción no se puede deshacer.');">
-                        <input type="hidden" name="intent" value="delete" />
-                        <input type="hidden" name="id" value={a.id} />
-                        <button class="admin-btn admin-btn-danger w-full" type="submit">
-                          <span class="material-symbols-outlined">delete</span>
-                          Eliminar
-                        </button>
-                      </form>
+                      </details>
                     </td>
                   </tr>
                 ))}
@@ -2431,101 +2532,145 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {contentTab === 'dashboard' ? (
       <section class="admin-card">
         <div class="admin-card-header">
-          <h4 class="admin-card-title">Centro de Control</h4>
+          <h4 class="admin-card-title">Dashboard Estratégico</h4>
         </div>
         <div class="admin-card-body">
           {analytics ? (
             <>
-              <div class="rounded-3xl border border-emerald-100 bg-gradient-to-r from-[#0a4f2c] via-[#0b6a39] to-[#14753f] p-6 text-white shadow-md">
-                <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div class="space-y-6">
+                <div class="flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-100/90">Panel estratégico de la liga</p>
-                    <h5 class="mt-2 text-2xl font-black leading-tight">Monitorea operación, crecimiento y respuesta institucional</h5>
-                    <p class="mt-2 text-sm text-emerald-50/90">
-                      Vista ejecutiva para presidencia, administración y soporte operativo.
-                    </p>
+                    <h3 class="text-3xl font-black text-[#2d3e50]">Panel Estratégico</h3>
+                    <p class="text-sm text-[#78909c]">Analítica operativa en tiempo real e información institucional clave</p>
                   </div>
-                  <div class="grid gap-2 sm:grid-cols-3">
-                    <article class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                      <p class="text-xs uppercase tracking-wide text-emerald-100/90">Contenido total</p>
-                      <p class="text-2xl font-extrabold">{totalManagedContent}</p>
-                    </article>
-                    <article class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                      <p class="text-xs uppercase tracking-wide text-emerald-100/90">Pulso operativo</p>
-                      <p class="text-xl font-extrabold">{operationalPulse}</p>
-                    </article>
-                    <article class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                      <p class="text-xs uppercase tracking-wide text-emerald-100/90">Actividad hoy</p>
-                      <p class="text-2xl font-extrabold">{(todayActivity?.postulations ?? 0) + (todayActivity?.pqrs ?? 0)}</p>
-                    </article>
+                  <div class="flex gap-2">
+                    <a href="/admin?tab=auditoria" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-[#2d3e50] shadow-sm hover:bg-gray-50">
+                      <span class="material-symbols-outlined text-base">download</span>
+                      Exportar actividad
+                    </a>
+                    <a href="/admin?tab=competencias" class="inline-flex items-center gap-2 rounded-lg bg-[#5AAC32] px-4 py-2 text-sm font-bold text-white shadow-sm hover:brightness-110">
+                      <span class="material-symbols-outlined text-base">event</span>
+                      Eventos programados
+                    </a>
                   </div>
                 </div>
-              </div>
 
-              <div class="mt-4 grid gap-3 md:grid-cols-3">
-                {dashboardCards.map((card) => (
-                  <article class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                    <div class={`h-1.5 rounded-full bg-gradient-to-r ${card.color}`}></div>
-                    <div class="mt-3 text-xs uppercase tracking-wide text-gray-400">{card.label}</div>
-                    <div class="text-3xl font-black text-gray-800">{card.value}</div>
-                  </article>
-                ))}
-              </div>
-
-              <div class="mt-6 grid gap-4 lg:grid-cols-3">
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 lg:col-span-2">
-                  <h5 class="text-sm font-semibold text-gray-700 mb-3">Postulaciones por estado</h5>
-                  <div class="space-y-2">
-                    {analytics.postulationsByStatus.map((item) => (
-                      <div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                        <div class="flex items-center justify-between text-sm">
-                          <span class="text-gray-600">{item.status}</span>
-                          <strong class="text-gray-800">{item.count}</strong>
-                        </div>
-                        <div class="mt-2 h-2 rounded-full bg-gray-100">
-                          <div
-                            class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-700"
-                            style={`width: ${Math.min(100, (item.count / Math.max(1, postulationSummary.total)) * 100)}%`}
-                          ></div>
-                        </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {metricCards.map((card) => (
+                    <article class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <div class="flex items-start justify-between">
+                        <span class={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${card.color}`}>
+                          <span class="material-symbols-outlined text-base">query_stats</span>
+                        </span>
+                        <span class="text-xs font-extrabold uppercase text-[#78909c]">{card.growth}</span>
                       </div>
-                    ))}
-                    {analytics.postulationsByStatus.length === 0 ? (
-                      <div class="text-xs text-gray-400">Sin datos</div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                  <h5 class="text-sm font-semibold text-gray-700 mb-3">PQRS por estado</h5>
-                  <div class="space-y-2">
-                    {analytics.pqrsByStatus.map((item) => (
-                      <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                        <span class="text-gray-600">{item.status}</span>
-                        <strong class="text-gray-800">{item.count}</strong>
+                      <p class="mt-3 text-[11px] font-black uppercase tracking-[0.16em] text-[#78909c]">{card.label}</p>
+                      <p class="text-4xl font-black leading-none text-[#2d3e50]">{card.value}</p>
+                      <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                        <div class="h-full rounded-full bg-[#5AAC32]" style={`width:${card.progress}%`}></div>
                       </div>
-                    ))}
-                    {analytics.pqrsByStatus.length === 0 ? (
-                      <div class="text-xs text-gray-400">Sin datos</div>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div class="mb-3 flex items-center justify-between">
-                  <h5 class="text-sm font-semibold text-gray-700">Tendencia últimos 7 días</h5>
-                  <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-500 border border-gray-200">Actividad reciente</span>
-                </div>
-                <div class="grid gap-2 md:grid-cols-7">
-                  {analytics.last7Days.map((day) => (
-                    <div class="rounded-lg border border-gray-200 bg-white p-3 text-xs">
-                      <div class="text-gray-400">{day.day}</div>
-                      <div class="mt-1 text-gray-700">POST: <strong>{day.postulations}</strong></div>
-                      <div class="text-gray-700">PQRS: <strong>{day.pqrs}</strong></div>
-                    </div>
+                    </article>
                   ))}
                 </div>
+
+                <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+                  <article class="xl:col-span-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <div class="mb-5 flex items-center justify-between">
+                      <div>
+                      <h4 class="text-xl font-black text-[#2d3e50]">Evolución de Gestión Operativa</h4>
+                      <p class="text-xs text-[#78909c]">Seguimiento de postulaciones y PQRS durante la última semana</p>
+                    </div>
+                    <span class="rounded-lg bg-[#f4f7f9] px-3 py-1 text-xs font-bold text-[#2d3e50]">Última semana</span>
+                  </div>
+                    <div class="rounded-2xl border border-gray-100 bg-[#f8fafc] p-4">
+                      <svg viewBox="0 0 100 100" class="h-64 w-full">
+                        <line x1="6" y1="90" x2="94" y2="90" stroke="#e2e8f0" stroke-width="1" />
+                        <line x1="6" y1="55" x2="94" y2="55" stroke="#e2e8f0" stroke-width="0.8" stroke-dasharray="2 2" />
+                        <line x1="6" y1="20" x2="94" y2="20" stroke="#e2e8f0" stroke-width="0.8" stroke-dasharray="2 2" />
+
+                        <polyline fill="none" stroke="#5AAC32" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" points={trendPostLinePoints} />
+                        <polyline fill="none" stroke="#E7D916" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" points={trendPqrsLinePoints} />
+                      </svg>
+                      <div class="mt-3 grid gap-2 md:grid-cols-7">
+                        {trendRows.map((row) => (
+                          <div class="rounded-lg bg-white px-2 py-2 text-center">
+                            <p class="text-[10px] font-black text-[#94a3b8]">{row.day}</p>
+                            <p class="text-[10px] font-semibold text-[#64748b]">Post: {row.postulations}</p>
+                            <p class="text-[10px] font-semibold text-[#64748b]">PQRS: {row.pqrs}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div class="mt-3 flex items-center gap-4 text-xs font-bold text-[#64748b]">
+                        <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-[#5AAC32]"></span>Postulaciones</span>
+                        <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-[#E7D916]"></span>PQRS</span>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="xl:col-span-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <h4 class="text-xl font-black text-[#2d3e50]">Distribución de Contenido</h4>
+                    <div class="relative mx-auto mt-4 h-44 w-44">
+                      <div class="absolute inset-0 rounded-full" style={`background:${distributionConic};`}></div>
+                      <div class="absolute inset-[22%] flex flex-col items-center justify-center rounded-full bg-white">
+                        <span class="text-2xl font-black text-[#2d3e50]">{distributionTotal}</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-[#78909c]">Total</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 space-y-2">
+                      {distributionRows.map((row) => (
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-2">
+                            <span class="h-2.5 w-2.5 rounded-full" style={`background:${row.color};`}></span>
+                            <span class="text-sm font-bold text-[#2d3e50]">{row.label}</span>
+                          </div>
+                          <span class="text-sm font-black text-[#2d3e50]">
+                            {distributionTotal > 0 ? Math.round((row.value / distributionTotal) * 100) : 0}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                </div>
+
+                <article class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                  <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
+                    <h4 class="text-xl font-black text-[#2d3e50]">Registros Operativos Recientes</h4>
+                    <a href="/admin?tab=competencias" class="text-sm font-bold text-emerald-700 hover:underline">Ver todo</a>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full min-w-[720px] text-left">
+                      <thead class="bg-emerald-50/40">
+                        <tr>
+                          <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-emerald-900">Registro</th>
+                          <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-emerald-900">Contexto</th>
+                          <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-emerald-900">Estado</th>
+                          <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-emerald-900">Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100">
+                        {recentOperationalRows.map((row) => (
+                          <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                              <p class="text-sm font-bold text-[#2d3e50]">{row.title}</p>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-[#64748b]">{row.context}</td>
+                            <td class="px-6 py-4">
+                              <span class="inline-flex rounded-full bg-[#e8f5e0] px-3 py-1 text-[10px] font-black uppercase text-[#0f5132]">
+                                {row.status}
+                              </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm font-mono text-[#2d3e50]">{row.value || '-'}</td>
+                          </tr>
+                        ))}
+                        {recentOperationalRows.length === 0 ? (
+                          <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">Sin registros recientes para mostrar.</td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
               </div>
             </>
           ) : (
@@ -3632,56 +3777,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button>
           </div>
         </div>
-<<<<<<< HEAD
       </details>
-=======
-        <div>
-          <label class="admin-label">Estado</label>
-          <input class="admin-input" value="Próximamente (automático)" disabled />
-        </div>
-        <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
-        <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
-        <div><label class="admin-label">Maximo pruebas por deportista</label><input class="admin-input" name="convMaxEventsPerAthlete" type="number" min="1" max="30" value="1" required /></div>
-        <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
-        <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required /></div>
-        <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
-        <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
-        <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
-        <div class="md:col-span-3 rounded-lg border border-gray-200 bg-white p-3 js-conv-catalog-v3">
-          <label class="admin-label">Disciplina habilitada</label>
-          <select class="admin-input mt-2 js-conv-discipline-select-v3">
-            <option value="">Selecciona disciplina</option>
-            {athleticsDisciplineNames.map((disciplineName) => (
-              <option value={disciplineName}>{disciplineName}</option>
-            ))}
-          </select>
-          <div class="mt-4 flex flex-wrap items-center gap-2">
-            <button type="button" class="admin-btn admin-btn-primary js-conv-select-visible-events-v3">
-              Seleccionar visibles
-            </button>
-            <button type="button" class="admin-btn admin-btn-secondary js-conv-clear-visible-events-v3">
-              Limpiar visibles
-            </button>
-          </div>
-          <label class="admin-label mt-4">Pruebas habilitadas</label>
-          <p class="mt-1 text-xs text-gray-500"><span class="js-conv-events-count-v3">0</span> pruebas seleccionadas</p>
-          <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
-            <div class="grid gap-2 sm:grid-cols-2">
-              {athleticsEventsCatalog.map((eventItem) => (
-                <label class="inline-flex items-center gap-2 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700">
-                  <input class="js-conv-event-check-v3" type="checkbox" value={eventItem.name} data-discipline={eventItem.disciplineName} />
-                  <span>{eventItem.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          <textarea class="sr-only js-conv-disciplines-hidden-v3" name="convDisciplines"></textarea>
-          <textarea class="sr-only js-conv-events-hidden-v3" name="convEvents"></textarea>
-        </div>
-        <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
-      </div>
->>>>>>> 42d45f5663921116ac0765d520c7dd7e0dce8f8c
     </template>
         <template id="tpl-competencia">
       <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#competencias-container">
@@ -3838,7 +3934,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     <script is:inline define:vars={{ geoDepartments, geoMunicipalities }}>
       (() => {
       const root = document;
-<<<<<<< HEAD
       root.addEventListener('toggle', (event) => {
         const details = event.target instanceof HTMLDetailsElement ? event.target : null;
         if (!details || !details.open) return;
@@ -3852,7 +3947,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           }
         });
       }, true);
-=======
       const baseState = globalThis.__adminBaseBindingsState || (globalThis.__adminBaseBindingsState = { handlersBound: false });
       const GEO_DEPARTMENTS = geoDepartments;
       const GEO_MUNICIPALITIES = geoMunicipalities;
@@ -4073,7 +4167,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           if (catalogRoot) applyConvCatalogDisciplineFilter(catalogRoot);
         }
       });
->>>>>>> 42d45f5663921116ac0765d520c7dd7e0dce8f8c
 
       root.addEventListener('click', (event) => {
         const targetEl = event.target instanceof HTMLElement ? event.target : null;
@@ -4447,6 +4540,31 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
 
         bindAll();
         setTimeout(bindAll, 0);
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const state = globalThis.__adminAthleteDetailsState || (globalThis.__adminAthleteDetailsState = { bound: false });
+        if (state.bound) return;
+        state.bound = true;
+
+        document.addEventListener(
+          'toggle',
+          (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLDetailsElement)) return;
+            if (!target.classList.contains('js-athlete-edit-details')) return;
+            if (!target.open) return;
+
+            const allDetails = document.querySelectorAll('.js-athlete-edit-details');
+            allDetails.forEach((node) => {
+              if (!(node instanceof HTMLDetailsElement)) return;
+              if (node === target) return;
+              node.open = false;
+            });
+          },
+          true
+        );
       })();
     </script>
   </AdminShell>

@@ -7,6 +7,8 @@ import { computeConvocatoriaStatus } from './convocatorias-status';
 const hasDatabase = Boolean(getDatabaseUrl());
 let warnedDbOffline = false;
 let cachedHasConvocatoriasStatusMode: boolean | null = null;
+let dbUnavailableUntil = 0;
+const DB_RETRY_INTERVAL_MS = 15000;
 
 function isMissingColumnError(error: unknown) {
   if (!error || typeof error !== 'object') return false;
@@ -30,6 +32,14 @@ async function hasConvocatoriasStatusModeColumn() {
   if (cachedHasConvocatoriasStatusMode !== null) return cachedHasConvocatoriasStatusMode;
   cachedHasConvocatoriasStatusMode = await hasColumn('convocatorias', 'status_mode');
   return cachedHasConvocatoriasStatusMode;
+}
+
+function shouldUseDbNow() {
+  return Date.now() >= dbUnavailableUntil;
+}
+
+function markDbUnavailable() {
+  dbUnavailableUntil = Date.now() + DB_RETRY_INTERVAL_MS;
 }
 
 export async function getHomeData() {
@@ -57,6 +67,9 @@ export async function getHomeData() {
       await writeStore(store);
     }
     return store;
+  }
+  if (!requireDatabase() && !shouldUseDbNow()) {
+    return readStore();
   }
 
   try {
@@ -86,25 +99,35 @@ export async function getHomeData() {
           OR status_mode IS DISTINCT FROM 'auto'`
       );
     } catch (error) {
+      if (isDbUnavailableError(error)) {
+        throw error;
+      }
       if (isMissingColumnError(error)) {
         cachedHasConvocatoriasStatusMode = false;
       } else {
-        console.warn('[content] Convocatorias auto-update (status_mode) fallback.', error);
+        console.warn('[content] Convocatorias auto-update (status_mode) fallback.');
       }
-      await db.query(
-        `UPDATE convocatorias
-         SET status = CASE
-           WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
-           WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
-           ELSE 'Próximamente'
-         END,
-         updated_at = NOW()
-         WHERE status IS DISTINCT FROM CASE
-           WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
-           WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
-           ELSE 'Próximamente'
-         END`
-      );
+      try {
+        await db.query(
+          `UPDATE convocatorias
+           SET status = CASE
+             WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
+             WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
+             ELSE 'Próximamente'
+           END,
+           updated_at = NOW()
+           WHERE status IS DISTINCT FROM CASE
+             WHEN close_date IS NOT NULL AND CURRENT_DATE > close_date THEN 'Cerrada'
+             WHEN open_date IS NOT NULL AND CURRENT_DATE >= open_date AND (close_date IS NULL OR CURRENT_DATE <= close_date) THEN 'Abierta'
+             ELSE 'Próximamente'
+           END`
+        );
+      } catch (fallbackError) {
+        if (isDbUnavailableError(fallbackError)) {
+          throw fallbackError;
+        }
+        console.warn('[content] Convocatorias auto-update fallback failed.');
+      }
     }
 
     const settingsRes = await db.query('SELECT * FROM site_settings ORDER BY id DESC LIMIT 1');
@@ -475,6 +498,7 @@ export async function getHomeData() {
   } catch (error) {
     if (requireDatabase()) throw error;
     if (isDbUnavailableError(error)) {
+      markDbUnavailable();
       if (!warnedDbOffline) {
         warnedDbOffline = true;
         console.warn('[content] Database unavailable (ECONNREFUSED). Running with local store fallback.');
@@ -660,3 +684,4 @@ function splitMark(mark: string): [number, string] {
   }
   return [0, mark];
 }
+
