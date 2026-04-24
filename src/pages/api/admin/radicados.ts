@@ -6,6 +6,7 @@ import { getRadicadoById, reviewRadicado } from '../../../lib/radicados';
 import { logAudit } from '../../../lib/audit';
 import type { Role } from '../../../lib/rbac';
 import { db } from '../../../lib/db';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const schema = z.object({
   id: z.coerce.number().int().positive(),
@@ -75,12 +76,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   });
 
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=solicitudes&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=solicitudes&error=invalid_schema', 302);
   }
 
   const radicado = await getRadicadoById(parsed.data.id);
   if (!radicado || radicado.status !== 'pending') {
-    return Response.redirect(new URL('/admin?tab=solicitudes&error=not_found', request.url), 302);
+    return redirectInternal('/admin?tab=solicitudes&error=not_found', 302);
   }
 
   if (parsed.data.decision === 'approved') {
@@ -90,7 +91,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (!exists) {
       const passwordHash = String((radicado.payload?.passwordHash as string) ?? '').trim();
-      if (!passwordHash) return Response.redirect(new URL('/admin?tab=solicitudes&error=missing_password', request.url), 302);
+      if (!passwordHash) return redirectInternal('/admin?tab=solicitudes&error=missing_password', 302);
       approvedUserId = await createUser({
         email: radicado.email,
         passwordHash,
@@ -127,5 +128,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/admin?tab=solicitudes&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=solicitudes&saved=1', 302);
 };
+
+

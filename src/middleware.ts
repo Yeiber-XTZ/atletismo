@@ -1,9 +1,18 @@
 import { defineMiddleware } from 'astro:middleware';
 import { getUserFromCookies } from './lib/auth';
+import { getAllowedHosts } from './lib/env';
+import { getEffectiveRequestHost, isRequestHostAllowed } from './lib/request-host';
 import { hasPermission, hasRole, type Role } from './lib/rbac';
+import { redirectInternal } from './lib/http-redirect';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
+  const requestHost = getEffectiveRequestHost(context.request);
+  const allowedHosts = getAllowedHosts();
+
+  if (!isRequestHostAllowed(requestHost, allowedHosts)) {
+    return new Response('Bad Request: Host not allowed', { status: 400 });
+  }
 
   const user = await getUserFromCookies(context.cookies);
   context.locals.user = user;
@@ -23,18 +32,24 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isAuthPage = pathname === '/login' || pathname === '/admin/login';
   const isAuthApi = pathname === '/api/login' || pathname === '/api/admin/login';
 
+  function withNextParam(loginPath: string, nextPath: string): string {
+    const [basePath, rawQuery = ''] = loginPath.split('?');
+    const params = new URLSearchParams(rawQuery);
+    if (!params.has('next')) params.set('next', nextPath);
+    const query = params.toString();
+    return query ? `${basePath}?${query}` : basePath;
+  }
+
   function deny(required: Role[], loginPath = '/login') {
     if (!user) {
-      const loginUrl = new URL(loginPath, context.url);
       const nextPath = `${pathname}${context.url.search}`;
-      if (!loginUrl.searchParams.has('next')) loginUrl.searchParams.set('next', nextPath);
-      return Response.redirect(loginUrl, 302);
+      return redirectInternal(withNextParam(loginPath, nextPath), 302);
     }
     if (hasRole(user, ['SUPERADMIN'])) {
       return null;
     }
     if (!hasRole(user, required)) {
-      return Response.redirect(new URL('/acceso-denegado', context.url), 302);
+      return redirectInternal('/acceso-denegado', 302);
     }
     return null;
   }
@@ -54,12 +69,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
       if (res) return res;
     } else if (isAsambleaArea) {
       if (!user) {
-        const loginUrl = new URL('/login', context.url);
-        loginUrl.searchParams.set('next', `${pathname}${context.url.search}`);
-        return Response.redirect(loginUrl, 302);
+        const nextPath = `${pathname}${context.url.search}`;
+        return redirectInternal(withNextParam('/login', nextPath), 302);
       }
       if (!hasPermission(user, 'assembly:self_panel') && !hasPermission(user, 'asambleas:manage')) {
-        return Response.redirect(new URL('/acceso-denegado', context.url), 302);
+        return redirectInternal('/acceso-denegado', 302);
       }
     } else {
       const res = deny(['SUPERADMIN', 'ADMIN', 'ORGANO_ADMIN', 'LIGA', 'CLUB']);
@@ -69,3 +83,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   return next();
 });
+
+

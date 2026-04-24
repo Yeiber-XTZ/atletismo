@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getAdminData, upsertCompetencias, upsertHome } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const Download = z.object({
   label: z.string().min(1).max(80),
@@ -49,7 +50,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         eventDateTime: featuredEventDateTime
       }
     });
-    return Response.redirect(new URL('/admin?tab=competencias&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=competencias&saved=1', 302);
   }
 
   const competenciasJson = String(form.get('competenciasJson') ?? '').trim();
@@ -59,7 +60,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       parsedJson = JSON.parse(competenciasJson);
     } catch {
-      return Response.redirect(new URL('/admin?tab=competencias&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=competencias&error=invalid_json', 302);
     }
   } else {
     const titles = form.getAll('compTitle').map((value) => String(value).trim());
@@ -106,7 +107,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(parsedJson);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=competencias&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=competencias&error=invalid_schema', 302);
   }
 
   const normalized = parsed.data.map((c) => ({
@@ -115,5 +116,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }));
 
   await upsertCompetencias(normalized);
-  return Response.redirect(new URL('/admin?tab=competencias&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=competencias&saved=1', 302);
 };
+
+

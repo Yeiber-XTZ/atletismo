@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { upsertHero } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'site:manage', { loginPath: '/admin/login' });
@@ -22,5 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   await upsertHero({ title, subtitle, imageUrl, badge });
-  return Response.redirect(new URL('/admin?tab=settings&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=settings&saved=1', 302);
 };
+
+

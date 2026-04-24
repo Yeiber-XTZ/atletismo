@@ -4,6 +4,7 @@ import { slugify } from '../../../lib/slug';
 import { getAdminData, upsertHome, upsertNews } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const urlOrPath = z.string().regex(/^(?:\/|https?:\/\/).*/).optional().or(z.literal(''));
 
@@ -42,7 +43,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       parsedJson = JSON.parse(newsJson);
     } catch {
-      return Response.redirect(new URL('/admin?tab=noticias&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=noticias&error=invalid_json', 302);
     }
   } else {
     const slugs = form.getAll('newsSlug').map((value) => String(value).trim());
@@ -85,7 +86,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(parsedJson);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=noticias&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=noticias&error=invalid_schema', 302);
   }
 
   const normalized = parsed.data.map((n) => ({
@@ -122,5 +123,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     news: featuredItems
   });
 
-  return Response.redirect(new URL('/admin?tab=noticias&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=noticias&saved=1', 302);
 };
+
+

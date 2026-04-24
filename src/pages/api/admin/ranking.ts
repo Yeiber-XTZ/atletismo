@@ -4,6 +4,7 @@ import { getAdminData, upsertHome, upsertRankings } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const urlOrPath = z.string().regex(/^(?:\/|https?:\/\/).*/).optional().or(z.literal(''));
 
@@ -37,7 +38,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       parsedJson = JSON.parse(rankingJson);
     } catch {
-      return Response.redirect(new URL('/admin?tab=ranking&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=ranking&error=invalid_json', 302);
     }
   } else {
     const ranks = form.getAll('rankingRank').map((value) => String(value).trim());
@@ -80,7 +81,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(parsedJson);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=ranking&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=ranking&error=invalid_schema', 302);
   }
 
   const normalized = parsed.data.map((r) => ({
@@ -132,5 +133,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   }
 
-  return Response.redirect(new URL('/admin?tab=ranking&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=ranking&saved=1', 302);
 };
+
+

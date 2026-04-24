@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireUser, requireRoles, assertPostulationStatusChange } from '../../../../lib/guards';
 import { PostulationStatus, updatePostulacionStatus } from '../../../../lib/postulaciones';
 import { logAudit } from '../../../../lib/audit';
+import { redirectInternal } from '../../../../lib/http-redirect';
 
 const schema = z.object({
   id: z.string().min(6).max(60),
@@ -42,11 +43,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
 
-    return Response.redirect(new URL('/admin?tab=aprobaciones&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=aprobaciones&saved=1', 302);
   } catch (error: any) {
     const status = Number(error?.status || 500);
-    if (status === 401) return Response.redirect(new URL('/login?next=/admin', request.url), 302);
-    if (status === 403) return Response.redirect(new URL('/admin?tab=aprobaciones&error=forbidden_status', request.url), 302);
+    if (status === 401) return redirectInternal('/login?next=/admin', 302);
+    if (status === 403) return redirectInternal('/admin?tab=aprobaciones&error=forbidden_status', 302);
     return new Response('Internal error', { status: 500 });
   }
 };
+
+

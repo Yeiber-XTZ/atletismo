@@ -3,6 +3,7 @@ import { getAdminData, upsertPublicSite } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import type { Permission } from '../../../lib/rbac';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const PAGE_PERMISSIONS: Record<string, Permission> = {
   laLiga: 'site:manage',
@@ -22,7 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const permission = PAGE_PERMISSIONS[pageKey];
 
   if (!permission) {
-    return Response.redirect(new URL(`/admin?tab=${encodeURIComponent(tab)}&error=invalid_schema`, request.url), 302);
+    return redirectInternal(`/admin?tab=${encodeURIComponent(tab)}&error=invalid_schema`, 302);
   }
 
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), permission, { loginPath: '/admin/login' });
@@ -45,5 +46,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
   });
 
-  return Response.redirect(new URL(`/admin?tab=${encodeURIComponent(tab)}&saved=1`, request.url), 302);
+  return redirectInternal(`/admin?tab=${encodeURIComponent(tab)}&saved=1`, 302);
 };
+
+

@@ -1,10 +1,11 @@
 import type { AstroCookies } from 'astro';
 import { getUserFromCookies } from './auth';
+import { redirectInternal } from './http-redirect';
 import { hasPermission, type AuthUser, type Permission } from './rbac';
 
 export async function requirePermissionOrRedirect(
   cookies: AstroCookies,
-  requestUrl: URL,
+  _requestUrl: URL,
   permission: Permission,
   opts?: { loginPath?: string; deniedPath?: string }
 ): { user: AuthUser } | { response: Response } {
@@ -13,10 +14,10 @@ export async function requirePermissionOrRedirect(
 
   const user = await getUserFromCookies(cookies);
   if (!user) {
-    return { response: Response.redirect(new URL(loginPath, requestUrl), 302) };
+    return { response: redirectInternal(loginPath, 302) };
   }
   if (!hasPermission(user, permission)) {
-    return { response: Response.redirect(new URL(deniedPath, requestUrl), 302) };
+    return { response: redirectInternal(deniedPath, 302) };
   }
   return { user };
 }

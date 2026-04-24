@@ -4,6 +4,7 @@ import { requirePermissionOrRedirect } from '../../../lib/access';
 import { createApprovalRequest } from '../../../lib/approvals';
 import { logAudit } from '../../../lib/audit';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'documents:manage', { loginPath: '/admin/login' });
@@ -38,7 +39,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       entityId: String(id),
       request
     });
-    return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=documents&saved=1', 302);
   }
 
   const needsApproval = (auth.user.role === 'LIGA' || auth.user.role === 'ORGANO_ADMIN') && isSensitive;
@@ -59,12 +60,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       meta: { intent, category, sensitive: true },
       request
     });
-    return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=documents&saved=1', 302);
   }
 
   if (intent === 'update') {
     if (!href) {
-      return Response.redirect(new URL('/admin?tab=documents&error=missing_file', request.url), 302);
+      return redirectInternal('/admin?tab=documents&error=missing_file', 302);
     }
     await updateDocument(id, { title, description, category, date, href });
     await logAudit({
@@ -74,11 +75,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       entityId: String(id),
       request
     });
-    return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=documents&saved=1', 302);
   }
 
   if (!href) {
-    return Response.redirect(new URL('/admin?tab=documents&error=missing_file', request.url), 302);
+    return redirectInternal('/admin?tab=documents&error=missing_file', 302);
   }
 
   await createDocument({ title, description, category, date, href });
@@ -89,5 +90,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     meta: { title, category },
     request
   });
-  return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=documents&saved=1', 302);
 };
+
+

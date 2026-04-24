@@ -3,6 +3,7 @@ import { requirePermissionOrRedirect } from '../../../lib/access';
 import { PERMISSIONS, ROLES, type Permission, type Role } from '../../../lib/rbac';
 import { saveRolePermissionMatrix } from '../../../lib/role-permissions';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'permissions:assign', {
@@ -11,7 +12,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if ('response' in auth) return auth.response;
 
   if (auth.user.role !== 'SUPERADMIN') {
-    return Response.redirect(new URL('/admin?tab=permisos&error=forbidden_superadmin_only', request.url), 302);
+    return redirectInternal('/admin?tab=permisos&error=forbidden_superadmin_only', 302);
   }
 
   const form = await request.formData();
@@ -44,6 +45,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/admin?tab=permisos&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=permisos&saved=1', 302);
 };
+
+
 

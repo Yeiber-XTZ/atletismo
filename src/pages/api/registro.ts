@@ -4,6 +4,7 @@ import { dataPath, generateRadicado, readJson, writeJson } from '../../lib/persi
 import { createRadicado } from '../../lib/radicados';
 import { saveFileUpload } from '../../lib/file-upload';
 import { hashPassword } from '../../lib/security';
+import { redirectInternal } from '../../lib/http-redirect';
 
 const profileSchema = z.literal('club');
 
@@ -24,11 +25,11 @@ const clubSchema = schema.extend({
   password: z.string().min(8).max(200)
 });
 
-function errorRedirectWithMessage(requestUrl: string, message: string) {
-  const url = new URL('/registro/club', requestUrl);
-  url.searchParams.set('error', 'invalid');
-  url.searchParams.set('message', message.slice(0, 220));
-  return Response.redirect(url, 302);
+function errorRedirectWithMessage(message: string) {
+  const params = new URLSearchParams();
+  params.set('error', 'invalid');
+  params.set('message', message.slice(0, 220));
+  return redirectInternal(`/registro/club?${params.toString()}`, 302);
 }
 
 type BasePayload = z.infer<typeof schema>;
@@ -48,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const parsedBase = schema.safeParse({ profile, name, email });
   if (!parsedBase.success) {
-    return errorRedirectWithMessage(request.url, parsedBase.error.issues[0]?.message ?? 'Datos inválidos');
+    return errorRedirectWithMessage(parsedBase.error.issues[0]?.message ?? 'Datos inválidos');
   }
 
   const clubParsed = clubSchema.safeParse({
@@ -62,7 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
     password: String(form.get('password') ?? '')
   });
   if (!clubParsed.success) {
-    return errorRedirectWithMessage(request.url, clubParsed.error.issues[0]?.message ?? 'Datos de club inválidos');
+    return errorRedirectWithMessage(clubParsed.error.issues[0]?.message ?? 'Datos de club inválidos');
   }
   const validatedProfilePayload: ClubPayload = clubParsed.data;
 
@@ -102,5 +103,7 @@ export const POST: APIRoute = async ({ request }) => {
     payload: item.data
   });
 
-  return Response.redirect(new URL(`/registro/club?success=1&radicado=${encodeURIComponent(radicado)}`, request.url), 302);
+  return redirectInternal(`/registro/club?success=1&radicado=${encodeURIComponent(radicado)}`, 302);
 };
+
+

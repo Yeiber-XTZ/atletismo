@@ -5,6 +5,7 @@ import { createUser, getUserPrimaryRole, setUserDirectPermissions, setUserRole, 
 import type { Role } from '../../../lib/rbac';
 import { PERMISSIONS, ROLES } from '../../../lib/rbac';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const roleSchema = z.enum(ROLES);
 
@@ -25,7 +26,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const intent = String(form.get('intent') ?? '');
 
   if (intent === 'create') {
-    if (!isAdminRoot) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+    if (!isAdminRoot) return redirectInternal('/admin?tab=users&error=forbidden_permissions', 302);
     const schema = z.object({
       email: z.string().email().max(160),
       password: z.string().min(8).max(200),
@@ -43,9 +44,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     };
 
     const parsed = schema.safeParse(payload);
-    if (!parsed.success) return Response.redirect(new URL('/admin?tab=users&error=invalid_schema', request.url), 302);
+    if (!parsed.success) return redirectInternal('/admin?tab=users&error=invalid_schema', 302);
     if (parsed.data.role === 'SUPERADMIN' && !isSuperAdmin) {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_superadmin', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_superadmin', 302);
     }
 
     await createUser({
@@ -57,11 +58,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
     await logAudit({ userId: Number(auth.user.id) || null, action: 'user_create', entityType: 'user', meta: { email: parsed.data.email, role: parsed.data.role }, request });
 
-    return Response.redirect(new URL('/admin?tab=users&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=users&saved=1', 302);
   }
 
   if (intent === 'update') {
-    if (!isAdminRoot) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+    if (!isAdminRoot) return redirectInternal('/admin?tab=users&error=forbidden_permissions', 302);
     const schema = z.object({
       id: z.coerce.number().int().positive(),
       displayName: z.string().max(120).optional().or(z.literal('')),
@@ -79,13 +80,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     };
 
     const parsed = schema.safeParse(payload);
-    if (!parsed.success) return Response.redirect(new URL('/admin?tab=users&error=invalid_schema', request.url), 302);
+    if (!parsed.success) return redirectInternal('/admin?tab=users&error=invalid_schema', 302);
     const targetRole = await getUserPrimaryRole(parsed.data.id);
     if (targetRole === 'SUPERADMIN' && !isSuperAdmin) {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_superadmin', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_superadmin', 302);
     }
     if (parsed.data.role === 'SUPERADMIN' && !isSuperAdmin) {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_superadmin', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_superadmin', 302);
     }
 
     const clubId = parsed.data.clubId.trim() ? Number(parsed.data.clubId) : null;
@@ -97,11 +98,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     await setUserRole(parsed.data.id, parsed.data.role as Role);
     await logAudit({ userId: Number(auth.user.id) || null, action: 'user_update', entityType: 'user', entityId: String(parsed.data.id), meta: { role: parsed.data.role }, request });
 
-    return Response.redirect(new URL('/admin?tab=users&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=users&saved=1', 302);
   }
 
   if (intent === 'password') {
-    if (!isAdminRoot) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+    if (!isAdminRoot) return redirectInternal('/admin?tab=users&error=forbidden_permissions', 302);
     const schema = z.object({
       id: z.coerce.number().int().positive(),
       password: z.string().min(8).max(200)
@@ -111,27 +112,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       password: String(form.get('password') ?? '')
     };
     const parsed = schema.safeParse(payload);
-    if (!parsed.success) return Response.redirect(new URL('/admin?tab=users&error=invalid_schema', request.url), 302);
+    if (!parsed.success) return redirectInternal('/admin?tab=users&error=invalid_schema', 302);
     const targetRole = await getUserPrimaryRole(parsed.data.id);
     if (targetRole === 'SUPERADMIN' && !isSuperAdmin) {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_superadmin', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_superadmin', 302);
     }
     await updateUserPassword(parsed.data.id, parsed.data.password);
     await logAudit({ userId: Number(auth.user.id) || null, action: 'user_password_reset', entityType: 'user', entityId: String(parsed.data.id), request });
-    return Response.redirect(new URL('/admin?tab=users&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=users&saved=1', 302);
   }
 
   if (intent === 'permissions') {
     if (!isSuperAdmin && !isLigaOrOrgano) {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_permissions', 302);
     }
     const id = Number(form.get('id') ?? 0);
     if (!Number.isFinite(id) || id <= 0) {
-      return Response.redirect(new URL('/admin?tab=users&error=invalid_schema', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=invalid_schema', 302);
     }
     const targetRole = await getUserPrimaryRole(id);
     if (targetRole === 'SUPERADMIN' && id !== Number(auth.user.id)) {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_superadmin', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_superadmin', 302);
     }
 
     const selected = form
@@ -141,7 +142,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const effectiveSelected = isSuperAdmin ? selected : selected.filter((value) => delegatedAssemblyPermissions.has(value));
     if (!isSuperAdmin && targetRole !== 'CLUB') {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_permissions', 302);
     }
 
     await setUserDirectPermissions(id, effectiveSelected);
@@ -153,8 +154,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       meta: { permissions: effectiveSelected },
       request
     });
-    return Response.redirect(new URL('/admin?tab=users&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=users&saved=1', 302);
   }
 
-  return Response.redirect(new URL('/admin?tab=users&error=unknown_intent', request.url), 302);
+  return redirectInternal('/admin?tab=users&error=unknown_intent', 302);
 };
+
+

@@ -8,6 +8,7 @@ import { resolveLocalUploadPath } from '../../lib/local-storage';
 import { getSignedUrl, useGCS } from '../../lib/storage';
 import { hasPermission, hasRole } from '../../lib/rbac';
 import { getClubFileAccessByFileId } from '../../lib/clubs';
+import { redirectInternal } from '../../lib/http-redirect';
 
 export const GET: APIRoute = async ({ params, cookies, request }) => {
   const id = Number(params.id);
@@ -18,7 +19,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
 
   if (file.isPrivate) {
     const user = await getUserFromCookies(cookies);
-    if (!user) return Response.redirect(new URL('/login', request.url), 302);
+    if (!user) return redirectInternal('/login', 302);
 
     const linkedClub = await getClubFileAccessByFileId(file.id);
     const linkedClubOwnerAllowed =
@@ -28,7 +29,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       const allowedClubFile =
         hasRole(user, ['LIGA', 'ADMIN']) || linkedClubOwnerAllowed;
       if (!allowedClubFile) {
-        return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+        return redirectInternal('/acceso-denegado', 302);
       }
     }
 
@@ -39,7 +40,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       linkedClubOwnerAllowed ||
       (file.ownerUserId != null && Number(user.id) === file.ownerUserId);
 
-    if (!allowed) return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    if (!allowed) return redirectInternal('/acceso-denegado', 302);
   }
 
   // ── GCS: redirigir a Signed URL temporal ──────────────────────────────────
@@ -73,3 +74,4 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
 
   return new Response(webStream, { headers });
 };
+

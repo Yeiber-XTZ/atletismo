@@ -6,6 +6,8 @@ import { getUserByEmail } from '../../lib/users';
 import { verifyPassword } from '../../lib/security';
 import { logAudit } from '../../lib/audit';
 import { db, isDbUnavailableError } from '../../lib/db';
+import { redirectInternal } from '../../lib/http-redirect';
+import { shouldUseSecureCookies } from '../../lib/request-security';
 
 const schema = z.object({
   email: z.string().email().max(160),
@@ -96,6 +98,7 @@ async function ensureClubLinkedAtLogin(input: {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  const secureCookie = shouldUseSecureCookies(request);
   const form = await request.formData();
   const payload = {
     email: String(form.get('email') ?? ''),
@@ -105,28 +108,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(payload);
   if (!parsed.success) {
-    return Response.redirect(new URL(invalidRedirectPath(payload.next), request.url), 302);
+    return redirectInternal(invalidRedirectPath(payload.next), 302);
   }
 
   try {
     const user = await getUserByEmail(parsed.data.email);
     if (!user) {
       await logAudit({ userId: null, action: 'login_failed', meta: { email: parsed.data.email }, request });
-      return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
+      return redirectInternal(invalidRedirectPath(parsed.data.next), 302);
     }
     if (!user.isActive) {
       await logAudit({ userId: user.id, action: 'login_inactive', meta: { email: parsed.data.email }, request });
-      return Response.redirect(new URL(inactiveRedirectPath(parsed.data.next), request.url), 302);
+      return redirectInternal(inactiveRedirectPath(parsed.data.next), 302);
     }
     if (!verifyPassword(parsed.data.password, user.passwordHash)) {
       await logAudit({ userId: null, action: 'login_failed', meta: { email: parsed.data.email }, request });
-      return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
+      return redirectInternal(invalidRedirectPath(parsed.data.next), 302);
     }
 
     const role = user.roles?.[0] as Role | undefined;
     if (!role) {
       await logAudit({ userId: user.id, action: 'login_failed_no_role', meta: { email: parsed.data.email }, request });
-      return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
+      return redirectInternal(invalidRedirectPath(parsed.data.next), 302);
     }
     let sessionClubId = user.clubId ?? null;
     if (role === 'CLUB') {
@@ -143,26 +146,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       clubId: sessionClubId,
       userAgent: request.headers.get('user-agent'),
       ip: request.headers.get('x-forwarded-for')
-    });
+    }, secureCookie);
     await logAudit({ userId: user.id, action: 'login_success', meta: { role }, request });
 
     const nextPath = safeNext(parsed.data.next);
     if (nextPath) {
       if (nextPath.startsWith('/admin') && !canAccessAdminByRole(role)) {
-        return Response.redirect(new URL(defaultRedirectForRole(role), request.url), 302);
+        return redirectInternal(defaultRedirectForRole(role), 302);
       }
-      return Response.redirect(new URL(nextPath, request.url), 302);
+      return redirectInternal(nextPath, 302);
     }
 
-    return Response.redirect(new URL(defaultRedirectForRole(role), request.url), 302);
+    return redirectInternal(defaultRedirectForRole(role), 302);
   } catch (error) {
     if (isDbUnavailableError(error)) {
-      return Response.redirect(new URL(dbRedirectPath(parsed.data.next), request.url), 302);
+      return redirectInternal(dbRedirectPath(parsed.data.next), 302);
     }
     throw error;
   }
 };
 
 export const GET: APIRoute = async ({ request }) => {
-  return Response.redirect(new URL('/login', request.url), 302);
+  return redirectInternal('/login', 302);
 };
+
+

@@ -4,6 +4,7 @@ import { requirePermissionOrRedirect } from '../../../lib/access';
 import { getApprovalRequestById, reviewApprovalRequest } from '../../../lib/approvals';
 import { createDocument, deleteDocument, updateDocument } from '../../../lib/admin';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const schema = z.object({
   id: z.coerce.number().int().positive(),
@@ -21,11 +22,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     decision: String(form.get('decision') ?? ''),
     reviewNotes: String(form.get('reviewNotes') ?? '')
   });
-  if (!parsed.success) return Response.redirect(new URL('/admin?tab=aprobaciones&error=invalid_schema', request.url), 302);
+  if (!parsed.success) return redirectInternal('/admin?tab=aprobaciones&error=invalid_schema', 302);
 
   const req = await getApprovalRequestById(parsed.data.id);
   if (!req || req.status !== 'pending') {
-    return Response.redirect(new URL('/admin?tab=aprobaciones&error=not_found', request.url), 302);
+    return redirectInternal('/admin?tab=aprobaciones&error=not_found', 302);
   }
 
   if (parsed.data.decision === 'approved' && req.module === 'documents') {
@@ -59,5 +60,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/admin?tab=aprobaciones&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=aprobaciones&saved=1', 302);
 };
+
+

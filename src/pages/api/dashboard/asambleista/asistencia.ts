@@ -4,6 +4,7 @@ import { requireUser } from '../../../../lib/guards';
 import { registerAssemblyAttendance } from '../../../../lib/asambleas';
 import { logAudit } from '../../../../lib/audit';
 import { hasPermission } from '../../../../lib/rbac';
+import { redirectInternal } from '../../../../lib/http-redirect';
 
 const schema = z.object({
   meetingId: z.coerce.number().int().positive(),
@@ -15,7 +16,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const user = await requireUser(cookies);
     if (!hasPermission(user, 'assembly:attendance:create') && !hasPermission(user, 'asambleas:manage')) {
-      return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+      return redirectInternal('/acceso-denegado', 302);
     }
 
     const form = await request.formData();
@@ -27,7 +28,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const parsed = schema.safeParse(payload);
     if (!parsed.success) {
-      return Response.redirect(new URL('/admin?tab=asambleas&error=invalid_schema', request.url), 302);
+      return redirectInternal('/admin?tab=asambleas&error=invalid_schema', 302);
     }
 
     await registerAssemblyAttendance({
@@ -46,11 +47,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
 
-    return Response.redirect(new URL('/admin?tab=asambleas&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=asambleas&saved=1', 302);
   } catch (error: any) {
     const status = Number(error?.status || 500);
-    if (status === 401) return Response.redirect(new URL('/login?next=/admin?tab=asambleas', request.url), 302);
-    if (status === 403) return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    if (status === 401) return redirectInternal('/login?next=/admin?tab=asambleas', 302);
+    if (status === 403) return redirectInternal('/acceso-denegado', 302);
     return new Response('Internal error', { status: 500 });
   }
 };
+
+

@@ -4,6 +4,7 @@ import { upsertConvocatorias } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
 import { computeConvocatoriaStatus } from '../../../lib/convocatorias-status';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const urlOrPath = z.string().regex(/^(?:\/|https?:\/\/).+/).optional().or(z.literal(''));
 
@@ -41,7 +42,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       parsedJson = JSON.parse(convocatoriasJson);
     } catch {
-      return Response.redirect(new URL('/admin?tab=convocatorias&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=convocatorias&error=invalid_json', 302);
     }
   } else {
     const titles = form.getAll('convTitle').map((value) => String(value).trim());
@@ -95,7 +96,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(parsedJson);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=convocatorias&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=convocatorias&error=invalid_schema', 302);
   }
 
   const normalized = parsed.data.map((c) => ({
@@ -105,5 +106,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     imageUrl: c.imageUrl || undefined
   }));
   await upsertConvocatorias(normalized);
-  return Response.redirect(new URL('/admin?tab=convocatorias&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=convocatorias&saved=1', 302);
 };
+
+

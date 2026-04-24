@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createMark, deleteMark } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'records:manage', { loginPath: '/admin/login' });
@@ -12,7 +13,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (intent === 'delete') {
     await deleteMark(id);
-    return Response.redirect(new URL('/admin?tab=stats&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=stats&saved=1', 302);
   }
 
   const athleteName = String(form.get('athleteName') ?? '');
@@ -22,5 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const recordDate = String(form.get('recordDate') ?? '');
 
   await createMark({ athleteName, discipline, value, unit, recordDate });
-  return Response.redirect(new URL('/admin?tab=stats&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=stats&saved=1', 302);
 };
+
+

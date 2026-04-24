@@ -4,6 +4,7 @@ import { requirePermissionOrRedirect } from '../../../lib/access';
 import { createNotification, setNotificationActive } from '../../../lib/notificaciones';
 import { ROLES } from '../../../lib/rbac';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const createSchema = z.object({
   title: z.string().min(3).max(180),
@@ -30,7 +31,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       id: form.get('id'),
       isActive: String(form.get('isActive') ?? '')
     });
-    if (!parsed.success) return Response.redirect(new URL('/admin?tab=notificaciones&error=invalid_schema', request.url), 302);
+    if (!parsed.success) return redirectInternal('/admin?tab=notificaciones&error=invalid_schema', 302);
     const isActive = parsed.data.isActive === '1' || parsed.data.isActive === 'true' || parsed.data.isActive === 'on';
     await setNotificationActive(parsed.data.id, isActive);
     await logAudit({
@@ -41,7 +42,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       meta: { isActive },
       request
     });
-    return Response.redirect(new URL('/admin?tab=notificaciones&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=notificaciones&saved=1', 302);
   }
 
   const parsed = createSchema.safeParse({
@@ -51,7 +52,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     targetRole: String(form.get('targetRole') ?? 'ALL'),
     actionHref: String(form.get('actionHref') ?? '')
   });
-  if (!parsed.success) return Response.redirect(new URL('/admin?tab=notificaciones&error=invalid_schema', request.url), 302);
+  if (!parsed.success) return redirectInternal('/admin?tab=notificaciones&error=invalid_schema', 302);
 
   await createNotification(parsed.data);
   await logAudit({
@@ -61,5 +62,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     meta: { targetRole: parsed.data.targetRole, level: parsed.data.level },
     request
   });
-  return Response.redirect(new URL('/admin?tab=notificaciones&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=notificaciones&saved=1', 302);
 };
+
+

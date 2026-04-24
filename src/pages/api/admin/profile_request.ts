@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { createApprovalRequest } from '../../../lib/approvals';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const user = locals.user;
   if (!user) {
-    return Response.redirect(new URL('/login', request.url), 302);
+    return redirectInternal('/login', 302);
   }
 
   const formData = await request.formData();
@@ -38,9 +39,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       request
     });
 
-    return Response.redirect(new URL('/admin?tab=perfil&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=perfil&saved=1', 302);
   } catch (err) {
     console.error('Error al manejar solicitud de perfil:', err);
-    return Response.redirect(new URL('/admin?tab=perfil&error=1', request.url), 302);
+    return redirectInternal('/admin?tab=perfil&error=1', 302);
   }
 };
+
+

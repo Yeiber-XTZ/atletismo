@@ -7,6 +7,7 @@ import { getHomeData } from '../../../../lib/content';
 import { slugify } from '../../../../lib/slug';
 import { getClubByOwnerUserId } from '../../../../lib/clubs';
 import { saveFileUpload } from '../../../../lib/file-upload';
+import { redirectInternal } from '../../../../lib/http-redirect';
 
 const schema = z.object({
   clubId: z.coerce.number().int().positive(),
@@ -35,18 +36,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const parsed = schema.safeParse(payload);
     if (!parsed.success) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.convocatoriaSlug)}?error=invalid_postulation`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.convocatoriaSlug)}?error=invalid_postulation`, 302);
     }
 
     if (!fallbackClubId) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.convocatoriaSlug)}?error=no_club`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.convocatoriaSlug)}?error=no_club`, 302);
     }
     assertClubOwnership({ ...user, clubId: fallbackClubId }, parsed.data.clubId);
 
     const content = await getHomeData();
     const convocatoria = (content.convocatorias ?? []).find((c) => slugify(c.title) === parsed.data.convocatoriaSlug);
     if (!convocatoria) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=not_found`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=not_found`, 302);
     }
 
     const now = new Date();
@@ -58,10 +59,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const closedByStatus = statusLower.includes('cerrad');
     const closedByDate = closeDate ? now.getTime() > closeDate.getTime() : false;
     if (!isOpenByStatus || notStartedByDate) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=not_open`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=not_open`, 302);
     }
     if (closedByStatus || closedByDate) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=closed`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=closed`, 302);
     }
 
     const duplicated = await existsPostulacionDuplicada({
@@ -70,7 +71,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       athleteName: parsed.data.athleteName
     });
     if (duplicated) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=duplicate`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?error=duplicate`, 302);
     }
 
     const supportFileUrl =
@@ -98,11 +99,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
 
-    return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?postulated=1`, request.url), 302);
+    return redirectInternal(`/convocatorias/${encodeURIComponent(parsed.data.convocatoriaSlug)}?postulated=1`, 302);
   } catch (error: any) {
     const status = Number(error?.status || 500);
-    if (status === 401) return Response.redirect(new URL('/login?next=/convocatorias', request.url), 302);
-    if (status === 403) return Response.redirect(new URL('/acceso-denegado', request.url), 302);
-    return Response.redirect(new URL('/convocatorias?error=postulation_internal', request.url), 302);
+    if (status === 401) return redirectInternal('/login?next=/convocatorias', 302);
+    if (status === 403) return redirectInternal('/acceso-denegado', 302);
+    return redirectInternal('/convocatorias?error=postulation_internal', 302);
   }
 };
+
+

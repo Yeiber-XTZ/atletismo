@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getAdminData, upsertPublicSite } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 function parseLines(value: string, columns: number) {
   return value
@@ -103,5 +104,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
   });
 
-  return Response.redirect(new URL('/admin?tab=liga-publica&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=liga-publica&saved=1', 302);
 };
+
+

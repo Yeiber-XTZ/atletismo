@@ -4,6 +4,7 @@ import { upsertClubs } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const urlOrPath = z.string().regex(/^(?:\/|https?:\/\/).+/).optional().or(z.literal(''));
 
@@ -90,7 +91,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       parsedJson = JSON.parse(clubsJson);
     } catch {
-      return Response.redirect(new URL('/admin?tab=clubs&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=clubs&error=invalid_json', 302);
     }
   } else {
     const names = form.getAll('clubName').map((value) => String(value).trim());
@@ -127,7 +128,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(parsedJson);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=clubs&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=clubs&error=invalid_schema', 302);
   }
 
   const normalized = parsed.data.map((c) => ({
@@ -145,7 +146,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     meta: { rows: normalized.length },
     request
   });
-  return Response.redirect(new URL('/admin?tab=clubs&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=clubs&saved=1', 302);
 };
+
+
 
 

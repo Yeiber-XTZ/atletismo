@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireRoles, requireUser } from '../lib/guards';
 import { summarizeAssemblyMeetings } from '../lib/asambleas';
+import { redirectInternal } from '../lib/http-redirect';
 
 function toCsvCell(value: unknown) {
   const text = String(value ?? '');
@@ -33,8 +34,10 @@ export const GET: APIRoute = async ({ cookies, request }) => {
     });
   } catch (error: any) {
     const status = Number(error?.status || 500);
-    if (status === 401) return Response.redirect(new URL('/login?next=/admin?tab=asambleas', request.url), 302);
-    if (status === 403) return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    if (status === 401) return redirectInternal('/login?next=/admin?tab=asambleas', 302);
+    if (status === 403) return redirectInternal('/acceso-denegado', 302);
     return new Response('Internal error', { status: 500 });
   }
 };
+
+

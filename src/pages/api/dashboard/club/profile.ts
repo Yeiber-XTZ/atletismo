@@ -4,6 +4,7 @@ import { getClubByOwnerUserId, updateClubById } from '../../../../lib/clubs';
 import { saveFileUpload, saveFileUploadRecord } from '../../../../lib/file-upload';
 import { logAudit } from '../../../../lib/audit';
 import { ClubProfileSchema } from '../../../../lib/validation/club-profile';
+import { redirectInternal } from '../../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const user = await requireUser(cookies);
@@ -27,7 +28,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const ownedClub = !user.clubId && user.id ? await getClubByOwnerUserId(Number(user.id)) : null;
   const effectiveClubId = user.clubId ? Number(user.clubId) : ownedClub?.id ?? 0;
   if (!effectiveClubId || parsed.data.clubId !== effectiveClubId) {
-    return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    return redirectInternal('/acceso-denegado', 302);
   }
 
   const imageFile = form.get('imageFile');
@@ -69,5 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/dashboard/club?saved=1', request.url), 302);
+  return redirectInternal('/dashboard/club?saved=1', 302);
 };
+
+

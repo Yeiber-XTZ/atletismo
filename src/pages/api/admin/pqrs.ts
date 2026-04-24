@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { updatePqrsStatus, type PqrsStatus } from '../../../lib/pqrs';
 import { PqrsUpdateSchema } from '../../../lib/validation/pqrs';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'pqrs:manage', { loginPath: '/admin/login' });
@@ -17,7 +18,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = PqrsUpdateSchema.safeParse(payload);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=pqrs&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=pqrs&error=invalid_schema', 302);
   }
 
   try {
@@ -30,8 +31,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
   } catch (error) {
-    return Response.redirect(new URL('/admin?tab=pqrs&error=invalid_transition', request.url), 302);
+    return redirectInternal('/admin?tab=pqrs&error=invalid_transition', 302);
   }
 
-  return Response.redirect(new URL('/admin?tab=pqrs&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=pqrs&saved=1', 302);
 };
+
+

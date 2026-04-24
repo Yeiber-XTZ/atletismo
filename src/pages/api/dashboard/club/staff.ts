@@ -4,6 +4,7 @@ import { requireRoles, requireUser } from '../../../../lib/guards';
 import { createClubTechnicalStaff, deleteClubTechnicalStaffById } from '../../../../lib/club-technical-staff';
 import { logAudit } from '../../../../lib/audit';
 import { getClubByOwnerUserId } from '../../../../lib/clubs';
+import { redirectInternal } from '../../../../lib/http-redirect';
 
 const createSchema = z.object({
   clubId: z.coerce.number().int().positive(),
@@ -34,7 +35,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         clubId: form.get('clubId')
       });
       if (!parsedDelete.success) {
-        return Response.redirect(new URL('/dashboard/club?error=staff_delete_invalid', request.url), 302);
+        return redirectInternal('/dashboard/club?error=staff_delete_invalid', 302);
       }
 
       if (!effectiveClubId || parsedDelete.data.clubId !== effectiveClubId) {
@@ -53,7 +54,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         request
       });
 
-      return Response.redirect(new URL('/dashboard/club?saved=staff_deleted', request.url), 302);
+      return redirectInternal('/dashboard/club?saved=staff_deleted', 302);
     }
 
     const parsedCreate = createSchema.safeParse({
@@ -64,7 +65,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       email: String(form.get('email') ?? '')
     });
     if (!parsedCreate.success) {
-      return Response.redirect(new URL('/dashboard/club?error=staff_invalid', request.url), 302);
+      return redirectInternal('/dashboard/club?error=staff_invalid', 302);
     }
 
     if (!effectiveClubId || parsedCreate.data.clubId !== effectiveClubId) {
@@ -83,11 +84,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
 
-    return Response.redirect(new URL('/dashboard/club?saved=staff', request.url), 302);
+    return redirectInternal('/dashboard/club?saved=staff', 302);
   } catch (error: any) {
     const status = Number(error?.status ?? 500);
-    if (status === 401) return Response.redirect(new URL('/login?next=/dashboard/club', request.url), 302);
-    if (status === 403) return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    if (status === 401) return redirectInternal('/login?next=/dashboard/club', 302);
+    if (status === 403) return redirectInternal('/acceso-denegado', 302);
     return new Response('Internal error', { status: 500 });
   }
 };
+
+

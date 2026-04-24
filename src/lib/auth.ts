@@ -26,13 +26,14 @@ export async function isAuthenticated(cookies: AstroCookies) {
 
 export async function setSessionCookie(
   cookies: AstroCookies,
-  input: { userId: number; role: Role; clubId?: number | null; ip?: string | null; userAgent?: string | null }
+  input: { userId: number; role: Role; clubId?: number | null; ip?: string | null; userAgent?: string | null },
+  secure: boolean
 ) {
   const { id } = await createDbSession(input);
   cookies.set(COOKIE_NAME, id, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: import.meta.env.PROD,
+    secure,
     path: '/',
     maxAge: SESSION_TTL_SECONDS
   });

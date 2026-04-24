@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { updateCompetenciaResultsLink } from '../../../lib/admin';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const Schema = z.object({
   competenciaIndex: z.coerce.number().int().min(0),
@@ -20,7 +21,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   });
 
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=results&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=results&error=invalid_schema', 302);
   }
 
   await updateCompetenciaResultsLink(parsed.data.competenciaIndex, parsed.data.resultsUrl || null);
@@ -34,5 +35,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/admin?tab=results&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=results&saved=1', 302);
 };
+
+

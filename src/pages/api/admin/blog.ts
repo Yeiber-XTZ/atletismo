@@ -4,6 +4,7 @@ import { slugify } from '../../../lib/slug';
 import { upsertBlogPosts } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const urlOrPath = z.string().regex(/^(?:\/|https?:\/\/).*/).optional().or(z.literal(''));
 
@@ -35,7 +36,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       parsedJson = JSON.parse(blogJson);
     } catch {
-      return Response.redirect(new URL('/admin?tab=blog&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=blog&error=invalid_json', 302);
     }
   } else {
     const slugs = form.getAll('blogSlug').map((value) => String(value).trim());
@@ -80,7 +81,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(parsedJson);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=blog&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=blog&error=invalid_schema', 302);
   }
 
   const normalized = parsed.data.map((p) => ({
@@ -91,5 +92,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }));
 
   await upsertBlogPosts(normalized);
-  return Response.redirect(new URL('/admin?tab=blog&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=blog&saved=1', 302);
 };
+
+

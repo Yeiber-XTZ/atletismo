@@ -118,14 +118,14 @@ const municipalityOptions = Array.from(
 const statusToType = (status?: string) => {
   const s = String(status ?? '').toLowerCase();
   if (s.includes('cerr') || s.includes('final') || s.includes('pendiente resultados')) return 'closed';
-  if (s.includes('prÃ³x') || s.includes('proxi') || s.includes('por confirmar')) return 'tertiary';
+  if (s.includes('próx') || s.includes('proxi') || s.includes('por confirmar')) return 'tertiary';
   return 'primary';
 };
 
 const statusLabel = (status?: string) => {
   const s = String(status ?? '').toLowerCase();
   if (s.includes('cerr') || s.includes('final')) return 'CERRADO';
-  if (s.includes('prÃ³x') || s.includes('proxi') || s.includes('por confirmar')) return 'PRÃ“XIMAMENTE';
+  if (s.includes('próx') || s.includes('proxi') || s.includes('por confirmar')) return 'PRÃ“XIMAMENTE';
   if (s.includes('abiert') || s.includes('inscrip')) return 'ABIERTO';
   if (status) return status.toUpperCase();
   return 'ABIERTO';
@@ -234,7 +234,7 @@ const heroImage =
               <div class="space-y-2">
                 <label class="block text-[0.6875rem] font-headline font-bold text-tertiary uppercase tracking-widest">Municipio</label>
                 <select class="w-full bg-surface-container-highest border-none rounded-sm font-body font-semibold text-on-surface focus:ring-2 focus:ring-primary p-3" name="mun">
-                  <option value="" selected={!municipality}>Todo el ChocÃ³</option>
+                  <option value="" selected={!municipality}>Todo el Chocó</option>
                   {municipalityOptions.map((x) => (
                     <option value={x} selected={municipality === x}>{x}</option>
                   ))}

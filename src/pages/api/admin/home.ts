@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getAdminData, upsertHome } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const urlOrPath = z.string().regex(/^(?:\/|https?:\/\/).*/).optional().or(z.literal(''));
 
@@ -37,7 +38,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       parsedJson = JSON.parse(homeJson);
     } catch {
-      return Response.redirect(new URL('/admin?tab=settings&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=settings&error=invalid_json', 302);
     }
   } else {
     const sponsorName = form.getAll('sponsorName').map((value) => String(value).trim());
@@ -77,7 +78,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(parsedJson);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=settings&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=settings&error=invalid_schema', 302);
   }
   const current = await getAdminData();
 
@@ -88,5 +89,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   };
 
   await upsertHome(normalized);
-  return Response.redirect(new URL('/admin?tab=settings&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=settings&saved=1', 302);
 };
+
+

@@ -303,9 +303,9 @@ const defaultStore: Store = {
       footnote: 'Cupos abiertos para semilleros y clubes regionales.'
     },
     sponsors: [
-      { name: 'Indeportes ChocÃ³', href: '#', logoUrl: '' },
-      { name: 'AlcaldÃ­a de QuibdÃ³', href: '#', logoUrl: '' },
-      { name: 'GobernaciÃ³n del ChocÃ³', href: '#', logoUrl: '' },
+      { name: 'Indeportes Chocó', href: '#', logoUrl: '' },
+      { name: 'AlcaldÃ­a de Quibdó', href: '#', logoUrl: '' },
+      { name: 'Gobernación del Chocó', href: '#', logoUrl: '' },
       { name: 'Aliado Deportivo', href: '#', logoUrl: '' }
     ]
   },

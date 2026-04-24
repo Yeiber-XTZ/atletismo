@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "test": "vitest run",
     "start": "astro dev --host",
     "preview": "astro preview",
     "db:up": "node scripts/db-up.mjs",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

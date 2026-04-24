@@ -4,6 +4,7 @@ import { dataPath, generateRadicado, readJson, writeJson } from '../../lib/persi
 import { getDatabaseUrl, requireDatabase } from '../../lib/env';
 import { createPqrs } from '../../lib/pqrs';
 import { logAudit } from '../../lib/audit';
+import { redirectInternal } from '../../lib/http-redirect';
 
 const schema = z.object({
   name: z.string().min(2).max(120),
@@ -33,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const parsed = schema.safeParse(payload);
   if (!parsed.success) {
-    return Response.redirect(new URL('/contacto?error=invalid', request.url), 302);
+    return redirectInternal('/contacto?error=invalid', 302);
   }
 
   const radicado = generateRadicado('PQRS');
@@ -55,7 +56,7 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } else {
     if (requireDatabase()) {
-      return Response.redirect(new URL('/contacto?error=db_required', request.url), 302);
+      return redirectInternal('/contacto?error=db_required', 302);
     }
     const file = dataPath('pqrs.json');
     const list = await readJson<PqrsItem[]>(file, []);
@@ -73,5 +74,7 @@ export const POST: APIRoute = async ({ request }) => {
     request
   });
 
-  return Response.redirect(new URL(`/contacto?radicado=${encodeURIComponent(radicado)}`, request.url), 302);
+  return redirectInternal(`/contacto?radicado=${encodeURIComponent(radicado)}`, 302);
 };
+
+

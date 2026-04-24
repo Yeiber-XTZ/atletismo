@@ -18,20 +18,50 @@ function looksLikePlaceholderDatabaseUrl(raw: string) {
   return false;
 }
 
+function toEnvString(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'boolean' || typeof value === 'number') return String(value).trim();
+  return '';
+}
+
+export function parseAllowedHosts(raw: unknown): string[] {
+  const normalized = toEnvString(raw);
+  if (!normalized) return [];
+
+  const unique = new Set<string>();
+  for (const piece of normalized.split(',')) {
+    const host = piece.trim().toLowerCase();
+    if (!host) continue;
+    unique.add(host);
+  }
+
+  return Array.from(unique);
+}
+
+export function normalizeDatabaseUrl(raw: unknown): string {
+  const normalized = toEnvString(raw);
+  if (!normalized) return '';
+  if (looksLikePlaceholderDatabaseUrl(normalized)) return '';
+  return normalized;
+}
+
+export function parseRequireDatabase(raw: unknown): boolean {
+  const normalized = toEnvString(raw).toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
 export function getDatabaseUrl() {
-  const raw = import.meta.env.DATABASE_URL;
-  if (!raw) return '';
-
-  const trimmed = raw.trim();
-  if (!trimmed) return '';
-  if (looksLikePlaceholderDatabaseUrl(trimmed)) return '';
-
-  return trimmed;
+  const raw: unknown = import.meta.env.DATABASE_URL;
+  return normalizeDatabaseUrl(raw);
 }
 
 export function requireDatabase() {
-  const raw = import.meta.env.REQUIRE_DB;
-  if (!raw) return false;
-  const normalized = raw.trim().toLowerCase();
-  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+  const raw: unknown = import.meta.env.REQUIRE_DB;
+  return parseRequireDatabase(raw);
+}
+
+export function getAllowedHosts() {
+  const raw: unknown = import.meta.env.ALLOWED_HOSTS;
+  return parseAllowedHosts(raw);
 }

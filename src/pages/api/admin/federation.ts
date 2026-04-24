@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { upsertFederation } from '../../../lib/admin';
 import { requirePermissionOrRedirect } from '../../../lib/access';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'site:manage', { loginPath: '/admin/login' });
@@ -12,5 +13,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const vision = String(form.get('vision') ?? '');
 
   await upsertFederation({ about, mission, vision });
-  return Response.redirect(new URL('/admin?tab=liga-publica&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=liga-publica&saved=1', 302);
 };
+
+

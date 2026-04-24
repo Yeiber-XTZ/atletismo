@@ -3,6 +3,7 @@ import { requirePermissionOrRedirect } from '../../../lib/access';
 import { createFileRecord } from '../../../lib/files';
 import { saveToLocalUploads } from '../../../lib/local-storage';
 import { logAudit } from '../../../lib/audit';
+import { normalizeInternalPath, redirectInternal } from '../../../lib/http-redirect';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'documents:manage', { loginPath: '/admin/login' });
@@ -13,7 +14,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const file = form.get('file');
   if (!(file instanceof File)) {
-    return Response.redirect(new URL('/admin?tab=documents&error=missing_file', request.url), 302);
+    return redirectInternal('/admin?tab=documents&error=missing_file', 302);
   }
 
   const isPrivate = String(form.get('isPrivate') ?? '') === '1';
@@ -38,7 +39,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  const url = new URL(returnTo, request.url);
-  url.searchParams.set('uploaded', `/files/${record.id}`);
-  return Response.redirect(url, 302);
+  const safeReturnTo = normalizeInternalPath(returnTo, '/admin?tab=documents');
+  const [basePath, rawQuery = ''] = safeReturnTo.split('?');
+  const params = new URLSearchParams(rawQuery);
+  params.set('uploaded', `/files/${record.id}`);
+  const nextPath = `${basePath}?${params.toString()}`;
+  return redirectInternal(nextPath, 302);
 };
+
+

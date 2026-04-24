@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
 import { requirePermissionOrRedirect } from '../../../lib/access';
+import { redirectInternal } from '../../../lib/http-redirect';
 import {
   createConvocatoriaCategory,
   deleteConvocatoriaCategory,
@@ -36,9 +37,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         intent,
         name: String(form.get('name') ?? '').trim()
       });
-      if (!parsed.success) return Response.redirect(new URL('/admin?tab=convocatorias&error=invalid_category', request.url), 302);
+      if (!parsed.success) return redirectInternal('/admin?tab=convocatorias&error=invalid_category', 302);
       await createConvocatoriaCategory(parsed.data.name);
-      return Response.redirect(new URL('/admin?tab=convocatorias&saved=1', request.url), 302);
+      return redirectInternal('/admin?tab=convocatorias&saved=1', 302);
     }
 
     if (intent === 'update') {
@@ -47,9 +48,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         id: form.get('id'),
         name: String(form.get('name') ?? '').trim()
       });
-      if (!parsed.success) return Response.redirect(new URL('/admin?tab=convocatorias&error=invalid_category', request.url), 302);
+      if (!parsed.success) return redirectInternal('/admin?tab=convocatorias&error=invalid_category', 302);
       await updateConvocatoriaCategory(parsed.data.id, parsed.data.name);
-      return Response.redirect(new URL('/admin?tab=convocatorias&saved=1', request.url), 302);
+      return redirectInternal('/admin?tab=convocatorias&saved=1', 302);
     }
 
     if (intent === 'delete') {
@@ -57,21 +58,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         intent,
         id: form.get('id')
       });
-      if (!parsed.success) return Response.redirect(new URL('/admin?tab=convocatorias&error=invalid_category', request.url), 302);
+      if (!parsed.success) return redirectInternal('/admin?tab=convocatorias&error=invalid_category', 302);
       await deleteConvocatoriaCategory(parsed.data.id);
-      return Response.redirect(new URL('/admin?tab=convocatorias&saved=1', request.url), 302);
+      return redirectInternal('/admin?tab=convocatorias&saved=1', 302);
     }
 
-    return Response.redirect(new URL('/admin?tab=convocatorias&error=invalid_intent', request.url), 302);
+    return redirectInternal('/admin?tab=convocatorias&error=invalid_intent', 302);
   } catch (error: any) {
     const message = String(error?.message ?? 'category_error');
     if (message === 'duplicate_name') {
-      return Response.redirect(new URL('/admin?tab=convocatorias&error=duplicate_category', request.url), 302);
+      return redirectInternal('/admin?tab=convocatorias&error=duplicate_category', 302);
     }
     if (message === 'not_found') {
-      return Response.redirect(new URL('/admin?tab=convocatorias&error=category_not_found', request.url), 302);
+      return redirectInternal('/admin?tab=convocatorias&error=category_not_found', 302);
     }
-    return Response.redirect(new URL('/admin?tab=convocatorias&error=category_error', request.url), 302);
+    return redirectInternal('/admin?tab=convocatorias&error=category_error', 302);
   }
 };
+
+
 

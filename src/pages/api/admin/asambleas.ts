@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requirePermissionOrRedirect } from '../../../lib/access';
 import { upsertAssemblyMeetings } from '../../../lib/asambleas';
 import { logAudit } from '../../../lib/audit';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const Doc = z.object({
   label: z.string().min(1).max(160),
@@ -33,7 +34,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       json = JSON.parse(raw);
     } catch {
-      return Response.redirect(new URL('/admin?tab=asambleas&error=invalid_json', request.url), 302);
+      return redirectInternal('/admin?tab=asambleas&error=invalid_json', 302);
     }
   } else {
     const ids = form.getAll('meetingId').map((value) => Number(String(value).trim() || 0));
@@ -69,7 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const parsed = schema.safeParse(json);
   if (!parsed.success) {
-    return Response.redirect(new URL('/admin?tab=asambleas&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=asambleas&error=invalid_schema', 302);
   }
 
   const normalized = parsed.data.map((x) => ({
@@ -93,5 +94,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/admin?tab=asambleas&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=asambleas&saved=1', 302);
 };
+
+
