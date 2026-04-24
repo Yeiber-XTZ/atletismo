@@ -29,6 +29,8 @@ INSERT INTO permissions (name, description) VALUES
   ('competencias:manage', 'Gestionar competencias'),
   ('results:manage', 'Gestionar resultados'),
   ('records:manage', 'Gestionar records'),
+  ('athletes:manage', 'Gestionar atletas de todos los clubes'),
+  ('athletes:self_manage', 'Gestionar atletas del propio club'),
   ('rankings:manage', 'Gestionar ranking'),
   ('news:manage', 'Gestionar noticias'),
   ('blog:manage', 'Gestionar blog'),
@@ -68,6 +70,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ADMIN','competencias:manage'
   UNION ALL SELECT 'ADMIN','results:manage'
   UNION ALL SELECT 'ADMIN','records:manage'
+  UNION ALL SELECT 'ADMIN','athletes:manage'
   UNION ALL SELECT 'ADMIN','rankings:manage'
   UNION ALL SELECT 'ADMIN','news:manage'
   UNION ALL SELECT 'ADMIN','blog:manage'
@@ -90,6 +93,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ORGANO_ADMIN','competencias:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','results:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','records:manage'
+  UNION ALL SELECT 'ORGANO_ADMIN','athletes:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','rankings:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','documents:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','postulations:approve'
@@ -105,6 +109,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'LIGA','competencias:manage'
   UNION ALL SELECT 'LIGA','results:manage'
   UNION ALL SELECT 'LIGA','records:manage'
+  UNION ALL SELECT 'LIGA','athletes:manage'
   UNION ALL SELECT 'LIGA','rankings:manage'
   UNION ALL SELECT 'LIGA','documents:manage'
   UNION ALL SELECT 'LIGA','postulations:approve'
@@ -117,6 +122,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ATLETA','postulations:self_read'
 
   UNION ALL SELECT 'CLUB','club:self_manage'
+  UNION ALL SELECT 'CLUB','athletes:self_manage'
 ),
 managed_roles AS (
   SELECT unnest(ARRAY[
@@ -154,6 +160,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ADMIN','competencias:manage'
   UNION ALL SELECT 'ADMIN','results:manage'
   UNION ALL SELECT 'ADMIN','records:manage'
+  UNION ALL SELECT 'ADMIN','athletes:manage'
   UNION ALL SELECT 'ADMIN','rankings:manage'
   UNION ALL SELECT 'ADMIN','news:manage'
   UNION ALL SELECT 'ADMIN','blog:manage'
@@ -176,6 +183,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ORGANO_ADMIN','competencias:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','results:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','records:manage'
+  UNION ALL SELECT 'ORGANO_ADMIN','athletes:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','rankings:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','documents:manage'
   UNION ALL SELECT 'ORGANO_ADMIN','postulations:approve'
@@ -191,6 +199,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'LIGA','competencias:manage'
   UNION ALL SELECT 'LIGA','results:manage'
   UNION ALL SELECT 'LIGA','records:manage'
+  UNION ALL SELECT 'LIGA','athletes:manage'
   UNION ALL SELECT 'LIGA','rankings:manage'
   UNION ALL SELECT 'LIGA','documents:manage'
   UNION ALL SELECT 'LIGA','postulations:approve'
@@ -203,6 +212,7 @@ WITH desired(role_name, permission_name) AS (
   UNION ALL SELECT 'ATLETA','postulations:self_read'
 
   UNION ALL SELECT 'CLUB','club:self_manage'
+  UNION ALL SELECT 'CLUB','athletes:self_manage'
 )
 INSERT INTO role_permissions (role_name, permission_name)
 SELECT DISTINCT d.role_name, d.permission_name

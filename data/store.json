@@ -64,8 +64,8 @@
   },
   "publicSite": {
     "pageHeroes": {
-      "laLiga": "",
-      "convocatorias": "",
+      "laLiga": "/files/55",
+      "convocatorias": "/files/57",
       "competencias": "",
       "calendario": "",
       "resultados": "",
@@ -426,7 +426,8 @@
         "U20",
         "Mayores"
       ],
-      "imageUrl": "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=4000&auto=format&fit=crop"
+      "imageUrl": "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=4000&auto=format&fit=crop",
+      "statusMode": "auto"
     },
     {
       "title": "Concentración Departamental de Talentos",
@@ -444,7 +445,8 @@
       "categories": [
         "U14",
         "U16"
-      ]
+      ],
+      "statusMode": "auto"
     }
   ],
   "competencias": [

@@ -1,0 +1,370 @@
+{
+  "sport": {
+    "nombre": "Atletismo",
+    "tipo": "INDIVIDUAL",
+    "tiene_pruebas": true,
+    "tiene_categoria": true,
+    "tiene_clasificacion_funcional": false,
+    "es_olimpico": true
+  },
+  "disciplines": [
+    {
+      "nombre": "Pista"
+    },
+    {
+      "nombre": "Campo"
+    },
+    {
+      "nombre": "Marcha"
+    },
+    {
+      "nombre": "Ruta"
+    },
+    {
+      "nombre": "Combinadas"
+    }
+  ],
+  "events": [
+    {
+      "nombre": "100m Plano Masculino",
+      "nombre_corto": "100m M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "200m Plano Masculino",
+      "nombre_corto": "200m M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "400m Plano Masculino",
+      "nombre_corto": "400m M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "800m Masculino",
+      "nombre_corto": "800m M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "1500m Masculino",
+      "nombre_corto": "1500m M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "5000m Masculino",
+      "nombre_corto": "5000m M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "10000m Masculino",
+      "nombre_corto": "10km M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "110m Vallas Masculino",
+      "nombre_corto": "110mV M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "400m Vallas Masculino",
+      "nombre_corto": "400mV M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "3000m Obstáculos Masculino",
+      "nombre_corto": "3000Obs M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "4x100m Relevos Masculino",
+      "nombre_corto": "4x100 M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO",
+      "es_relevos": true
+    },
+    {
+      "nombre": "4x400m Relevos Masculino",
+      "nombre_corto": "4x400 M",
+      "disciplina": "Pista",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO",
+      "es_relevos": true
+    },
+    {
+      "nombre": "Salto Alto Masculino",
+      "nombre_corto": "S.Alto M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Salto con Garrocha Masculino",
+      "nombre_corto": "Garrocha M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Salto Largo Masculino",
+      "nombre_corto": "S.Largo M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Triple Salto Masculino",
+      "nombre_corto": "Triple M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Bala Masculino",
+      "nombre_corto": "Bala M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Disco Masculino",
+      "nombre_corto": "Disco M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Martillo Masculino",
+      "nombre_corto": "Martillo M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Jabalina Masculino",
+      "nombre_corto": "Jabalina M",
+      "disciplina": "Campo",
+      "genero": "MASCULINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Decatlón Masculino",
+      "nombre_corto": "Decatlón M",
+      "disciplina": "Combinadas",
+      "genero": "MASCULINO",
+      "unidad": "PUNTOS"
+    },
+    {
+      "nombre": "Marcha 20km Masculino",
+      "nombre_corto": "Marcha20 M",
+      "disciplina": "Marcha",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "Maratón Masculino",
+      "nombre_corto": "Maratón M",
+      "disciplina": "Ruta",
+      "genero": "MASCULINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "100m Plano Femenino",
+      "nombre_corto": "100m F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "200m Plano Femenino",
+      "nombre_corto": "200m F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "400m Plano Femenino",
+      "nombre_corto": "400m F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "800m Femenino",
+      "nombre_corto": "800m F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "1500m Femenino",
+      "nombre_corto": "1500m F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "5000m Femenino",
+      "nombre_corto": "5000m F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "10000m Femenino",
+      "nombre_corto": "10km F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "100m Vallas Femenino",
+      "nombre_corto": "100mV F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "400m Vallas Femenino",
+      "nombre_corto": "400mV F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "3000m Obstáculos Femenino",
+      "nombre_corto": "3000Obs F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "4x100m Relevos Femenino",
+      "nombre_corto": "4x100 F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO",
+      "es_relevos": true
+    },
+    {
+      "nombre": "4x400m Relevos Femenino",
+      "nombre_corto": "4x400 F",
+      "disciplina": "Pista",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO",
+      "es_relevos": true
+    },
+    {
+      "nombre": "Salto Alto Femenino",
+      "nombre_corto": "S.Alto F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Salto con Garrocha Femenino",
+      "nombre_corto": "Garrocha F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Salto Largo Femenino",
+      "nombre_corto": "S.Largo F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Triple Salto Femenino",
+      "nombre_corto": "Triple F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Bala Femenino",
+      "nombre_corto": "Bala F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Disco Femenino",
+      "nombre_corto": "Disco F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Martillo Femenino",
+      "nombre_corto": "Martillo F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Lanzamiento Jabalina Femenino",
+      "nombre_corto": "Jabalina F",
+      "disciplina": "Campo",
+      "genero": "FEMENINO",
+      "unidad": "DISTANCIA"
+    },
+    {
+      "nombre": "Heptatlón Femenino",
+      "nombre_corto": "Heptatlón F",
+      "disciplina": "Combinadas",
+      "genero": "FEMENINO",
+      "unidad": "PUNTOS"
+    },
+    {
+      "nombre": "Marcha 20km Femenino",
+      "nombre_corto": "Marcha20 F",
+      "disciplina": "Marcha",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "Maratón Femenino",
+      "nombre_corto": "Maratón F",
+      "disciplina": "Ruta",
+      "genero": "FEMENINO",
+      "unidad": "TIEMPO"
+    },
+    {
+      "nombre": "4x400m Relevos Mixto",
+      "nombre_corto": "4x400 Mx",
+      "disciplina": "Pista",
+      "genero": "MIXTO",
+      "unidad": "TIEMPO",
+      "es_relevos": true
+    },
+    {
+      "nombre": "Marcha Maratón Mixto",
+      "nombre_corto": "MaratónMx",
+      "disciplina": "Marcha",
+      "genero": "MIXTO",
+      "unidad": "TIEMPO"
+    }
+  ]
+}

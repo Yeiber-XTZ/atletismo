@@ -123,6 +123,7 @@ export type Store = {
     date: string;
     tags: string[];
     imageUrl?: string;
+    videoUrl?: string;
     body: string[];
   }>;
   events: Array<{
@@ -176,6 +177,7 @@ export type Store = {
     category: string;
     status: 'Abierta' | 'Próximamente' | 'Cerrada' | string;
     statusMode?: 'auto' | 'manual' | string;
+    maxEventsPerAthlete?: number;
     openDate: string;
     closeDate: string;
     location: string;
@@ -183,6 +185,8 @@ export type Store = {
     description: string;
     requirements: string[];
     categories: string[];
+    disciplines?: string[];
+    events?: string[];
     imageUrl?: string;
   }>;
   competencias: Array<{
@@ -304,7 +308,7 @@ const defaultStore: Store = {
     },
     sponsors: [
       { name: 'Indeportes Chocó', href: '#', logoUrl: '' },
-      { name: 'AlcaldÃ­a de Quibdó', href: '#', logoUrl: '' },
+      { name: 'Alcaldía de Quibdó', href: '#', logoUrl: '' },
       { name: 'Gobernación del Chocó', href: '#', logoUrl: '' },
       { name: 'Aliado Deportivo', href: '#', logoUrl: '' }
     ]
@@ -645,6 +649,7 @@ const defaultStore: Store = {
       title: 'Selectivo Nacional 2026',
       category: 'Selección',
       status: 'Abierta',
+      maxEventsPerAthlete: 1,
       openDate: '2026-04-01',
       closeDate: '2026-04-25',
       location: 'Quibdó',
@@ -658,6 +663,7 @@ const defaultStore: Store = {
       title: 'Concentración Departamental de Talentos',
       category: 'Talentos',
       status: 'Próximamente',
+      maxEventsPerAthlete: 1,
       openDate: '2026-05-10',
       closeDate: '2026-05-25',
       location: 'Istmina',
@@ -859,6 +865,7 @@ function normalizeStore(raw: unknown): Store {
           date: String(p?.date ?? ''),
           tags: Array.isArray(p?.tags) ? p.tags.map((x: any) => String(x)) : [],
           imageUrl: typeof p?.imageUrl === 'string' && p.imageUrl.trim() ? p.imageUrl.trim() : undefined,
+          videoUrl: typeof p?.videoUrl === 'string' && p.videoUrl.trim() ? p.videoUrl.trim() : undefined,
           body: Array.isArray(p?.body) ? p.body.map((x: any) => String(x)) : []
         }))
       : (defaultStore as any).blogPosts,
@@ -935,3 +942,5 @@ export async function writeStore(data: Store) {
   await fs.mkdir(path.dirname(STORE_PATH), { recursive: true });
   await fs.writeFile(STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
 }
+
+

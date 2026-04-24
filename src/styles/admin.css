@@ -348,6 +348,15 @@
   border-color: var(--color-primary);
 }
 
+/* === ACCORDION CHEVRON === */
+.admin-root details > summary > .material-symbols-outlined:last-child {
+  transition: transform 180ms ease;
+}
+
+.admin-root details[open] > summary > .material-symbols-outlined:last-child {
+  transform: rotate(180deg);
+}
+
 /* === FAB (Floating Action Button) === */
 .admin-root .admin-fab {
   position: fixed;

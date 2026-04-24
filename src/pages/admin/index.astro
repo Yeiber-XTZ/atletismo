@@ -10,10 +10,13 @@ import { listPostulaciones, PostulationStatus, summarizePostulaciones } from '..
 import { listAssemblyMeetings, summarizeAssemblyAttendance, summarizeAssemblyMeetings } from '../../lib/asambleas';
 import { getAdminAnalytics } from '../../lib/analytics';
 import { getAdminAlerts } from '../../lib/alerts';
-import { listNotifications } from '../../lib/notificaciones';
+import { listNotifications, listNotificationsForRole } from '../../lib/notificaciones';
 import { listAuditLogs } from '../../lib/audit';
 import { listRadicados } from '../../lib/radicados';
 import { listConvocatoriaCategories } from '../../lib/convocatoria-categories';
+import { listAthletes } from '../../lib/athletes-admin';
+import { getClubByOwnerUserId } from '../../lib/clubs';
+import { listAthleticsCatalogs, listGeoCatalogs, listSexCatalog } from '../../lib/catalogs';
 
 const user = Astro.locals.user as AuthUser | null;
 const requestedTab = Astro.url.searchParams.get('tab') ?? ((user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') ? 'dashboard' : 'settings');
@@ -45,14 +48,35 @@ const activeTab = navAliases[requestedTab] ?? requestedTab;
 const contentTab = tabAliases[requestedTab] ?? requestedTab;
 const saved = Astro.url.searchParams.get('saved');
 const error = Astro.url.searchParams.get('error');
+const settingsViewParam = (Astro.url.searchParams.get('settingsView') ?? '').trim().toLowerCase();
+const settingsViews = new Set(['general', 'hero', 'home']);
+const settingsView = settingsViews.has(settingsViewParam) ? settingsViewParam : '';
+const ligaViewParam = (Astro.url.searchParams.get('ligaView') ?? '').trim().toLowerCase();
+const ligaViews = new Set(['hero', 'info', 'estructura']);
+const ligaView = ligaViews.has(ligaViewParam) ? ligaViewParam : '';
+const errorMessages: Record<string, string> = {
+  invalid_schema: 'Hay campos inválidos o incompletos. Revisa el formulario.',
+  missing_club: 'Tu usuario no tiene club asociado para registrar atletas.',
+  missing_municipality: 'Debes seleccionar un municipio válido.',
+  duplicate_document: 'Ya existe un atleta con ese número de documento.'
+};
+const errorMessage = error ? (errorMessages[error] ?? 'Error al guardar los cambios') : '';
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
 const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
 const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
+const athleteStatusFilter = Astro.url.searchParams.get('athleteStatus') ?? 'all';
+const athleteQuery = (Astro.url.searchParams.get('athleteQ') ?? '').trim();
+const athleteClubFilterId = Number(Astro.url.searchParams.get('athleteClubId') ?? 0);
 const auditAction = (Astro.url.searchParams.get('auditAction') ?? '').trim();
 const auditEntity = (Astro.url.searchParams.get('auditEntity') ?? '').trim();
 const auditUserId = Number(Astro.url.searchParams.get('auditUserId') ?? 0);
+const auditPage = Math.max(1, Number(Astro.url.searchParams.get('auditPage') ?? 1));
+const auditPageSize = Math.min(100, Math.max(10, Number(Astro.url.searchParams.get('auditPageSize') ?? 25)));
 
 const data = await getAdminData();
+const sexCatalog = await listSexCatalog();
+const geoCatalog = await listGeoCatalogs();
+const athleticsCatalog = await listAthleticsCatalogs();
 const managedConvocatoriaCategories = await listConvocatoriaCategories();
 const docs = await listDocuments();
 const marks: Array<{ id: number; athlete: string; discipline: string; value: string; unit: string; recordDate: string }> = [];
@@ -78,16 +102,49 @@ const canManageUsers = hasPermission(user, 'users:manage');
 const canManageApprovals = hasPermission(user, 'approvals:manage');
 const canManageAsambleas = hasPermission(user, 'asambleas:manage');
 const canViewAsambleasPanel = canManageAsambleas || hasPermission(user, 'assembly:self_panel');
+const canManageNotifications = hasPermission(user, 'notificaciones:manage');
+const canViewNotifications = canManageNotifications || hasPermission(user, 'assembly:self_panel') || user?.role === 'CLUB';
+const canViewAlerts = hasPermission(user, 'records:manage');
+const canManageAllAthletes = hasPermission(user, 'athletes:manage');
+const canManageClubAthletes = hasPermission(user, 'athletes:self_manage');
+const canAccessAthletesTab = canManageAllAthletes || canManageClubAthletes;
+let ownClubId = user?.clubId ? Number(user.clubId) : 0;
+if (!ownClubId && user?.role === 'CLUB' && user?.id) {
+  const ownedClub = await getClubByOwnerUserId(Number(user.id));
+  ownClubId = ownedClub?.id ?? 0;
+}
 if ((contentTab === 'roles' || contentTab === 'permisos') && !isSuperAdmin) {
   return Astro.redirect('/acceso-denegado');
 }
-if (contentTab === 'notificaciones' && !hasPermission(user, 'notificaciones:manage')) {
+if (contentTab === 'notificaciones' && !canViewNotifications) {
+  return Astro.redirect('/acceso-denegado');
+}
+if (contentTab === 'alertas' && !canViewAlerts) {
   return Astro.redirect('/acceso-denegado');
 }
 if (contentTab === 'asambleas' && !canViewAsambleasPanel) {
   return Astro.redirect('/acceso-denegado');
 }
+if (contentTab === 'athletes' && !canAccessAthletesTab) {
+  return Astro.redirect('/acceso-denegado');
+}
 const users = canManageUsers ? await listUsers() : [];
+const usersForUsersTab =
+  user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN'
+    ? users.filter((u) => (u.roles?.[0] ?? '') === 'CLUB')
+    : users;
+const athleteScopeClubId = canManageAllAthletes
+  ? (Number.isFinite(athleteClubFilterId) && athleteClubFilterId > 0 ? athleteClubFilterId : undefined)
+  : (ownClubId > 0 ? ownClubId : undefined);
+const athletes = canAccessAthletesTab
+  ? (!canManageAllAthletes && !athleteScopeClubId
+      ? []
+      : await listAthletes({
+          clubId: athleteScopeClubId,
+          query: athleteQuery,
+          status: athleteStatusFilter
+        }))
+  : [];
 const pqrs = isAdminRoot ? await listPqrs(500) : [];
 const canApprovePostulations = hasPermission(user, 'postulations:approve');
 const postulationsDb = (canApprovePostulations || user?.role === 'CLUB') ? await listPostulaciones() : [];
@@ -101,17 +158,35 @@ const asambleaAttendanceSummary = canManageAsambleas
   : { total: 0, byStatus: [] };
 const asambleaMeetingsSummary = canManageAsambleas ? await summarizeAssemblyMeetings() : [];
 const analytics = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAnalytics() : null;
-const alerts = user && (user.role === 'SUPERADMIN' || user.role === 'ADMIN' || user.role === 'LIGA') ? await getAdminAlerts() : [];
-const notifications = isAdminRoot ? await listNotifications() : [];
+const alerts = canViewAlerts ? await getAdminAlerts() : [];
+const notificationsManaged = canManageNotifications ? await listNotifications() : [];
+const notificationsForUser = canViewNotifications && user?.role ? await listNotificationsForRole(user.role) : [];
 const registrationRadicados = canManageApprovals ? await listRadicados('pending') : [];
-const auditLogs = isAdminRoot
+const auditLogResult = isAdminRoot
   ? await listAuditLogs({
       action: auditAction || undefined,
       entityType: auditEntity || undefined,
       userId: Number.isFinite(auditUserId) && auditUserId > 0 ? auditUserId : undefined,
-      limit: 250
+      limit: auditPageSize,
+      offset: (auditPage - 1) * auditPageSize
     })
-  : [];
+  : { rows: [], total: 0, limit: auditPageSize, offset: 0 };
+const auditLogs = auditLogResult.rows;
+const auditTotal = auditLogResult.total;
+const auditTotalPages = Math.max(1, Math.ceil(auditTotal / auditPageSize));
+const auditPrevPage = Math.max(1, auditPage - 1);
+const auditNextPage = Math.min(auditTotalPages, auditPage + 1);
+const auditBaseParams = new URLSearchParams();
+auditBaseParams.set('tab', 'auditoria');
+if (auditAction) auditBaseParams.set('auditAction', auditAction);
+if (auditEntity) auditBaseParams.set('auditEntity', auditEntity);
+if (Number.isFinite(auditUserId) && auditUserId > 0) auditBaseParams.set('auditUserId', String(auditUserId));
+auditBaseParams.set('auditPageSize', String(auditPageSize));
+const getAuditPageHref = (page: number) => {
+  const params = new URLSearchParams(auditBaseParams);
+  params.set('auditPage', String(Math.max(1, page)));
+  return `/admin?${params.toString()}`;
+};
 const dashboardCards = [
   { label: 'Convocatorias', value: analytics?.totals.convocatorias ?? 0, color: 'from-emerald-500 to-emerald-700' },
   { label: 'Competencias', value: analytics?.totals.competencias ?? 0, color: 'from-sky-500 to-sky-700' },
@@ -120,6 +195,52 @@ const dashboardCards = [
   { label: 'Documentos', value: analytics?.totals.documents ?? 0, color: 'from-rose-500 to-rose-700' },
   { label: 'Usuarios', value: users.length, color: 'from-slate-600 to-slate-800' }
 ];
+const totalManagedContent = dashboardCards.reduce((acc, card) => acc + Number(card.value || 0), 0);
+const postStatusMap = new Map<string, number>(
+  (analytics?.postulationsByStatus ?? []).map((item) => [String(item.status ?? '').trim().toLowerCase(), Number(item.count ?? 0)])
+);
+const pqrsStatusMap = new Map<string, number>(
+  (analytics?.pqrsByStatus ?? []).map((item) => [String(item.status ?? '').trim().toLowerCase(), Number(item.count ?? 0)])
+);
+const postulationsTotal = Number(postulationSummary?.total ?? 0);
+const postulationsApproved = Array.from(postStatusMap.entries())
+  .filter(([status]) => status.includes('aprob'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const postulationsPending = Array.from(postStatusMap.entries())
+  .filter(([status]) => status.includes('postul') || status.includes('revisi') || status.includes('pend'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const postulationsRejected = Array.from(postStatusMap.entries())
+  .filter(([status]) => status.includes('rechaz') || status.includes('incomplet'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const pqrsTotal = (analytics?.pqrsByStatus ?? []).reduce((acc, item) => acc + Number(item.count ?? 0), 0);
+const pqrsResolved = Array.from(pqrsStatusMap.entries())
+  .filter(([status]) => status.includes('resuelt') || status.includes('cerrad'))
+  .reduce((acc, [, count]) => acc + count, 0);
+const pqrsOpen = Math.max(0, pqrsTotal - pqrsResolved);
+const approvalRate = postulationsTotal > 0 ? Math.round((postulationsApproved / postulationsTotal) * 100) : 0;
+const pqrsResolutionRate = pqrsTotal > 0 ? Math.round((pqrsResolved / pqrsTotal) * 100) : 0;
+const activityLast7Post = (analytics?.last7Days ?? []).reduce((acc, day) => acc + Number(day.postulations ?? 0), 0);
+const activityLast7Pqrs = (analytics?.last7Days ?? []).reduce((acc, day) => acc + Number(day.pqrs ?? 0), 0);
+const activityPeak = Math.max(
+  1,
+  ...(analytics?.last7Days ?? []).map((day) => Math.max(Number(day.postulations ?? 0), Number(day.pqrs ?? 0)))
+);
+const todayActivity = (() => {
+  const today = new Date().toISOString().slice(0, 10);
+  return (analytics?.last7Days ?? []).find((day) => day.day === today);
+})();
+const operationalPulse =
+  approvalRate >= 60 && pqrsResolutionRate >= 60
+    ? 'Estable'
+    : approvalRate >= 40 || pqrsResolutionRate >= 40
+      ? 'En seguimiento'
+      : 'Crítico';
+const operationalPulseClass =
+  operationalPulse === 'Estable'
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    : operationalPulse === 'En seguimiento'
+      ? 'bg-amber-100 text-amber-800 border-amber-200'
+      : 'bg-red-100 text-red-800 border-red-200';
 
 const filteredPostulations = postulations.filter((p) => {
   if (postulationStatusFilter !== 'all' && p.status !== postulationStatusFilter) return false;
@@ -181,6 +302,12 @@ const clubsWithId = (data.clubs ?? [])
   .map((club: any) => ({ ...club, id: Number(club.id) }))
   .sort((a: any, b: any) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'es-CO'));
 const clubNameById = new Map<number, string>(clubsWithId.map((club: any) => [Number(club.id), String(club.name ?? '')]));
+const geoCountries = geoCatalog.countries ?? [];
+const geoDepartments = geoCatalog.departments ?? [];
+const geoMunicipalities = geoCatalog.municipalities ?? [];
+const athleticsDisciplineNames = (athleticsCatalog.disciplines ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
+const athleticsEventNames = (athleticsCatalog.events ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
+const athleticsEventsCatalog = athleticsCatalog.events ?? [];
 const laLigaContent = data.publicSite?.laLiga;
 const laLigaPrinciplesRows = (laLigaContent?.principles?.length ? laLigaContent.principles : [{ icon: 'star', title: '', desc: '' }]);
 const laLigaGovernanceRows = (laLigaContent?.governanceItems?.length ? laLigaContent.governanceItems : [{ label: '', title: '' }]);
@@ -216,6 +343,7 @@ const rawNavItems = [
   { id: 'aprobaciones', label: 'Aprobaciones', icon: 'fact_check' },
   { id: 'auditoria', label: 'Auditoria', icon: 'manage_search' },
   { id: 'clubs', label: 'Clubes', icon: 'groups' },
+  { id: 'athletes', label: 'Atletas', icon: 'directions_run' },
   { id: 'convocatorias', label: 'Convocatorias', icon: 'campaign' },
   { id: 'competencias', label: 'Competencias', icon: 'sports' },
   { id: 'ranking', label: 'Ranking', icon: 'leaderboard' },
@@ -243,6 +371,7 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
   blog: 'blog:manage',
   stats: 'records:manage',
   clubs: 'clubs:manage',
+  athletes: 'athletes:manage',
   competencias: 'competencias:manage',
   convocatorias: 'convocatorias:manage',
   results: 'results:manage',
@@ -253,8 +382,9 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
 const navItems = rawNavItems.filter((item) => {
   if (item.id === 'perfil') return true;
   if (item.id === 'asambleas') return canViewAsambleasPanel;
+  if (item.id === 'athletes') return canAccessAthletesTab;
   const r = user?.role;
-  if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents', 'alertas'].includes(item.id)) return true;
+  if (r === 'CLUB' && ['convocatorias', 'competencias', 'documents'].includes(item.id)) return true;
   const need = NAV_PERMS[item.id] ?? 'admin:all';
   if (need === 'admin:all') return hasPermission(user, 'admin:all');
   return hasPermission(user, need);
@@ -316,7 +446,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {error ? (
       <div class="admin-alert admin-alert-error">
         <span class="material-symbols-outlined">error</span>
-        <span>Error al guardar los cambios</span>
+        <span>{errorMessage}</span>
       </div>
     ) : null}
 
@@ -381,18 +511,47 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Configuración del Home</h4>
         </div>
         <div class="admin-card-body space-y-4">
-          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <h5 class="text-sm font-semibold text-emerald-800">Configuración guiada</h5>
-            <p class="text-sm text-emerald-700 mt-1">Abre solo la tarjeta que quieras editar y guarda cada bloque por separado.</p>
-            <div class="mt-3 flex flex-wrap gap-2 text-xs">
-              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-general">General</a>
-              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-hero">Hero</a>
-              <a class="rounded-full bg-white px-3 py-1 border border-emerald-200 text-emerald-700" href="#cfg-home">CTA y Patrocinadores</a>
-            </div>
-          </div>
+          {!settingsView ? (
+            <>
+              <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <h5 class="text-sm font-semibold text-emerald-800">Módulos de configuración</h5>
+                <p class="text-sm text-emerald-700 mt-1">Elige una tarjeta para abrir su formulario en una vista dedicada.</p>
+              </div>
+              <div class="grid gap-4 md:grid-cols-3">
+                <a href="/admin?tab=settings&settingsView=general" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                  <div class="flex items-start justify-between">
+                    <span class="material-symbols-outlined text-emerald-600">tune</span>
+                    <span class="text-xs font-semibold text-gray-400 group-hover:text-emerald-700">Abrir</span>
+                  </div>
+                  <h5 class="mt-3 text-base font-semibold text-gray-800">Ajustes Generales</h5>
+                  <p class="mt-1 text-sm text-gray-500">Nombre del sitio, logo, colores y canales de contacto.</p>
+                </a>
+                <a href="/admin?tab=settings&settingsView=hero" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                  <div class="flex items-start justify-between">
+                    <span class="material-symbols-outlined text-emerald-600">wallpaper</span>
+                    <span class="text-xs font-semibold text-gray-400 group-hover:text-emerald-700">Abrir</span>
+                  </div>
+                  <h5 class="mt-3 text-base font-semibold text-gray-800">Hero Principal</h5>
+                  <p class="mt-1 text-sm text-gray-500">Título, subtítulo, badge e imagen principal de portada.</p>
+                </a>
+                <a href="/admin?tab=settings&settingsView=home" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                  <div class="flex items-start justify-between">
+                    <span class="material-symbols-outlined text-emerald-600">campaign</span>
+                    <span class="text-xs font-semibold text-gray-400 group-hover:text-emerald-700">Abrir</span>
+                  </div>
+                  <h5 class="mt-3 text-base font-semibold text-gray-800">CTA y Patrocinadores</h5>
+                  <p class="mt-1 text-sm text-gray-500">Botones de acción final y bloque de aliados/sponsors.</p>
+                </a>
+              </div>
+            </>
+          ) : null}
 
-          <details id="cfg-general" class="rounded-xl border border-gray-200 bg-gray-50 p-2" open>
-            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">1) Ajustes generales</summary>
+          {settingsView === 'general' ? (
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+              <div class="mb-2 px-3 py-2 flex items-center justify-between">
+                <h5 class="text-sm font-semibold text-gray-700">1) Ajustes generales</h5>
+                <a href="/admin?tab=settings" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+              </div>
           <form method="POST" action="/api/admin/settings" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
             <h5 class="text-sm font-semibold text-gray-700">1) Ajustes generales</h5>
             <div class="grid gap-5 md:grid-cols-2">
@@ -450,10 +609,15 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
-          </details>
+            </div>
+          ) : null}
 
-          <details id="cfg-hero" class="rounded-xl border border-gray-200 bg-gray-50 p-2">
-            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">2) Hero principal</summary>
+          {settingsView === 'hero' ? (
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+              <div class="mb-2 px-3 py-2 flex items-center justify-between">
+                <h5 class="text-sm font-semibold text-gray-700">2) Hero principal</h5>
+                <a href="/admin?tab=settings" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+              </div>
           <form method="POST" action="/api/admin/hero" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
             <h5 class="text-sm font-semibold text-gray-700">2) Hero principal</h5>
             <div>
@@ -483,10 +647,15 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
-          </details>
+            </div>
+          ) : null}
 
-          <details id="cfg-home" class="rounded-xl border border-gray-200 bg-gray-50 p-2">
-            <summary class="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-gray-700">3) CTA y Patrocinadores</summary>
+          {settingsView === 'home' ? (
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-2">
+              <div class="mb-2 px-3 py-2 flex items-center justify-between">
+                <h5 class="text-sm font-semibold text-gray-700">3) CTA y Patrocinadores</h5>
+                <a href="/admin?tab=settings" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+              </div>
           <form method="POST" action="/api/admin/home" encType="multipart/form-data" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
             <h5 class="text-sm font-semibold text-gray-700">3) CTA y Patrocinadores del Home</h5>
             <p class="text-sm text-gray-500">La noticia destacada se maneja en <strong>Noticias</strong> y la competencia destacada en <strong>Competencias</strong>.</p>
@@ -550,7 +719,8 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
-          </details>
+            </div>
+          ) : null}
 
         </div>
       </section>
@@ -567,44 +737,41 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             La imagen principal de cada vista pública se administra en su módulo correspondiente.
           </div>
 
-          <section class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-emerald-100/40 p-4 md:p-5">
-            <h5 class="text-sm font-semibold text-emerald-900">Editar por secciones</h5>
-            <p class="text-xs text-emerald-700 mt-1">Haz clic en una tarjeta para ir directo al formulario.</p>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#form-liga-hero-view">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Imagen</div>
-                <div class="mt-1 font-semibold text-gray-800">Hero de La Liga</div>
-                <div class="mt-1 text-xs text-gray-500">Portada de la vista /la-liga</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#form-liga-info">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Contenido</div>
-                <div class="mt-1 font-semibold text-gray-800">Información institucional</div>
-                <div class="mt-1 text-xs text-gray-500">Acerca de la liga, misión y visión</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-hero" data-open-details="#card-laliga-hero">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Hero y cabecera</div>
-                <div class="mt-1 text-xs text-gray-500">Título, subtítulo e imagen de historia</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-principios" data-open-details="#card-laliga-principios">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Principios institucionales</div>
-                <div class="mt-1 text-xs text-gray-500">Tarjetas de principios de la sección</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-organos" data-open-details="#card-laliga-organos">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Órganos directivos</div>
-                <div class="mt-1 text-xs text-gray-500">Cargos y jerarquía institucional</div>
-              </button>
-              <button type="button" class="js-jump-card text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all" data-target="#card-laliga-marco" data-open-details="#card-laliga-marco">
-                <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
-                <div class="mt-1 font-semibold text-gray-800">Marco normativo</div>
-                <div class="mt-1 text-xs text-gray-500">Documentos y enlaces normativos</div>
-              </button>
-            </div>
-          </section>
+          {!ligaView ? (
+            <section class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-emerald-100/40 p-4 md:p-5">
+              <h5 class="text-sm font-semibold text-emerald-900">Editar por módulos</h5>
+              <p class="text-xs text-emerald-700 mt-1">Haz clic en una tarjeta para abrir su vista dedicada.</p>
+              <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <a href="/admin?tab=liga-publica&ligaView=hero" class="text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div class="text-xs uppercase tracking-wide text-emerald-600">Imagen</div>
+                  <div class="mt-1 font-semibold text-gray-800">Hero de La Liga</div>
+                  <div class="mt-1 text-xs text-gray-500">Portada de la vista /la-liga</div>
+                </a>
+                <a href="/admin?tab=liga-publica&ligaView=info" class="text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div class="text-xs uppercase tracking-wide text-emerald-600">Contenido</div>
+                  <div class="mt-1 font-semibold text-gray-800">Información institucional</div>
+                  <div class="mt-1 text-xs text-gray-500">Acerca de la liga, misión y visión</div>
+                </a>
+                <a href="/admin?tab=liga-publica&ligaView=estructura" class="text-left rounded-2xl bg-white border border-emerald-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div class="text-xs uppercase tracking-wide text-emerald-600">Estructura</div>
+                  <div class="mt-1 font-semibold text-gray-800">Estructura pública</div>
+                  <div class="mt-1 text-xs text-gray-500">Cabecera, principios, órganos y marco normativo</div>
+                </a>
+              </div>
+            </section>
+          ) : null}
 
-          <form id="form-liga-hero-view" method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
+          {ligaView ? (
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p class="text-sm font-semibold text-gray-700">
+                {ligaView === 'hero' ? 'Módulo: Hero de La Liga' : ligaView === 'info' ? 'Módulo: Información institucional' : 'Módulo: Estructura pública'}
+              </p>
+              <a href="/admin?tab=liga-publica" class="text-xs font-semibold text-emerald-700 hover:underline">← Volver a módulos</a>
+            </div>
+          ) : null}
+
+          {ligaView === 'hero' ? (
+            <form id="form-liga-hero-view" method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
             <input type="hidden" name="pageKey" value="laLiga" />
             <input type="hidden" name="tab" value="liga-publica" />
             <h5 class="text-sm font-semibold text-gray-700">Hero de la vista La Liga</h5>
@@ -621,8 +788,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
+          ) : null}
 
-          <form id="form-liga-info" method="POST" action="/api/admin/federation" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
+          {ligaView === 'info' ? (
+            <form id="form-liga-info" method="POST" action="/api/admin/federation" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5 scroll-mt-24">
             <h5 class="text-sm font-semibold text-gray-700">1) Información institucional (contenido)</h5>
             <div>
               <label class="admin-label">Acerca de la liga</label>
@@ -643,8 +812,10 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </button>
             </div>
           </form>
+          ) : null}
 
-          <form method="POST" action="/api/admin/public-site" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5">
+          {ligaView === 'estructura' ? (
+            <form method="POST" action="/api/admin/public-site" encType="multipart/form-data" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-5">
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
               <h5 class="text-sm font-semibold text-gray-700">2) Sección La Liga (estructura pública)</h5>
               <p class="text-xs text-gray-500 mt-1">Usa estas tarjetas para editar solo el bloque que necesites.</p>
@@ -769,11 +940,12 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               <div class="flex items-center justify-end pt-3">
                 <button class="admin-btn admin-btn-primary" type="submit">
                   <span class="material-symbols-outlined">save</span>
-                  Guardar marco normativo
-                </button>
-              </div>
-            </details>
+                Guardar marco normativo
+              </button>
+            </div>
+          </details>
           </form>
+          ) : null}
         </div>
       </section>
     ) : null}
@@ -801,71 +973,100 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/clubs" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Formulario guiado: completa los campos y guarda. Sin JSON.</p>
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Directorio de clubes</p>
+                <p class="text-xs text-gray-500">Los clubes se muestran como tarjetas para una edición más clara.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-club" data-container="#clubs-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar club
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar clubes
+                </button>
+              </div>
+            </div>
             <div id="clubs-container" class="space-y-3" data-repeat-container>
               {data.clubs.map((club) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3" data-club-id={club.id}>
-                  <div>
-                    <label class="admin-label">Nombre</label>
-                    <input class="admin-input" name="clubName" value={club.name} required />
+                <details class="js-repeat-item rounded-2xl border border-gray-200 bg-white shadow-sm" data-club-id={club.id} data-accordion-group="#clubs-container">
+                  <summary class="cursor-pointer list-none p-4 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {club.imageUrl ? (
+                        <img src={club.imageUrl} alt={club.name} class="h-11 w-11 rounded-full object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-11 w-11 rounded-full border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">groups</span>
+                        </div>
+                      )}
+                      <div class="min-w-0">
+                        <p class="text-xs uppercase tracking-wide text-emerald-700">Club afiliado</p>
+                        <h6 class="text-sm font-semibold text-gray-800 truncate">{club.name || 'Nuevo club'}</h6>
+                      </div>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-4 grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label class="admin-label">Nombre</label>
+                      <input class="admin-input" name="clubName" value={club.name} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Municipio</label>
+                      <input class="admin-input" name="clubMunicipality" value={club.municipality} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Atletas</label>
+                      <input class="admin-input" name="clubAthletes" type="number" min="0" value={club.athletes} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Estado</label>
+                      <input class="admin-input" name="clubStatus" value={club.status} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Entrenador</label>
+                      <input class="admin-input" name="clubCoach" value={club.coach} required />
+                    </div>
+                    <div>
+                      <label class="admin-label">Categoría</label>
+                      <input class="admin-input" name="clubCategory" value={club.category ?? ''} />
+                    </div>
+                    <div class="md:col-span-2">
+                      <label class="admin-label">Imagen</label>
+                      <input class="admin-input" type="file" name="clubImageFile" accept="image/*" />
+                      <input type="hidden" name="clubImageUrl" value={club.imageUrl ?? ''} />
+                      {club.imageUrl && (
+                        <p class="text-xs text-gray-500 mt-1">Actual: {club.imageUrl}</p>
+                      )}
+                    </div>
+                    <div class="md:col-span-2 mt-2 flex justify-between items-center gap-2">
+                      {isAdminRoot && club.id ? (
+                        <button
+                          type="button"
+                          class="admin-btn admin-btn-danger js-delete-club-db"
+                          data-club-id={String(club.id)}
+                          data-club-name={club.name}
+                        >
+                          <span class="material-symbols-outlined">delete_forever</span>
+                          Eliminar permanentemente
+                        </button>
+                      ) : <span />}
+                      <div class="flex items-center gap-2">
+                        <button class="admin-btn admin-btn-primary" type="submit">
+                          <span class="material-symbols-outlined">save</span>
+                          Actualizar club
+                        </button>
+                        <button type="button" class="admin-btn admin-btn-secondary js-remove-row">
+                          <span class="material-symbols-outlined">remove_circle_outline</span>
+                          Quitar de la lista
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label class="admin-label">Municipio</label>
-                    <input class="admin-input" name="clubMunicipality" value={club.municipality} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Atletas</label>
-                    <input class="admin-input" name="clubAthletes" type="number" min="0" value={club.athletes} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Estado</label>
-                    <input class="admin-input" name="clubStatus" value={club.status} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Entrenador</label>
-                    <input class="admin-input" name="clubCoach" value={club.coach} required />
-                  </div>
-                  <div>
-                    <label class="admin-label">Categoría</label>
-                    <input class="admin-input" name="clubCategory" value={club.category ?? ''} />
-                  </div>
-                  <div class="md:col-span-3">
-                    <label class="admin-label">Imagen</label>
-                    <input class="admin-input" type="file" name="clubImageFile" accept="image/*" />
-                    <input type="hidden" name="clubImageUrl" value={club.imageUrl ?? ''} />
-                    {club.imageUrl && (
-                      <p class="text-xs text-gray-500 mt-1">Actual: {club.imageUrl}</p>
-                    )}
-                  </div>
-                  <div class="md:col-span-3 flex justify-between items-center gap-2">
-                    {isAdminRoot && club.id ? (
-                      <button
-                        type="button"
-                        class="admin-btn admin-btn-danger js-delete-club-db"
-                        data-club-id={String(club.id)}
-                        data-club-name={club.name}
-                      >
-                        <span class="material-symbols-outlined">delete_forever</span>
-                        Eliminar permanentemente
-                      </button>
-                    ) : <span />}
-                    <button type="button" class="admin-btn admin-btn-secondary js-remove-row">
-                      <span class="material-symbols-outlined">remove_circle_outline</span>
-                      Quitar de la lista
-                    </button>
-                  </div>
-                </div>
+                </details>
               ))}
-            </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-club">
-                <span class="material-symbols-outlined">add</span>
-                Agregar club
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar clubes
-              </button>
             </div>
           </form>
         </div>
@@ -946,42 +1147,77 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     </button>
                   </div>
                 </form>
-                <div class="mt-3 space-y-2">
-                  {managedConvocatoriaCategories.map((item) => (
-                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 grid gap-2 md:grid-cols-12">
-                      <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-10 grid gap-2 md:grid-cols-6">
-                        <input type="hidden" name="intent" value="update" />
-                        <input type="hidden" name="id" value={item.id} />
-                        <div class="md:col-span-4">
-                          <input class="admin-input" name="name" value={item.name} required />
-                        </div>
-                        <div class="md:col-span-2 flex items-end justify-end">
-                          <button class="admin-btn admin-btn-secondary" type="submit">
-                            <span class="material-symbols-outlined">save</span>
-                            Guardar
+                <details class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3" open>
+                  <summary class="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-gray-700">
+                    <span>Categorías existentes ({managedConvocatoriaCategories.length})</span>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="mt-3 space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {managedConvocatoriaCategories.map((item) => (
+                      <div class="rounded-lg border border-gray-200 bg-white p-3 grid gap-2 md:grid-cols-12">
+                        <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-10 grid gap-2 md:grid-cols-6">
+                          <input type="hidden" name="intent" value="update" />
+                          <input type="hidden" name="id" value={item.id} />
+                          <div class="md:col-span-4">
+                            <input class="admin-input" name="name" value={item.name} required />
+                          </div>
+                          <div class="md:col-span-2 flex items-end justify-end">
+                            <button class="admin-btn admin-btn-secondary" type="submit">
+                              <span class="material-symbols-outlined">save</span>
+                              Guardar
+                            </button>
+                          </div>
+                        </form>
+                        <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-2 flex items-end justify-end">
+                          <input type="hidden" name="intent" value="delete" />
+                          <input type="hidden" name="id" value={item.id} />
+                          <button class="admin-btn admin-btn-danger" type="submit">
+                            <span class="material-symbols-outlined">delete</span>
+                            Eliminar
                           </button>
-                        </div>
-                      </form>
-                      <form method="POST" action="/api/admin/convocatoria-categories" class="md:col-span-2 flex items-end justify-end">
-                        <input type="hidden" name="intent" value="delete" />
-                        <input type="hidden" name="id" value={item.id} />
-                        <button class="admin-btn admin-btn-danger" type="submit">
-                          <span class="material-symbols-outlined">delete</span>
-                          Eliminar
-                        </button>
-                      </form>
-                    </div>
-                  ))}
-                  {managedConvocatoriaCategories.length === 0 ? (
-                    <p class="text-xs text-gray-400">No hay categorías definidas aún.</p>
-                  ) : null}
-                </div>
+                        </form>
+                      </div>
+                    ))}
+                    {managedConvocatoriaCategories.length === 0 ? (
+                      <p class="text-xs text-gray-400">No hay categorías definidas aún.</p>
+                    ) : null}
+                  </div>
+                </details>
               </section>
               <form method="POST" action="/api/admin/convocatorias" encType="multipart/form-data" class="grid gap-5 mt-6">
-                <p class="text-xs text-gray-400">Campos guiados. Requisitos y categorías: una línea por ítem.</p>
-                <div class="space-y-3" data-repeat-container>
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-700">Tarjetas de convocatorias</p>
+                    <p class="text-xs text-gray-500">Cada tarjeta muestra solo nombre e imagen. Haz clic para editar el detalle.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-convocatoria">
+                      <span class="material-symbols-outlined">add</span>
+                      Agregar convocatoria
+                    </button>
+                    <button class="admin-btn admin-btn-primary" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar convocatorias
+                    </button>
+                  </div>
+                </div>
+                <div id="convocatorias-container" class="space-y-3" data-repeat-container>
                   {data.convocatorias.map((conv) => (
-                    <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                    <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#convocatorias-container">
+                      <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                          {conv.imageUrl ? (
+                            <img src={conv.imageUrl} alt={conv.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                          ) : (
+                            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                              <span class="material-symbols-outlined text-base">campaign</span>
+                            </div>
+                          )}
+                          <h6 class="text-sm font-semibold text-gray-800 truncate">{conv.title || 'Nueva convocatoria'}</h6>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                      </summary>
+                      <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
                       <div>
                         <label class="admin-label">Título</label>
                         <input class="admin-input" name="convTitle" value={conv.title} required />
@@ -1014,6 +1250,18 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <input class="admin-input" name="convCloseDate" type="date" value={conv.closeDate} />
                       </div>
                       <div>
+                        <label class="admin-label">Maximo pruebas por deportista</label>
+                        <input
+                          class="admin-input"
+                          name="convMaxEventsPerAthlete"
+                          type="number"
+                          min="1"
+                          max="30"
+                          value={String(Math.max(1, Number((conv as any).maxEventsPerAthlete ?? 1) || 1))}
+                          required
+                        />
+                      </div>
+                      <div>
                         <label class="admin-label">Ubicación</label>
                         <input class="admin-input" name="convLocation" value={conv.location} required />
                       </div>
@@ -1033,6 +1281,50 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <label class="admin-label">Categorías (una línea por categoría)</label>
                         <textarea class="admin-input min-h-[90px]" name="convCategories">{linesFromArray(conv.categories)}</textarea>
                       </div>
+                      <div class="md:col-span-3 rounded-lg border border-gray-200 bg-white p-3 js-conv-catalog-v3">
+                        <label class="admin-label">Disciplina habilitada</label>
+                        <select class="admin-input mt-2 js-conv-discipline-select-v3">
+                          <option value="">Selecciona disciplina</option>
+                          {athleticsDisciplineNames.map((disciplineName) => (
+                            <option
+                              value={disciplineName}
+                              selected={String((Array.isArray((conv as any).disciplines) ? (conv as any).disciplines[0] : '') ?? '') === disciplineName}
+                            >
+                              {disciplineName}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div class="mt-4 flex flex-wrap items-center gap-2">
+                          <button type="button" class="admin-btn admin-btn-primary js-conv-select-visible-events-v3">
+                            Seleccionar visibles
+                          </button>
+                          <button type="button" class="admin-btn admin-btn-secondary js-conv-clear-visible-events-v3">
+                            Limpiar visibles
+                          </button>
+                        </div>
+
+                        <label class="admin-label mt-4">Pruebas habilitadas</label>
+                        <p class="mt-1 text-xs text-gray-500"><span class="js-conv-events-count-v3">0</span> pruebas seleccionadas</p>
+                        <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
+                          <div class="grid gap-2 sm:grid-cols-2">
+                            {athleticsEventsCatalog.map((eventItem) => (
+                              <label class="inline-flex items-center gap-2 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700">
+                                <input
+                                  class="js-conv-event-check-v3"
+                                  type="checkbox"
+                                  value={eventItem.name}
+                                  data-discipline={eventItem.disciplineName}
+                                />
+                                <span>{eventItem.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <textarea class="sr-only js-conv-disciplines-hidden-v3" name="convDisciplines">{linesFromArray((conv as any).disciplines)}</textarea>
+                        <textarea class="sr-only js-conv-events-hidden-v3" name="convEvents">{linesFromArray((conv as any).events)}</textarea>
+                      </div>
                       <div>
                         <label class="admin-label">Imagen</label>
                         <input class="admin-input" type="file" name="convImageFile" accept="image/*" />
@@ -1041,24 +1333,19 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           <p class="text-xs text-gray-500 mt-1">Actual: {conv.imageUrl}</p>
                         )}
                       </div>
-                      <div class="md:col-span-3 flex justify-end">
+                      <div class="md:col-span-3 flex justify-end gap-2">
+                        <button class="admin-btn admin-btn-primary" type="submit">
+                          <span class="material-symbols-outlined">save</span>
+                          Actualizar convocatoria
+                        </button>
                         <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                           <span class="material-symbols-outlined">delete</span>
                           Quitar convocatoria
                         </button>
                       </div>
-                    </div>
+                      </div>
+                    </details>
                   ))}
-                </div>
-                <div class="flex items-center justify-end gap-2 pt-2">
-                  <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-convocatoria">
-                    <span class="material-symbols-outlined">add</span>
-                    Agregar convocatoria
-                  </button>
-                  <button class="admin-btn admin-btn-primary" type="submit">
-                    <span class="material-symbols-outlined">save</span>
-                    Guardar convocatorias
-                  </button>
                 </div>
               </form>
             </>
@@ -1136,10 +1423,39 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 </div>
               </form>
               <form method="POST" action="/api/admin/competencias" encType="multipart/form-data" class="grid gap-5 mt-6">
-                <p class="text-xs text-gray-400">Descargas: una línea por archivo con formato `Etiqueta|URL`.</p>
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-700">Tarjetas de competencias</p>
+                    <p class="text-xs text-gray-500">Cada tarjeta muestra nombre e imagen. Haz clic para editar.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-competencia" data-container="#competencias-container">
+                      <span class="material-symbols-outlined">add</span>
+                      Agregar competencia
+                    </button>
+                    <button class="admin-btn admin-btn-primary" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar competencias
+                    </button>
+                  </div>
+                </div>
                 <div id="competencias-container" class="space-y-3" data-repeat-container>
                   {data.competencias.map((comp) => (
-                    <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
+                    <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#competencias-container">
+                      <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                          {comp.imageUrl ? (
+                            <img src={comp.imageUrl} alt={comp.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                          ) : (
+                            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                              <span class="material-symbols-outlined text-base">sports</span>
+                            </div>
+                          )}
+                          <h6 class="text-sm font-semibold text-gray-800 truncate">{comp.title || 'Nueva competencia'}</h6>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                      </summary>
+                      <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
                       <div>
                         <label class="admin-label">Título</label>
                         <input class="admin-input" name="compTitle" value={comp.title} required />
@@ -1176,26 +1492,21 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         <label class="admin-label">Descargas</label>
                         <textarea class="admin-input min-h-[90px]" name="compDownloads">{downloadsToLines(comp.downloads)}</textarea>
                       </div>
-                      <div class="md:col-span-3 flex justify-end">
+                      <div class="md:col-span-3 flex justify-end gap-2">
+                        <button class="admin-btn admin-btn-primary" type="submit">
+                          <span class="material-symbols-outlined">save</span>
+                          Actualizar competencia
+                        </button>
                         <button type="button" class="admin-btn admin-btn-danger js-remove-row">
                           <span class="material-symbols-outlined">delete</span>
                           Quitar competencia
-                    </button>
-                  </div>
+                        </button>
+                      </div>
+                      </div>
+                    </details>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-competencia" data-container="#competencias-container">
-                <span class="material-symbols-outlined">add</span>
-                Agregar competencia
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar competencias
-              </button>
-            </div>
-          </form>
+              </form>
             </>
           )}
         </div>
@@ -1279,7 +1590,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
-                  {users.map((u) => (
+                  {usersForUsersTab.map((u) => (
                     <tr>
                       <td class="p-3 align-top text-gray-500">{u.id}</td>
                       <td class="p-3 align-top">{u.email}</td>
@@ -1363,7 +1674,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                       </td>
                     </tr>
                   ))}
-                  {users.length === 0 && (
+                  {usersForUsersTab.length === 0 && (
                     <tr>
                       <td class="p-6 text-center text-gray-400" colSpan={7}>
                         No hay usuarios registrados (configura `ADMIN_EMAIL` y `ADMIN_PASSWORD` y corre el seed).
@@ -1375,6 +1686,362 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </div>
 
+        </div>
+      </section>
+    ) : null}
+
+    {contentTab === 'athletes' ? (
+      <section class="admin-card">
+        <div class="admin-card-header">
+          <h4 class="admin-card-title">Gestión de Atletas</h4>
+        </div>
+        <div class="admin-card-body space-y-6">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-sm text-gray-500">
+              {canManageAllAthletes
+                ? 'Administra atletas de todos los clubes y filtra por club.'
+                : 'Administra únicamente los atletas de tu club.'}
+            </p>
+            <button
+              type="button"
+              id="toggle-create-athlete"
+              class="admin-btn admin-btn-secondary"
+              disabled={!canManageAllAthletes && !ownClubId}
+            >
+              <span class="material-symbols-outlined">person_add</span>
+              Registrar atleta
+            </button>
+          </div>
+
+          {!canManageAllAthletes && !ownClubId ? (
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Tu usuario CLUB aún no tiene un club asociado. Solicita la asociación al administrador para poder registrar atletas.
+            </div>
+          ) : null}
+
+          <div id="create-athlete-panel" class="rounded-xl border border-gray-200 bg-gray-50 p-5 hidden">
+            <h5 class="text-sm font-semibold text-gray-700 mb-4">Nuevo atleta</h5>
+            <form method="POST" action="/api/admin/athletes" encType="multipart/form-data" class="grid gap-4 md:grid-cols-12">
+              <input type="hidden" name="intent" value="create" />
+              {!canManageAllAthletes ? <input type="hidden" name="clubId" value={String(ownClubId || '')} /> : null}
+              <div class="md:col-span-3">
+                <label class="admin-label">Nombres</label>
+                <input class="admin-input" name="firstName" required />
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Apellidos</label>
+                <input class="admin-input" name="lastName" required />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Tipo doc.</label>
+                <select class="admin-input" name="documentType">
+                  <option value="CC">CC</option>
+                  <option value="TI">TI</option>
+                  <option value="CE">CE</option>
+                  <option value="PP">PP</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Documento</label>
+                <input class="admin-input" name="document" required />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Sexo</label>
+                <select class="admin-input" name="sexCode" required>
+                  {sexCatalog.map((sex) => (
+                    <option value={sex.code}>{sex.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Nacimiento</label>
+                <input class="admin-input" type="date" name="birthdate" required />
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Email</label>
+                <input class="admin-input" type="email" name="email" />
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">País</label>
+                <select class="admin-input js-geo-country" name="countryIso2" data-geo-scope="create">
+                  <option value="">Selecciona país</option>
+                  {geoCountries.map((country) => (
+                    <option value={country.iso2} selected={country.iso2 === 'CO'}>{country.shortName}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Departamento</label>
+                <select class="admin-input js-geo-department" name="departmentCode" data-geo-scope="create">
+                  <option value="">Selecciona departamento</option>
+                </select>
+              </div>
+              <div class="md:col-span-3">
+                <label class="admin-label">Municipio</label>
+                <select class="admin-input js-geo-municipality" name="municipalityCode" data-geo-scope="create">
+                  <option value="">Selecciona municipio</option>
+                </select>
+                <input type="hidden" name="municipality" class="js-geo-municipality-name" data-geo-scope="create" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Estado</label>
+                <select class="admin-input" name="status">
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </div>
+              {canManageAllAthletes ? (
+                <div class="md:col-span-2">
+                  <label class="admin-label">Club</label>
+                  <select class="admin-input" name="clubId" required>
+                    <option value="">Selecciona club</option>
+                    {clubsWithId.map((club) => (
+                      <option value={String(club.id)}>#{club.id} · {club.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+              <div class="md:col-span-4">
+                <label class="admin-label">Entrenador</label>
+                <input class="admin-input" name="coach" />
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">EPS</label>
+                <input class="admin-input" name="eps" />
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">Contacto emergencia</label>
+                <input class="admin-input" name="emergencyContact" />
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">Foto</label>
+                <input class="admin-input" type="file" name="photoFile" accept="image/*" />
+                <input type="hidden" name="photoUrl" value="" />
+              </div>
+              <div class="md:col-span-12">
+                <label class="admin-label">Pruebas / disciplinas</label>
+                <div class="rounded-xl border border-gray-300 bg-gray-50 js-discipline-picker">
+                  <button
+                    type="button"
+                    class="js-discipline-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                    aria-expanded="false"
+                  >
+                    <span>Selección disciplinas</span>
+                    <span class="js-discipline-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                  </button>
+                  <div class="js-discipline-panel hidden max-h-36 overflow-auto border-t border-gray-300 p-2">
+                    <div class="grid gap-1">
+                      {athleticsDisciplineNames
+                        .slice()
+                        .sort((a, b) => a.localeCompare(b, 'es-CO'))
+                        .map((disciplineName) => (
+                          <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-800 hover:bg-white">
+                            <input type="checkbox" name="disciplines" value={disciplineName} />
+                            <span>{disciplineName}</span>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="md:col-span-12 flex justify-end">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar atleta
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <form method="GET" action="/admin" class="rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-12">
+            <input type="hidden" name="tab" value="athletes" />
+            <div class="md:col-span-5">
+              <label class="admin-label">Buscar</label>
+              <input class="admin-input" name="athleteQ" value={athleteQuery} placeholder="Nombre, documento, email, municipio" />
+            </div>
+            <div class="md:col-span-3">
+              <label class="admin-label">Estado</label>
+              <select class="admin-input" name="athleteStatus">
+                <option value="all" selected={athleteStatusFilter === 'all'}>Todos</option>
+                <option value="active" selected={athleteStatusFilter === 'active'}>Activo</option>
+                <option value="inactive" selected={athleteStatusFilter === 'inactive'}>Inactivo</option>
+              </select>
+            </div>
+            {canManageAllAthletes ? (
+              <div class="md:col-span-3">
+                <label class="admin-label">Club</label>
+                <select class="admin-input" name="athleteClubId">
+                  <option value="" selected={!athleteClubFilterId}>Todos los clubes</option>
+                  {clubsWithId.map((club) => (
+                    <option value={String(club.id)} selected={athleteClubFilterId === club.id}>#{club.id} · {club.name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <input type="hidden" name="athleteClubId" value={String(ownClubId || '')} />
+            )}
+            <div class="md:col-span-1 flex items-end">
+              <button class="admin-btn admin-btn-primary w-full" type="submit">
+                <span class="material-symbols-outlined">filter_alt</span>
+                Filtrar
+              </button>
+            </div>
+          </form>
+
+          <div class="overflow-auto rounded-xl border border-gray-200">
+            <table class="min-w-[1300px] w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                  <th class="text-left p-3 font-medium">Atleta</th>
+                  <th class="text-left p-3 font-medium">Documento</th>
+                  <th class="text-left p-3 font-medium">Club</th>
+                  <th class="text-left p-3 font-medium">Datos</th>
+                  <th class="text-left p-3 font-medium">Disciplinas</th>
+                  <th class="text-left p-3 font-medium">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                {athletes.map((a) => (
+                  <tr>
+                    <td class="p-3 align-top">
+                      <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+                          {a.photoUrl ? (
+                            <img src={a.photoUrl} alt={a.fullName} class="h-full w-full object-cover" />
+                          ) : (
+                            <div class="flex h-full w-full items-center justify-center text-xs text-gray-400">N/A</div>
+                          )}
+                        </div>
+                        <div>
+                          <div class="font-semibold text-gray-800">{a.fullName}</div>
+                          <div class="text-xs text-gray-500">#{a.id} · {a.gender} · {a.birthdate || '-'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-3 align-top">
+                      <div class="text-sm text-gray-700">{a.documentType} {a.document}</div>
+                      <div class="text-xs text-gray-500">{a.email || '-'}</div>
+                    </td>
+                    <td class="p-3 align-top">
+                      {a.clubId ? `#${a.clubId} · ${a.clubName}` : a.clubName || '(sin club)'}
+                    </td>
+                    <td class="p-3 align-top">
+                      <div class="text-xs text-gray-600">Municipio: {a.municipalityName || a.municipality || '-'}</div>
+                      <div class="text-xs text-gray-600">Coach: {a.coach || '-'}</div>
+                      <div class="text-xs text-gray-600">EPS: {a.eps || '-'}</div>
+                      <div class="text-xs text-gray-600">Emergencia: {a.emergencyContact || '-'}</div>
+                    </td>
+                    <td class="p-3 align-top">
+                      <div class="text-xs text-gray-700 whitespace-pre-wrap">{a.disciplines.join(', ') || '-'}</div>
+                    </td>
+                    <td class="p-3 align-top">
+                      <form method="POST" action="/api/admin/athletes" encType="multipart/form-data" class="grid gap-2">
+                        <input type="hidden" name="intent" value="update" />
+                        <input type="hidden" name="id" value={a.id} />
+                        <div class="grid grid-cols-2 gap-2">
+                          <input class="admin-input" name="firstName" value={a.firstName} required />
+                          <input class="admin-input" name="lastName" value={a.lastName} required />
+                          <select class="admin-input" name="documentType">
+                            <option value="CC" selected={a.documentType === 'CC'}>CC</option>
+                            <option value="TI" selected={a.documentType === 'TI'}>TI</option>
+                            <option value="CE" selected={a.documentType === 'CE'}>CE</option>
+                            <option value="PP" selected={a.documentType === 'PP'}>PP</option>
+                          </select>
+                          <input class="admin-input" name="document" value={a.document} required />
+                          <select class="admin-input" name="sexCode">
+                            {sexCatalog.map((sex) => (
+                              <option value={sex.code} selected={a.sexCode === sex.code || a.gender === sex.code}>{sex.name}</option>
+                            ))}
+                          </select>
+                          <input class="admin-input" type="date" name="birthdate" value={a.birthdate} required />
+                          <input class="admin-input" type="email" name="email" value={a.email} placeholder="Email" />
+                          <select class="admin-input js-geo-country" name="countryIso2" data-geo-scope={`edit-${a.id}`}>
+                            <option value="">Selecciona país</option>
+                            {geoCountries.map((country) => (
+                              <option value={country.iso2} selected={a.countryIso2 === country.iso2}>{country.shortName}</option>
+                            ))}
+                          </select>
+                          <select class="admin-input js-geo-department" name="departmentCode" data-geo-scope={`edit-${a.id}`} data-selected={a.departmentCode}>
+                            <option value="">Selecciona departamento</option>
+                          </select>
+                          <select class="admin-input js-geo-municipality" name="municipalityCode" data-geo-scope={`edit-${a.id}`} data-selected={a.municipalityCode}>
+                            <option value="">Selecciona municipio</option>
+                          </select>
+                          <input type="hidden" name="municipality" value={a.municipalityName || a.municipality} class="js-geo-municipality-name" data-geo-scope={`edit-${a.id}`} />
+                          <input class="admin-input" name="coach" value={a.coach} placeholder="Coach" />
+                          <input class="admin-input" name="eps" value={a.eps} placeholder="EPS" />
+                          <input class="admin-input" name="emergencyContact" value={a.emergencyContact} placeholder="Emergencia" />
+                          <input class="admin-input" type="file" name="photoFile" accept="image/*" />
+                          <input type="hidden" name="photoUrl" value={a.photoUrl || ''} />
+                          <select class="admin-input" name="status">
+                            <option value="active" selected={a.status === 'active'}>Activo</option>
+                            <option value="inactive" selected={a.status === 'inactive'}>Inactivo</option>
+                          </select>
+                          {canManageAllAthletes ? (
+                            <select class="admin-input col-span-2" name="clubId" required>
+                              <option value="">Selecciona club</option>
+                              {clubsWithId.map((club) => (
+                                <option value={String(club.id)} selected={Number(a.clubId ?? 0) === club.id}>#{club.id} · {club.name}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input type="hidden" name="clubId" value={String(ownClubId || '')} />
+                          )}
+                          <div class="col-span-2 rounded-xl border border-gray-300 bg-gray-50 js-discipline-picker">
+                            <button
+                              type="button"
+                              class="js-discipline-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                              aria-expanded="false"
+                            >
+                              <span>Selección disciplinas</span>
+                              <span class="js-discipline-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                            </button>
+                            <div class="js-discipline-panel hidden max-h-36 overflow-auto border-t border-gray-300 p-2">
+                              <div class="grid gap-1">
+                                {athleticsDisciplineNames
+                                  .slice()
+                                  .sort((x, y) => x.localeCompare(y, 'es-CO'))
+                                  .map((disciplineName) => (
+                                    <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-800 hover:bg-white">
+                                      <input
+                                        type="checkbox"
+                                        name="disciplines"
+                                        value={disciplineName}
+                                        checked={a.disciplines.includes(disciplineName)}
+                                      />
+                                      <span>{disciplineName}</span>
+                                    </label>
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="flex gap-2">
+                          <button class="admin-btn admin-btn-primary flex-1" type="submit">
+                            <span class="material-symbols-outlined">save</span>
+                            Guardar
+                          </button>
+                        </div>
+                      </form>
+                      <form method="POST" action="/api/admin/athletes" class="mt-2" onsubmit="return confirm('¿Eliminar atleta? Esta acción no se puede deshacer.');">
+                        <input type="hidden" name="intent" value="delete" />
+                        <input type="hidden" name="id" value={a.id} />
+                        <button class="admin-btn admin-btn-danger w-full" type="submit">
+                          <span class="material-symbols-outlined">delete</span>
+                          Eliminar
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+                {athletes.length === 0 ? (
+                  <tr>
+                    <td class="p-6 text-center text-gray-400" colSpan={6}>No hay atletas registrados con los filtros actuales.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     ) : null}
@@ -1761,14 +2428,35 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {contentTab === 'dashboard' ? (
       <section class="admin-card">
         <div class="admin-card-header">
-          <h4 class="admin-card-title">Dashboard Estratégico</h4>
+          <h4 class="admin-card-title">Centro de Control</h4>
         </div>
         <div class="admin-card-body">
           {analytics ? (
             <>
-              <div class="rounded-2xl border border-gray-200 bg-gradient-to-r from-emerald-50 via-white to-sky-50 p-5">
-                <h5 class="text-lg font-extrabold text-gray-800">Resumen operativo de la liga</h5>
-                <p class="text-sm text-gray-600">Métricas clave para decisiones rápidas del equipo administrativo.</p>
+              <div class="rounded-3xl border border-emerald-100 bg-gradient-to-r from-[#0a4f2c] via-[#0b6a39] to-[#14753f] p-6 text-white shadow-md">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-100/90">Panel estratégico de la liga</p>
+                    <h5 class="mt-2 text-2xl font-black leading-tight">Monitorea operación, crecimiento y respuesta institucional</h5>
+                    <p class="mt-2 text-sm text-emerald-50/90">
+                      Vista ejecutiva para presidencia, administración y soporte operativo.
+                    </p>
+                  </div>
+                  <div class="grid gap-2 sm:grid-cols-3">
+                    <article class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
+                      <p class="text-xs uppercase tracking-wide text-emerald-100/90">Contenido total</p>
+                      <p class="text-2xl font-extrabold">{totalManagedContent}</p>
+                    </article>
+                    <article class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
+                      <p class="text-xs uppercase tracking-wide text-emerald-100/90">Pulso operativo</p>
+                      <p class="text-xl font-extrabold">{operationalPulse}</p>
+                    </article>
+                    <article class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
+                      <p class="text-xs uppercase tracking-wide text-emerald-100/90">Actividad hoy</p>
+                      <p class="text-2xl font-extrabold">{(todayActivity?.postulations ?? 0) + (todayActivity?.pqrs ?? 0)}</p>
+                    </article>
+                  </div>
+                </div>
               </div>
 
               <div class="mt-4 grid gap-3 md:grid-cols-3">
@@ -1878,80 +2566,105 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {contentTab === 'notificaciones' ? (
       <section class="admin-card">
         <div class="admin-card-header">
-          <h4 class="admin-card-title">Notificaciones por Rol</h4>
+          <h4 class="admin-card-title">{canManageNotifications ? 'Notificaciones por Rol' : 'Mis notificaciones'}</h4>
         </div>
         <div class="admin-card-body">
-          <form method="POST" action="/api/admin/notificaciones" class="grid gap-4 md:grid-cols-6">
-            <input type="hidden" name="intent" value="create" />
-            <div class="md:col-span-2">
-              <label class="admin-label">Título</label>
-              <input class="admin-input" name="title" required />
-            </div>
-            <div class="md:col-span-2">
-              <label class="admin-label">Mensaje</label>
-              <input class="admin-input" name="message" required />
-            </div>
-            <div>
-              <label class="admin-label">Nivel</label>
-              <select class="admin-input" name="level">
-                <option value="info">info</option>
-                <option value="warning">warning</option>
-                <option value="critical">critical</option>
-              </select>
-            </div>
-            <div>
-              <label class="admin-label">Rol</label>
-              <select class="admin-input" name="targetRole">
-                <option value="ALL">ALL</option>
-                {ROLES.map((r) => (
-                  <option value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
-            <div class="md:col-span-4">
-              <label class="admin-label">Acción (URL interna opcional)</label>
-              <input class="admin-input" name="actionHref" placeholder="/dashboard/club" />
-            </div>
-            <div class="md:col-span-2 flex items-end justify-end">
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">add</span>
-                Publicar
-              </button>
-            </div>
-          </form>
+          {canManageNotifications ? (
+            <form method="POST" action="/api/admin/notificaciones" class="grid gap-4 md:grid-cols-6">
+              <input type="hidden" name="intent" value="create" />
+              <div class="md:col-span-2">
+                <label class="admin-label">Título</label>
+                <input class="admin-input" name="title" required />
+              </div>
+              <div class="md:col-span-2">
+                <label class="admin-label">Mensaje</label>
+                <input class="admin-input" name="message" required />
+              </div>
+              <div>
+                <label class="admin-label">Nivel</label>
+                <select class="admin-input" name="level">
+                  <option value="info">info</option>
+                  <option value="warning">warning</option>
+                  <option value="critical">critical</option>
+                </select>
+              </div>
+              <div>
+                <label class="admin-label">Rol</label>
+                <select class="admin-input" name="targetRole">
+                  <option value="ALL">ALL</option>
+                  {ROLES.map((r) => (
+                    <option value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="md:col-span-4">
+                <label class="admin-label">Acción (URL interna opcional)</label>
+                <input class="admin-input" name="actionHref" placeholder="/dashboard/club" />
+              </div>
+              <div class="md:col-span-2 flex items-end justify-end">
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">add</span>
+                  Publicar
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p class="text-sm text-gray-500">
+              Notificaciones activas para tu rol. Si necesitas publicar una nueva, solicita apoyo al rol administrativo.
+            </p>
+          )}
 
           <div class="mt-6 space-y-3">
-            {notifications.map((n) => (
-              <form method="POST" action="/api/admin/notificaciones" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-6">
-                <input type="hidden" name="intent" value="toggle" />
-                <input type="hidden" name="id" value={n.id} />
-                <div class="md:col-span-2">
-                  <div class="font-semibold text-gray-700">{n.title}</div>
-                  <div class="text-sm text-gray-600">{n.message}</div>
-                </div>
-                <div class="text-sm text-gray-600">
-                  <div>Nivel: <strong>{n.level}</strong></div>
-                  <div>Rol: <strong>{n.targetRole}</strong></div>
-                </div>
-                <div class="text-sm text-gray-600">
-                  <div>Acción: <strong>{n.actionHref || '-'}</strong></div>
-                  <div>Fecha: <strong>{new Date(n.createdAt).toLocaleDateString('es-CO')}</strong></div>
-                </div>
-                <div class="md:col-span-2 flex items-end justify-end">
-                  <label class="inline-flex items-center gap-2 text-xs text-gray-600">
-                    <input type="checkbox" name="isActive" value="1" checked={n.isActive} />
-                    Activa
-                  </label>
-                  <button class="admin-btn admin-btn-secondary ml-3" type="submit">
-                    <span class="material-symbols-outlined">save</span>
-                    Guardar
-                  </button>
-                </div>
-              </form>
+            {(canManageNotifications ? notificationsManaged : notificationsForUser).map((n) => (
+              canManageNotifications ? (
+                <form method="POST" action="/api/admin/notificaciones" class="rounded-xl border border-gray-200 p-4 grid gap-3 md:grid-cols-6">
+                  <input type="hidden" name="intent" value="toggle" />
+                  <input type="hidden" name="id" value={n.id} />
+                  <div class="md:col-span-2">
+                    <div class="font-semibold text-gray-700">{n.title}</div>
+                    <div class="text-sm text-gray-600">{n.message}</div>
+                  </div>
+                  <div class="text-sm text-gray-600">
+                    <div>Nivel: <strong>{n.level}</strong></div>
+                    <div>Rol: <strong>{n.targetRole}</strong></div>
+                  </div>
+                  <div class="text-sm text-gray-600">
+                    <div>Acción: <strong>{n.actionHref || '-'}</strong></div>
+                    <div>Fecha: <strong>{new Date(n.createdAt).toLocaleDateString('es-CO')}</strong></div>
+                  </div>
+                  <div class="md:col-span-2 flex items-end justify-end">
+                    <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                      <input type="checkbox" name="isActive" value="1" checked={n.isActive} />
+                      Activa
+                    </label>
+                    <button class="admin-btn admin-btn-secondary ml-3" type="submit">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <article class="rounded-xl border border-gray-200 p-4 grid gap-2 bg-white">
+                  <div class="flex items-center justify-between gap-3">
+                    <h5 class="font-semibold text-gray-700">{n.title}</h5>
+                    <span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{n.level}</span>
+                  </div>
+                  <p class="text-sm text-gray-600">{n.message}</p>
+                  <div class="flex items-center justify-between gap-2 text-xs text-gray-500">
+                    <span>Dirigida a: <strong>{n.targetRole}</strong></span>
+                    <span>{new Date(n.createdAt).toLocaleDateString('es-CO')}</span>
+                  </div>
+                  {n.actionHref ? (
+                    <div class="pt-1">
+                      <a class="admin-btn admin-btn-secondary" href={n.actionHref}>Abrir</a>
+                    </div>
+                  ) : null}
+                </article>
+              )
             ))}
-            {notifications.length === 0 ? (
+            {(canManageNotifications ? notificationsManaged : notificationsForUser).length === 0 ? (
               <div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
-                No hay notificaciones creadas.
+                {canManageNotifications ? 'No hay notificaciones creadas.' : 'No hay notificaciones activas para tu rol.'}
               </div>
             ) : null}
           </div>
@@ -2098,8 +2811,9 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Auditoria Avanzada</h4>
         </div>
         <div class="admin-card-body">
-          <form method="GET" action="/admin" class="mb-4 rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-5">
+          <form method="GET" action="/admin" class="mb-4 rounded-xl border border-gray-200 p-3 grid gap-3 md:grid-cols-6">
             <input type="hidden" name="tab" value="auditoria" />
+            <input type="hidden" name="auditPage" value="1" />
             <div>
               <label class="admin-label">Accion</label>
               <input class="admin-input" name="auditAction" value={auditAction} placeholder="login_success" />
@@ -2111,6 +2825,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             <div>
               <label class="admin-label">Usuario ID</label>
               <input class="admin-input" name="auditUserId" value={auditUserId > 0 ? String(auditUserId) : ''} placeholder="123" />
+            </div>
+            <div>
+              <label class="admin-label">Por página</label>
+              <select class="admin-input" name="auditPageSize">
+                <option value="25" selected={auditPageSize === 25}>25</option>
+                <option value="50" selected={auditPageSize === 50}>50</option>
+                <option value="100" selected={auditPageSize === 100}>100</option>
+              </select>
             </div>
             <div class="md:col-span-2 flex items-end gap-2">
               <button class="admin-btn admin-btn-primary" type="submit">
@@ -2124,24 +2846,71 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
 
-          <div class="space-y-2">
-            {auditLogs.map((log) => (
-              <article class="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <div class="flex items-center justify-between gap-3">
-                  <div class="text-sm">
-                    <strong class="text-gray-700">{log.action}</strong> · {log.entityType || 'general'} · {log.entityId || '-'}
-                  </div>
-                  <div class="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString('es-CO')}</div>
-                </div>
-                <div class="text-xs text-gray-600 mt-1">Usuario: {log.userId ?? '-'} · IP: {log.ip ?? '-'}</div>
-              </article>
-            ))}
+          <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr class="text-left text-gray-500">
+                    <th class="px-4 py-3 font-semibold">Fecha</th>
+                    <th class="px-4 py-3 font-semibold">Usuario</th>
+                    <th class="px-4 py-3 font-semibold">Acción</th>
+                    <th class="px-4 py-3 font-semibold">Módulo</th>
+                    <th class="px-4 py-3 font-semibold">Entidad</th>
+                    <th class="px-4 py-3 font-semibold">IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log) => (
+                    <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60">
+                      <td class="px-4 py-3 whitespace-nowrap text-gray-600">{new Date(log.timestamp || log.createdAt).toLocaleString('es-CO')}</td>
+                      <td class="px-4 py-3">
+                        <div class="font-semibold text-gray-800">
+                          {log.userDisplayName || log.userEmail || (log.userId ? `Usuario #${log.userId}` : 'Sistema')}
+                        </div>
+                        <div class="text-xs text-gray-500">{log.userEmail || (log.userId ? `ID ${log.userId}` : 'Sin usuario')}</div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{log.action}</span>
+                      </td>
+                      <td class="px-4 py-3 text-gray-700">{log.tableName || log.entityType || 'general'}</td>
+                      <td class="px-4 py-3 text-gray-600">{log.entityId || '-'}</td>
+                      <td class="px-4 py-3 text-gray-600">{log.ip || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {auditLogs.length === 0 ? (
-              <div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+              <div class="p-6 text-sm text-gray-500 border-t border-gray-100">
                 Sin registros con esos filtros.
               </div>
             ) : null}
           </div>
+
+          {auditLogs.length > 0 ? (
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <p class="text-sm text-gray-600">
+                Mostrando <strong>{auditLogResult.offset + 1}</strong>–<strong>{Math.min(auditLogResult.offset + auditLogResult.limit, auditTotal)}</strong> de <strong>{auditTotal}</strong> registros
+              </p>
+              <div class="flex items-center gap-2">
+                <a
+                  class:list={['admin-btn admin-btn-secondary', auditPage <= 1 ? 'pointer-events-none opacity-50' : '']}
+                  href={getAuditPageHref(auditPrevPage)}
+                >
+                  <span class="material-symbols-outlined">chevron_left</span>
+                  Anterior
+                </a>
+                <span class="text-sm font-semibold text-gray-700">Página {auditPage} de {auditTotalPages}</span>
+                <a
+                  class:list={['admin-btn admin-btn-secondary', auditPage >= auditTotalPages ? 'pointer-events-none opacity-50' : '']}
+                  href={getAuditPageHref(auditNextPage)}
+                >
+                  Siguiente
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </a>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
     ) : null}
@@ -2209,35 +2978,49 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 </form>
               </div>
 
-              <div class="mt-6 space-y-3">
+              <div class="mt-6 space-y-3" id="documents-container">
                 {docs.map((d) => (
-                  <form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="admin-list-item md:grid-cols-6">
-                    <input type="hidden" name="id" value={d.id} />
-                    <input type="hidden" name="intent" value="update" />
-                    <input type="hidden" name="existingHref" value={d.href} />
-                    <input class="admin-input" name="title" value={d.title} required />
-                    <input class="admin-input" name="category" value={d.category ?? ''} placeholder="Categoría" />
-                    <input class="admin-input" type="date" name="date" value={d.date ?? ''} placeholder="YYYY-MM-DD" />
-                    <div class="md:col-span-2">
-                      <input class="admin-input" type="file" name="file" />
-                      <p class="text-xs text-gray-500 mt-1">
-                        Archivo actual: <a class="text-emerald-700 underline break-all" href={d.href} target="_blank" rel="noreferrer">{d.href}</a>
-                      </p>
-                    </div>
-                    <button class="admin-btn admin-btn-primary" type="submit">
-                      <span class="material-symbols-outlined">save</span>
-                      Actualizar
-                    </button>
-                    <textarea class="admin-input min-h-[80px] md:col-span-5" name="description">{d.description}</textarea>
-                    <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-5">
-                      <input type="checkbox" name="isSensitive" value="1" />
-                      Marcar como sensible para solicitar aprobación
-                    </label>
-                    <button class="admin-btn admin-btn-danger" type="submit" name="intent" value="delete">
-                      <span class="material-symbols-outlined">delete</span>
-                      Eliminar
-                    </button>
-                  </form>
+                  <details class="rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#documents-container">
+                    <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">description</span>
+                        </div>
+                        <div class="min-w-0">
+                          <h6 class="text-sm font-semibold text-gray-800 truncate">{d.title || 'Documento'}</h6>
+                          <p class="text-xs text-gray-500 truncate">{d.category || 'Sin categoría'} · {d.date || 'Sin fecha'}</p>
+                        </div>
+                      </div>
+                      <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                    </summary>
+                    <form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-6">
+                      <input type="hidden" name="id" value={d.id} />
+                      <input type="hidden" name="intent" value="update" />
+                      <input type="hidden" name="existingHref" value={d.href} />
+                      <input class="admin-input" name="title" value={d.title} required />
+                      <input class="admin-input" name="category" value={d.category ?? ''} placeholder="Categoría" />
+                      <input class="admin-input" type="date" name="date" value={d.date ?? ''} placeholder="YYYY-MM-DD" />
+                      <div class="md:col-span-2">
+                        <input class="admin-input" type="file" name="file" />
+                        <p class="text-xs text-gray-500 mt-1">
+                          Archivo actual: <a class="text-emerald-700 underline break-all" href={d.href} target="_blank" rel="noreferrer">{d.href}</a>
+                        </p>
+                      </div>
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar
+                      </button>
+                      <textarea class="admin-input min-h-[80px] md:col-span-5" name="description">{d.description}</textarea>
+                      <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-5">
+                        <input type="checkbox" name="isSensitive" value="1" />
+                        Marcar como sensible para solicitar aprobación
+                      </label>
+                      <button class="admin-btn admin-btn-danger" type="submit" name="intent" value="delete">
+                        <span class="material-symbols-outlined">delete</span>
+                        Eliminar
+                      </button>
+                    </form>
+                  </details>
                 ))}
                 {docs.length === 0 && (
                   <div class="text-center py-12 text-gray-400">
@@ -2272,42 +3055,69 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/ranking" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Formulario guiado del ranking destacado.</p>
-            <div class="space-y-3" data-repeat-container>
-              {rankingRows.map((item) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-5">
-                  <input class="admin-input" name="rankingRank" value={item.rank} placeholder="Puesto" required />
-                  <input class="admin-input md:col-span-2" name="rankingAthlete" value={item.athlete} placeholder="Atleta" required />
-                  <input class="admin-input md:col-span-2" name="rankingClub" value={item.club} placeholder="Club" />
-                  <input class="admin-input" name="rankingMark" value={item.mark} placeholder="Marca" required />
-                  <input class="admin-input" name="rankingStatus" value={item.status} placeholder="Estado" />
-                  <input class="admin-input" name="rankingCategory" value={item.category} placeholder="Categoría" />
-                  <input class="admin-input" name="rankingDiscipline" value={item.discipline} placeholder="Disciplina" />
-                  <input class="admin-input" name="rankingGender" value={item.gender} placeholder="Sexo" />
-                  <input class="admin-input" name="rankingSeason" value={item.season} placeholder="Temporada" />
-                  <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" />
-                  <input type="hidden" name="rankingImageUrl" value={item.imageUrl ?? ''} />
-                  {item.imageUrl && (
-                    <p class="text-xs text-gray-500 mt-1 md:col-span-3">Actual: {item.imageUrl}</p>
-                  )}
-                  <div class="md:col-span-5 flex justify-end">
-                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
-                      <span class="material-symbols-outlined">delete</span>
-                      Quitar fila
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Tarjetas de ranking</p>
+                <p class="text-xs text-gray-500">Cada tarjeta muestra nombre e imagen. Haz clic para editar la fila.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-ranking" data-container="#ranking-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar fila
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar ranking
+                </button>
+              </div>
             </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-ranking">
-                <span class="material-symbols-outlined">add</span>
-                Agregar fila
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar ranking
-              </button>
+            <div id="ranking-container" class="space-y-3" data-repeat-container>
+              {rankingRows.map((item) => (
+                <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#ranking-container">
+                  <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.athlete} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">leaderboard</span>
+                        </div>
+                      )}
+                      <div class="min-w-0">
+                        <h6 class="text-sm font-semibold text-gray-800 truncate">{item.athlete || 'Nueva fila'}</h6>
+                        <p class="text-xs text-gray-500 truncate">#{item.rank || '-'} · {item.club || 'Sin club'}</p>
+                      </div>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-5">
+                    <input class="admin-input" name="rankingRank" value={item.rank} placeholder="Puesto" required />
+                    <input class="admin-input md:col-span-2" name="rankingAthlete" value={item.athlete} placeholder="Atleta" required />
+                    <input class="admin-input md:col-span-2" name="rankingClub" value={item.club} placeholder="Club" />
+                    <input class="admin-input" name="rankingMark" value={item.mark} placeholder="Marca" required />
+                    <input class="admin-input" name="rankingStatus" value={item.status} placeholder="Estado" />
+                    <input class="admin-input" name="rankingCategory" value={item.category} placeholder="Categoría" />
+                    <input class="admin-input" name="rankingDiscipline" value={item.discipline} placeholder="Disciplina" />
+                    <input class="admin-input" name="rankingGender" value={item.gender} placeholder="Sexo" />
+                    <input class="admin-input" name="rankingSeason" value={item.season} placeholder="Temporada" />
+                    <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" />
+                    <input type="hidden" name="rankingImageUrl" value={item.imageUrl ?? ''} />
+                    {item.imageUrl && (
+                      <p class="text-xs text-gray-500 mt-1 md:col-span-3">Actual: {item.imageUrl}</p>
+                    )}
+                    <div class="md:col-span-5 flex justify-end gap-2">
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar fila
+                      </button>
+                      <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                        <span class="material-symbols-outlined">delete</span>
+                        Quitar fila
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              ))}
             </div>
           </form>
         </div>
@@ -2471,51 +3281,75 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/news" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Formulario guiado. Contenido: una línea por párrafo.</p>
-            <div class="space-y-3" data-repeat-container>
-              {data.news.map((item) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-                  <input class="admin-input" name="newsSlug" value={item.slug} placeholder="Slug (opcional)" />
-                  <input class="admin-input md:col-span-2" name="newsTitle" value={item.title} placeholder="Título" required />
-                  <input class="admin-input md:col-span-3" name="newsExcerpt" value={item.excerpt} placeholder="Resumen" />
-                  <input class="admin-input" name="newsDate" type="date" value={item.date} />
-                  <input class="admin-input" name="newsCategory" value={item.category} placeholder="Categoría" />
-                  <input class="admin-input" type="file" name="newsImageFile" accept="image/*" />
-                  <input type="hidden" name="newsImageUrl" value={item.imageUrl ?? ''} />
-                  {item.imageUrl && (
-                    <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
-                  )}
-                  <div>
-                    <label class="admin-label">Destacada en Home</label>
-                    <select class="admin-input" name="newsFeaturedOrder">
-                      <option value="" selected={!featuredNewsOrderMap.get(item.slug)}>No destacar</option>
-                      <option value="1" selected={featuredNewsOrderMap.get(item.slug) === 1}>Orden 1</option>
-                      <option value="2" selected={featuredNewsOrderMap.get(item.slug) === 2}>Orden 2</option>
-                      <option value="3" selected={featuredNewsOrderMap.get(item.slug) === 3}>Orden 3</option>
-                    </select>
-                  </div>
-                  <div class="md:col-span-3">
-                    <label class="admin-label">Párrafos del contenido</label>
-                    <textarea class="admin-input min-h-[110px]" name="newsBody">{linesFromArray(item.body)}</textarea>
-                  </div>
-                  <div class="md:col-span-3 flex justify-end">
-                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
-                      <span class="material-symbols-outlined">delete</span>
-                      Quitar noticia
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Tarjetas de noticias</p>
+                <p class="text-xs text-gray-500">Cada tarjeta muestra título e imagen. Haz clic para editar.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-news" data-container="#news-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar noticia
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar noticias
+                </button>
+              </div>
             </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-news">
-                <span class="material-symbols-outlined">add</span>
-                Agregar noticia
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar noticias
-              </button>
+            <div id="news-container" class="space-y-3" data-repeat-container>
+              {data.news.map((item) => (
+                <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#news-container">
+                  <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">newspaper</span>
+                        </div>
+                      )}
+                      <h6 class="text-sm font-semibold text-gray-800 truncate">{item.title || 'Nueva noticia'}</h6>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+                    <input class="admin-input" name="newsSlug" value={item.slug} placeholder="Slug (opcional)" />
+                    <input class="admin-input md:col-span-2" name="newsTitle" value={item.title} placeholder="Título" required />
+                    <input class="admin-input md:col-span-3" name="newsExcerpt" value={item.excerpt} placeholder="Resumen" />
+                    <input class="admin-input" name="newsDate" type="date" value={item.date} />
+                    <input class="admin-input" name="newsCategory" value={item.category} placeholder="Categoría" />
+                    <input class="admin-input" type="file" name="newsImageFile" accept="image/*" />
+                    <input type="hidden" name="newsImageUrl" value={item.imageUrl ?? ''} />
+                    {item.imageUrl && (
+                      <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
+                    )}
+                    <div>
+                      <label class="admin-label">Destacada en Home</label>
+                      <select class="admin-input" name="newsFeaturedOrder">
+                        <option value="" selected={!featuredNewsOrderMap.get(item.slug)}>No destacar</option>
+                        <option value="1" selected={featuredNewsOrderMap.get(item.slug) === 1}>Orden 1</option>
+                        <option value="2" selected={featuredNewsOrderMap.get(item.slug) === 2}>Orden 2</option>
+                        <option value="3" selected={featuredNewsOrderMap.get(item.slug) === 3}>Orden 3</option>
+                      </select>
+                    </div>
+                    <div class="md:col-span-3">
+                      <label class="admin-label">Párrafos del contenido</label>
+                      <textarea class="admin-input min-h-[110px]" name="newsBody">{linesFromArray(item.body)}</textarea>
+                    </div>
+                    <div class="md:col-span-3 flex justify-end gap-2">
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar noticia
+                      </button>
+                      <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                        <span class="material-symbols-outlined">delete</span>
+                        Quitar noticia
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              ))}
             </div>
           </form>
         </div>
@@ -2542,43 +3376,70 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             </div>
           </form>
           <form method="POST" action="/api/admin/blog" encType="multipart/form-data" class="grid gap-5 mt-6">
-            <p class="text-xs text-gray-400">Etiquetas separadas por coma. Contenido: una línea por párrafo.</p>
-            <div class="space-y-3" data-repeat-container>
-              {data.blogPosts.map((item) => (
-                <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-                  <input class="admin-input" name="blogSlug" value={item.slug} placeholder="Slug (opcional)" />
-                  <input class="admin-input" name="blogType" value={item.type} placeholder="Tipo" />
-                  <input class="admin-input" name="blogDate" type="date" value={item.date} />
-                  <input class="admin-input md:col-span-3" name="blogTitle" value={item.title} placeholder="Título" required />
-                  <input class="admin-input md:col-span-3" name="blogExcerpt" value={item.excerpt} placeholder="Resumen" />
-                  <input class="admin-input md:col-span-2" name="blogTags" value={(item.tags ?? []).join(', ')} placeholder="tags, separadas, por, coma" />
-                  <input class="admin-input" type="file" name="blogImageFile" accept="image/*" />
-                  <input type="hidden" name="blogImageUrl" value={item.imageUrl ?? ''} />
-                  {item.imageUrl && (
-                    <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
-                  )}
-                  <div class="md:col-span-3">
-                    <label class="admin-label">Párrafos del contenido</label>
-                    <textarea class="admin-input min-h-[110px]" name="blogBody">{linesFromArray(item.body)}</textarea>
-                  </div>
-                  <div class="md:col-span-3 flex justify-end">
-                    <button type="button" class="admin-btn admin-btn-danger js-remove-row">
-                      <span class="material-symbols-outlined">delete</span>
-                      Quitar artículo
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-700">Tarjetas de blog</p>
+                <p class="text-xs text-gray-500">Cada tarjeta muestra título e imagen. Haz clic para editar.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-blog" data-container="#blog-container">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar artículo
+                </button>
+                <button class="admin-btn admin-btn-primary" type="submit">
+                  <span class="material-symbols-outlined">save</span>
+                  Guardar blog
+                </button>
+              </div>
             </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button type="button" class="admin-btn admin-btn-secondary js-add-row" data-target="#tpl-blog">
-                <span class="material-symbols-outlined">add</span>
-                Agregar artículo
-              </button>
-              <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">save</span>
-                Guardar blog
-              </button>
+            <div id="blog-container" class="space-y-3" data-repeat-container>
+              {data.blogPosts.map((item) => (
+                <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" data-accordion-group="#blog-container">
+                  <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.title} class="h-10 w-10 rounded-lg object-cover border border-gray-200" />
+                      ) : (
+                        <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                          <span class="material-symbols-outlined text-base">article</span>
+                        </div>
+                      )}
+                      <h6 class="text-sm font-semibold text-gray-800 truncate">{item.title || 'Nuevo artículo'}</h6>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                  </summary>
+                  <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+                    <input class="admin-input" name="blogSlug" value={item.slug} placeholder="Slug (opcional)" />
+                    <input class="admin-input" name="blogType" value={item.type} placeholder="Tipo" />
+                    <input class="admin-input" name="blogDate" type="date" value={item.date} />
+                    <input class="admin-input md:col-span-3" name="blogTitle" value={item.title} placeholder="Título" required />
+                    <input class="admin-input md:col-span-3" name="blogExcerpt" value={item.excerpt} placeholder="Resumen" />
+                    <input class="admin-input md:col-span-2" name="blogTags" value={(item.tags ?? []).join(', ')} placeholder="tags, separadas, por, coma" />
+                    <input class="admin-input" type="file" name="blogImageFile" accept="image/*" />
+                    <input type="hidden" name="blogImageUrl" value={item.imageUrl ?? ''} />
+                    {item.imageUrl && (
+                      <p class="text-xs text-gray-500 mt-1">Actual: {item.imageUrl}</p>
+                    )}
+                    <input class="admin-input md:col-span-2" type="file" name="blogVideoFile" accept="video/*" />
+                    <input class="admin-input md:col-span-3" name="blogVideoUrl" value={item.videoUrl ?? ''} placeholder="URL del video (opcional)" />
+                    <p class="text-xs text-gray-500 mt-1 md:col-span-3">Puedes subir archivo o pegar URL. Si subes archivo, se usará ese video.</p>
+                    <div class="md:col-span-3">
+                      <label class="admin-label">Párrafos del contenido</label>
+                      <textarea class="admin-input min-h-[110px]" name="blogBody">{linesFromArray(item.body)}</textarea>
+                    </div>
+                    <div class="md:col-span-3 flex justify-end gap-2">
+                      <button class="admin-btn admin-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">save</span>
+                        Actualizar artículo
+                      </button>
+                      <button type="button" class="admin-btn admin-btn-danger js-remove-row">
+                        <span class="material-symbols-outlined">delete</span>
+                        Quitar artículo
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              ))}
             </div>
           </form>
         </div>
@@ -2699,30 +3560,74 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
     </template>
     <template id="tpl-club">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <div><label class="admin-label">Nombre</label><input class="admin-input" name="clubName" required /></div>
-        <div><label class="admin-label">Municipio</label><input class="admin-input" name="clubMunicipality" required /></div>
-        <div><label class="admin-label">Atletas</label><input class="admin-input" name="clubAthletes" type="number" min="0" value="0" required /></div>
-        <div><label class="admin-label">Estado</label><input class="admin-input" name="clubStatus" value="Activo" required /></div>
-        <div><label class="admin-label">Entrenador</label><input class="admin-input" name="clubCoach" required /></div>
-        <div><label class="admin-label">Categoría</label><input class="admin-input" name="clubCategory" /></div>
-        <div class="md:col-span-3"><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="clubImageFile" accept="image/*" /><input type="hidden" name="clubImageUrl" value="" /></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar club</button></div>
-      </div>
+      <details class="js-repeat-item rounded-2xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#clubs-container">
+        <summary class="cursor-pointer list-none p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-11 w-11 rounded-full border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">groups</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs uppercase tracking-wide text-emerald-700">Club afiliado</p>
+              <h6 class="text-sm font-semibold text-gray-800 truncate">Nuevo club</h6>
+            </div>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-4 grid gap-3 md:grid-cols-2">
+          <div><label class="admin-label">Nombre</label><input class="admin-input" name="clubName" required /></div>
+          <div><label class="admin-label">Municipio</label><input class="admin-input" name="clubMunicipality" required /></div>
+          <div><label class="admin-label">Atletas</label><input class="admin-input" name="clubAthletes" type="number" min="0" value="0" required /></div>
+          <div><label class="admin-label">Estado</label><input class="admin-input" name="clubStatus" value="Activo" required /></div>
+          <div><label class="admin-label">Entrenador</label><input class="admin-input" name="clubCoach" required /></div>
+          <div><label class="admin-label">Categoría</label><input class="admin-input" name="clubCategory" /></div>
+          <div class="md:col-span-2"><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="clubImageFile" accept="image/*" /><input type="hidden" name="clubImageUrl" value="" /></div>
+          <div class="md:col-span-2 mt-2 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar club</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar club</button>
+          </div>
+        </div>
+      </details>
     </template>
     <template id="tpl-convocatoria">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <div><label class="admin-label">Título</label><input class="admin-input" name="convTitle" required /></div>
-        <div>
-          <label class="admin-label">Categoría</label>
-          <select class="admin-input" name="convCategory" required>
-            {convocatoriaCategoryOptions.map((categoryOption, idx) => (
-              <option value={categoryOption} selected={idx === 0}>{categoryOption}</option>
-            ))}
-            {convocatoriaCategoryOptions.length === 0 ? (
-              <option value="General" selected>General</option>
-            ) : null}
-          </select>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#convocatorias-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">campaign</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva convocatoria</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <div><label class="admin-label">Título</label><input class="admin-input" name="convTitle" required /></div>
+          <div>
+            <label class="admin-label">Categoría</label>
+            <select class="admin-input" name="convCategory" required>
+              {convocatoriaCategoryOptions.map((categoryOption, idx) => (
+                <option value={categoryOption} selected={idx === 0}>{categoryOption}</option>
+              ))}
+              {convocatoriaCategoryOptions.length === 0 ? (
+                <option value="General" selected>General</option>
+              ) : null}
+            </select>
+          </div>
+          <div>
+            <label class="admin-label">Estado</label>
+            <input class="admin-input" value="Próximamente (automático)" disabled />
+          </div>
+          <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
+          <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
+          <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
+          <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required /></div>
+          <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
+          <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
+          <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
+          <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar convocatoria</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button>
+          </div>
         </div>
         <div>
           <label class="admin-label">Estado</label>
@@ -2730,27 +3635,74 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         </div>
         <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
         <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
+        <div><label class="admin-label">Maximo pruebas por deportista</label><input class="admin-input" name="convMaxEventsPerAthlete" type="number" min="1" max="30" value="1" required /></div>
         <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
         <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required /></div>
         <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
         <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
         <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
+        <div class="md:col-span-3 rounded-lg border border-gray-200 bg-white p-3 js-conv-catalog-v3">
+          <label class="admin-label">Disciplina habilitada</label>
+          <select class="admin-input mt-2 js-conv-discipline-select-v3">
+            <option value="">Selecciona disciplina</option>
+            {athleticsDisciplineNames.map((disciplineName) => (
+              <option value={disciplineName}>{disciplineName}</option>
+            ))}
+          </select>
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <button type="button" class="admin-btn admin-btn-primary js-conv-select-visible-events-v3">
+              Seleccionar visibles
+            </button>
+            <button type="button" class="admin-btn admin-btn-secondary js-conv-clear-visible-events-v3">
+              Limpiar visibles
+            </button>
+          </div>
+          <label class="admin-label mt-4">Pruebas habilitadas</label>
+          <p class="mt-1 text-xs text-gray-500"><span class="js-conv-events-count-v3">0</span> pruebas seleccionadas</p>
+          <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
+            <div class="grid gap-2 sm:grid-cols-2">
+              {athleticsEventsCatalog.map((eventItem) => (
+                <label class="inline-flex items-center gap-2 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700">
+                  <input class="js-conv-event-check-v3" type="checkbox" value={eventItem.name} data-discipline={eventItem.disciplineName} />
+                  <span>{eventItem.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <textarea class="sr-only js-conv-disciplines-hidden-v3" name="convDisciplines"></textarea>
+          <textarea class="sr-only js-conv-events-hidden-v3" name="convEvents"></textarea>
+        </div>
         <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
         <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
       </div>
+      </details>
     </template>
         <template id="tpl-competencia">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <div><label class="admin-label">Título</label><input class="admin-input" name="compTitle" required /></div>
-        <div><label class="admin-label">Estado</label><input class="admin-input" name="compStatus" value="Confirmado" required /></div>
-        <div><label class="admin-label">Fecha</label><input class="admin-input" name="compDate" type="date" /></div>
-        <div><label class="admin-label">Ubicación</label><input class="admin-input" name="compLocation" required /></div>
-        <div><label class="admin-label">Tipo</label><input class="admin-input" name="compType" /></div>
-        <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="compImageFile" accept="image/*" /><input type="hidden" name="compImageUrl" value="" /></div>
-        <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[90px]" name="compDescription" required></textarea></div>
-        <div class="md:col-span-3"><label class="admin-label">Descargas (`Etiqueta|URL`)</label><textarea class="admin-input min-h-[90px]" name="compDownloads"></textarea></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar competencia</button></div>
-      </div>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#competencias-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">sports</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva competencia</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <div><label class="admin-label">Título</label><input class="admin-input" name="compTitle" required /></div>
+          <div><label class="admin-label">Estado</label><input class="admin-input" name="compStatus" value="Confirmado" required /></div>
+          <div><label class="admin-label">Fecha</label><input class="admin-input" name="compDate" type="date" /></div>
+          <div><label class="admin-label">Ubicación</label><input class="admin-input" name="compLocation" required /></div>
+          <div><label class="admin-label">Tipo</label><input class="admin-input" name="compType" /></div>
+          <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="compImageFile" accept="image/*" /><input type="hidden" name="compImageUrl" value="" /></div>
+          <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[90px]" name="compDescription" required></textarea></div>
+          <div class="md:col-span-3"><label class="admin-label">Descargas (`Etiqueta|URL`)</label><textarea class="admin-input min-h-[90px]" name="compDownloads"></textarea></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar competencia</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar competencia</button>
+          </div>
+        </div>
+      </details>
     </template>
     <template id="tpl-asamblea">
       <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
@@ -2766,19 +3718,33 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
     </template>
     <template id="tpl-ranking">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-5">
-        <input class="admin-input" name="rankingRank" placeholder="Puesto" required />
-        <input class="admin-input md:col-span-2" name="rankingAthlete" placeholder="Atleta" required />
-        <input class="admin-input md:col-span-2" name="rankingClub" placeholder="Club" />
-        <input class="admin-input" name="rankingMark" placeholder="Marca" required />
-        <input class="admin-input" name="rankingStatus" placeholder="Estado" />
-        <input class="admin-input" name="rankingCategory" placeholder="Categoría" />
-        <input class="admin-input" name="rankingDiscipline" placeholder="Disciplina" />
-        <input class="admin-input" name="rankingGender" placeholder="Sexo" />
-        <input class="admin-input" name="rankingSeason" placeholder="Temporada" />
-        <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="rankingImageUrl" value="" />
-        <div class="md:col-span-5 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar fila</button></div>
-      </div>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#ranking-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">leaderboard</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva fila</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-5">
+          <input class="admin-input" name="rankingRank" placeholder="Puesto" required />
+          <input class="admin-input md:col-span-2" name="rankingAthlete" placeholder="Atleta" required />
+          <input class="admin-input md:col-span-2" name="rankingClub" placeholder="Club" />
+          <input class="admin-input" name="rankingMark" placeholder="Marca" required />
+          <input class="admin-input" name="rankingStatus" placeholder="Estado" />
+          <input class="admin-input" name="rankingCategory" placeholder="Categoría" />
+          <input class="admin-input" name="rankingDiscipline" placeholder="Disciplina" />
+          <input class="admin-input" name="rankingGender" placeholder="Sexo" />
+          <input class="admin-input" name="rankingSeason" placeholder="Temporada" />
+          <input class="admin-input md:col-span-3" type="file" name="rankingImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="rankingImageUrl" value="" />
+          <div class="md:col-span-5 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar fila</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar fila</button>
+          </div>
+        </div>
+      </details>
     </template>
     <template id="tpl-result">
       <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-4">
@@ -2796,42 +3762,310 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
     </template>
     <template id="tpl-news">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <input class="admin-input" name="newsSlug" placeholder="Slug (opcional)" />
-        <input class="admin-input md:col-span-2" name="newsTitle" placeholder="Título" required />
-        <input class="admin-input md:col-span-3" name="newsExcerpt" placeholder="Resumen" />
-        <input class="admin-input" name="newsDate" type="date" />
-        <input class="admin-input" name="newsCategory" placeholder="Categoría" />
-        <input class="admin-input" type="file" name="newsImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="newsImageUrl" value="" />
-        <div>
-          <label class="admin-label">Destacada en Home</label>
-          <select class="admin-input" name="newsFeaturedOrder">
-            <option value="" selected>No destacar</option>
-            <option value="1">Orden 1</option>
-            <option value="2">Orden 2</option>
-            <option value="3">Orden 3</option>
-          </select>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#news-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">newspaper</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nueva noticia</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <input class="admin-input" name="newsSlug" placeholder="Slug (opcional)" />
+          <input class="admin-input md:col-span-2" name="newsTitle" placeholder="Título" required />
+          <input class="admin-input md:col-span-3" name="newsExcerpt" placeholder="Resumen" />
+          <input class="admin-input" name="newsDate" type="date" />
+          <input class="admin-input" name="newsCategory" placeholder="Categoría" />
+          <input class="admin-input" type="file" name="newsImageFile" accept="image/*" />
+          <input type="hidden" name="newsImageUrl" value="" />
+          <div>
+            <label class="admin-label">Destacada en Home</label>
+            <select class="admin-input" name="newsFeaturedOrder">
+              <option value="" selected>No destacar</option>
+              <option value="1">Orden 1</option>
+              <option value="2">Orden 2</option>
+              <option value="3">Orden 3</option>
+            </select>
+          </div>
+          <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="newsBody"></textarea></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar noticia</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar noticia</button>
+          </div>
         </div>
-        <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="newsBody"></textarea></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar noticia</button></div>
-      </div>
+      </details>
     </template>
     <template id="tpl-blog">
-      <div class="js-repeat-item grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-3">
-        <input class="admin-input" name="blogSlug" placeholder="Slug (opcional)" />
-        <input class="admin-input" name="blogType" placeholder="Tipo" />
-        <input class="admin-input" name="blogDate" type="date" />
-        <input class="admin-input md:col-span-3" name="blogTitle" placeholder="Título" required />
-        <input class="admin-input md:col-span-3" name="blogExcerpt" placeholder="Resumen" />
-        <input class="admin-input md:col-span-2" name="blogTags" placeholder="tags, separadas, por, coma" />
-        <input class="admin-input" type="file" name="blogImageFile" accept="image/*" placeholder="Imagen" /><input type="hidden" name="blogImageUrl" value="" />
-        <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="blogBody"></textarea></div>
-        <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar artículo</button></div>
-      </div>
+      <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#blog-container">
+        <summary class="cursor-pointer list-none p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+              <span class="material-symbols-outlined text-base">article</span>
+            </div>
+            <h6 class="text-sm font-semibold text-gray-800 truncate">Nuevo artículo</h6>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">expand_more</span>
+        </summary>
+        <div class="border-t border-gray-100 p-3 grid gap-3 md:grid-cols-3">
+          <input class="admin-input" name="blogSlug" placeholder="Slug (opcional)" />
+          <input class="admin-input" name="blogType" placeholder="Tipo" />
+          <input class="admin-input" name="blogDate" type="date" />
+          <input class="admin-input md:col-span-3" name="blogTitle" placeholder="Título" required />
+          <input class="admin-input md:col-span-3" name="blogExcerpt" placeholder="Resumen" />
+          <input class="admin-input md:col-span-2" name="blogTags" placeholder="tags, separadas, por, coma" />
+          <input class="admin-input" type="file" name="blogImageFile" accept="image/*" />
+          <input type="hidden" name="blogImageUrl" value="" />
+          <input class="admin-input md:col-span-2" type="file" name="blogVideoFile" accept="video/*" />
+          <input class="admin-input md:col-span-3" name="blogVideoUrl" placeholder="URL del video (opcional)" />
+          <p class="text-xs text-gray-500 mt-1 md:col-span-3">Puedes subir archivo o pegar URL. Si subes archivo, se usará ese video.</p>
+          <div class="md:col-span-3"><label class="admin-label">Párrafos del contenido</label><textarea class="admin-input min-h-[110px]" name="blogBody"></textarea></div>
+          <div class="md:col-span-3 flex justify-end gap-2">
+            <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar artículo</button>
+            <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar artículo</button>
+          </div>
+        </div>
+      </details>
     </template>
 
-    <script is:inline>
+    <script is:inline define:vars={{ geoDepartments, geoMunicipalities }}>
+      (() => {
       const root = document;
+      root.addEventListener('toggle', (event) => {
+        const details = event.target instanceof HTMLDetailsElement ? event.target : null;
+        if (!details || !details.open) return;
+        const groupSelector = details.getAttribute('data-accordion-group');
+        if (!groupSelector) return;
+        const group = root.querySelector(groupSelector);
+        if (!group) return;
+        group.querySelectorAll(`details[data-accordion-group="${groupSelector}"]`).forEach((node) => {
+          if (node instanceof HTMLDetailsElement && node !== details) {
+            node.open = false;
+          }
+        });
+      }, true);
+      const baseState = globalThis.__adminBaseBindingsState || (globalThis.__adminBaseBindingsState = { handlersBound: false });
+      const GEO_DEPARTMENTS = geoDepartments;
+      const GEO_MUNICIPALITIES = geoMunicipalities;
+
+      const normalizeCode = (value) => String(value || '').trim().toUpperCase();
+      const matchesCode = (left, right) => {
+        const a = normalizeCode(left);
+        const b = normalizeCode(right);
+        if (!a || !b) return false;
+        return a === b || a.startsWith(b) || b.startsWith(a);
+      };
+
+      const fillSelect = (selectEl, items, selectedValue, valueKey = 'code', labelKey = 'name') => {
+        if (!(selectEl instanceof HTMLSelectElement)) return;
+        const firstOption = selectEl.querySelector('option');
+        const placeholder = firstOption ? firstOption.textContent || '' : 'Selecciona';
+        selectEl.innerHTML = '';
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = placeholder;
+        selectEl.appendChild(ph);
+        for (const item of items) {
+          const opt = document.createElement('option');
+          opt.value = String(item?.[valueKey] ?? '');
+          opt.textContent = String(item?.[labelKey] ?? '');
+          if (selectedValue && opt.value === String(selectedValue)) opt.selected = true;
+          selectEl.appendChild(opt);
+        }
+      };
+
+      const initGeoScope = (scope) => {
+        const country = root.querySelector(`.js-geo-country[data-geo-scope=\"${scope}\"]`);
+        const department = root.querySelector(`.js-geo-department[data-geo-scope=\"${scope}\"]`);
+        const municipality = root.querySelector(`.js-geo-municipality[data-geo-scope=\"${scope}\"]`);
+        const municipalityNameInput = root.querySelector(`.js-geo-municipality-name[data-geo-scope=\"${scope}\"]`);
+        if (!(country instanceof HTMLSelectElement) || !(department instanceof HTMLSelectElement) || !(municipality instanceof HTMLSelectElement)) return;
+
+        const selectedDepartment = department.getAttribute('data-selected') || department.value || '';
+        const selectedMunicipality = municipality.getAttribute('data-selected') || municipality.value || '';
+        const countryCode = normalizeCode(country.value || 'CO');
+        if (!country.value) country.value = countryCode;
+        const deps = GEO_DEPARTMENTS.filter((item) => matchesCode(item.countryIso2, countryCode));
+        fillSelect(department, deps, selectedDepartment);
+        const depCode = normalizeCode(department.value || selectedDepartment);
+        const muns = GEO_MUNICIPALITIES.filter((item) => matchesCode(item.departmentCode, depCode));
+        fillSelect(municipality, muns, selectedMunicipality);
+
+        if (municipalityNameInput instanceof HTMLInputElement) {
+          municipalityNameInput.value = municipality.value ? (municipality.options[municipality.selectedIndex]?.text || '') : '';
+        }
+      };
+
+      const syncMunicipalityName = (scope) => {
+        const municipality = root.querySelector(`.js-geo-municipality[data-geo-scope=\"${scope}\"]`);
+        const municipalityNameInput = root.querySelector(`.js-geo-municipality-name[data-geo-scope=\"${scope}\"]`);
+        if (!(municipality instanceof HTMLSelectElement) || !(municipalityNameInput instanceof HTMLInputElement)) return;
+        municipalityNameInput.value = municipality.value ? (municipality.options[municipality.selectedIndex]?.text || '') : '';
+      };
+
+      const initAllGeoScopes = () => {
+        root.querySelectorAll('.js-geo-country').forEach((el) => {
+          const scope = el.getAttribute('data-geo-scope');
+          if (scope) initGeoScope(scope);
+        });
+      };
+
+      if (!baseState.handlersBound) {
+      root.addEventListener('change', (event) => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        if (!target) return;
+        if (target.classList.contains('js-geo-country')) {
+          const scope = target.getAttribute('data-geo-scope');
+          if (scope) initGeoScope(scope);
+          return;
+        }
+        if (target.classList.contains('js-geo-department')) {
+          const scope = target.getAttribute('data-geo-scope');
+          if (!scope) return;
+          if (!(target instanceof HTMLSelectElement)) return;
+          const municipality = root.querySelector(`.js-geo-municipality[data-geo-scope=\"${scope}\"]`);
+          if (!(municipality instanceof HTMLSelectElement)) return;
+          const selectedDepartmentCode = normalizeCode(target.value || '');
+          const muns = GEO_MUNICIPALITIES.filter((item) => matchesCode(item.departmentCode, selectedDepartmentCode));
+          fillSelect(municipality, muns, '');
+          syncMunicipalityName(scope);
+          return;
+        }
+        if (target.classList.contains('js-geo-municipality')) {
+          const scope = target.getAttribute('data-geo-scope');
+          if (scope) syncMunicipalityName(scope);
+        }
+      });
+
+      root.addEventListener('submit', (event) => {
+        const form = event.target instanceof HTMLFormElement ? event.target : null;
+        if (!form) return;
+        const municipalities = Array.from(form.querySelectorAll('.js-geo-municipality'));
+        municipalities.forEach((el) => {
+          if (!(el instanceof HTMLSelectElement)) return;
+          const scope = el.getAttribute('data-geo-scope');
+          if (scope) syncMunicipalityName(scope);
+        });
+      });
+      }
+
+      const syncConvCatalogHidden = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const disciplineChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-discipline-check'));
+        const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check'));
+        const disciplinesHidden = catalogRoot.querySelector('.js-conv-disciplines-hidden');
+        const eventsHidden = catalogRoot.querySelector('.js-conv-events-hidden');
+        if (!(disciplinesHidden instanceof HTMLTextAreaElement) || !(eventsHidden instanceof HTMLTextAreaElement)) return;
+
+        const selectedDisciplines = disciplineChecks
+          .filter((el) => el instanceof HTMLInputElement && el.checked)
+          .map((el) => el instanceof HTMLInputElement ? el.value : '')
+          .filter(Boolean);
+        const selectedEvents = eventChecks
+          .filter((el) => el instanceof HTMLInputElement && el.checked)
+          .map((el) => el instanceof HTMLInputElement ? el.value : '')
+          .filter(Boolean);
+
+        disciplinesHidden.value = selectedDisciplines.join('\n');
+        eventsHidden.value = selectedEvents.join('\n');
+      };
+
+      const getConvSelectedDisciplines = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return new Set();
+        const disciplineChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-discipline-check'));
+        return new Set(
+          disciplineChecks
+            .filter((el) => el instanceof HTMLInputElement && el.checked)
+            .map((el) => (el instanceof HTMLInputElement ? String(el.value || '').trim() : ''))
+            .filter(Boolean)
+        );
+      };
+
+      const updateConvDisciplineQuickButtons = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const selectedDisciplineSet = getConvSelectedDisciplines(catalogRoot);
+        const quickButtons = Array.from(catalogRoot.querySelectorAll('.js-conv-select-discipline-events'));
+        quickButtons.forEach((btn) => {
+          if (!(btn instanceof HTMLElement)) return;
+          const discipline = String(btn.getAttribute('data-discipline') || '').trim();
+          const enabled = selectedDisciplineSet.has(discipline);
+          btn.hidden = !enabled;
+          if (btn instanceof HTMLButtonElement) btn.disabled = !enabled;
+        });
+      };
+
+      const applyConvCatalogDisciplineFilter = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check'));
+        const selectedDisciplineSet = getConvSelectedDisciplines(catalogRoot);
+
+        eventChecks.forEach((el) => {
+          if (!(el instanceof HTMLInputElement)) return;
+          const disciplineName = String(el.getAttribute('data-discipline') || '').trim();
+          const eventRow = (el.closest('label') || el.parentElement);
+          const visible = selectedDisciplineSet.size > 0 && selectedDisciplineSet.has(disciplineName);
+          el.disabled = !visible;
+          el.dataset.hiddenByDiscipline = visible ? '0' : '1';
+          if (eventRow instanceof HTMLElement) eventRow.hidden = !visible;
+          if (!visible) el.checked = false;
+        });
+
+        updateConvDisciplineQuickButtons(catalogRoot);
+        syncConvCatalogHidden(catalogRoot);
+      };
+
+      const initConvCatalog = (catalogRoot) => {
+        if (!(catalogRoot instanceof HTMLElement)) return;
+        const disciplinesHidden = catalogRoot.querySelector('.js-conv-disciplines-hidden');
+        const eventsHidden = catalogRoot.querySelector('.js-conv-events-hidden');
+        const disciplineChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-discipline-check'));
+        const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check'));
+        if (!(disciplinesHidden instanceof HTMLTextAreaElement) || !(eventsHidden instanceof HTMLTextAreaElement)) return;
+
+        const selectedDisciplines = new Set(
+          String(disciplinesHidden.value || '')
+            .split(/\r?\n/)
+            .map((item) => item.trim())
+            .filter(Boolean)
+        );
+        const selectedEvents = new Set(
+          String(eventsHidden.value || '')
+            .split(/\r?\n/)
+            .map((item) => item.trim())
+            .filter(Boolean)
+        );
+
+        disciplineChecks.forEach((el) => {
+          if (!(el instanceof HTMLInputElement)) return;
+          el.checked = selectedDisciplines.has(el.value);
+        });
+        eventChecks.forEach((el) => {
+          if (!(el instanceof HTMLInputElement)) return;
+          el.checked = selectedEvents.has(el.value);
+        });
+        applyConvCatalogDisciplineFilter(catalogRoot);
+      };
+
+      const refreshAllConvCatalogs = () => {
+        root.querySelectorAll('.js-conv-catalog').forEach((catalogRoot) => initConvCatalog(catalogRoot));
+      };
+
+      const initAllConvCatalogs = () => {
+        refreshAllConvCatalogs();
+        setTimeout(() => refreshAllConvCatalogs(), 0);
+      };
+
+      if (!baseState.handlersBound) {
+      root.addEventListener('change', (event) => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        if (!target) return;
+        if (target.classList.contains('js-conv-discipline-check') || target.classList.contains('js-conv-event-check')) {
+          const catalogRoot = target.closest('.js-conv-catalog');
+          if (catalogRoot) applyConvCatalogDisciplineFilter(catalogRoot);
+        }
+      });
+
       root.addEventListener('click', (event) => {
         const targetEl = event.target instanceof HTMLElement ? event.target : null;
         if (!targetEl) return;
@@ -2898,6 +4132,14 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           return;
         }
 
+        const createAthleteToggle = targetEl.closest('#toggle-create-athlete');
+        if (createAthleteToggle) {
+          const panel = root.querySelector('#create-athlete-panel');
+          if (!panel) return;
+          panel.classList.toggle('hidden');
+          return;
+        }
+
         const addButton = targetEl.closest('.js-add-row');
         if (addButton) {
           const target = addButton.getAttribute('data-target');
@@ -2910,6 +4152,66 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           if (!template || !container) return;
           const fragment = template.content.cloneNode(true);
           container.appendChild(fragment);
+          refreshAllConvCatalogs();
+          return;
+        }
+
+        const selectAllDisciplineBtn = targetEl.closest('.js-conv-select-discipline-events');
+        if (selectAllDisciplineBtn instanceof HTMLElement) {
+          if (selectAllDisciplineBtn instanceof HTMLButtonElement && selectAllDisciplineBtn.disabled) return;
+          const discipline = String(selectAllDisciplineBtn.getAttribute('data-discipline') ?? '').trim();
+          if (!discipline) return;
+          const catalogRoot = selectAllDisciplineBtn.closest('.js-conv-catalog');
+          if (!catalogRoot) return;
+          const disciplineChecks = catalogRoot.querySelectorAll('.js-conv-discipline-check');
+          disciplineChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            if (el.value === discipline) el.checked = true;
+          });
+          const eventChecks = catalogRoot.querySelectorAll('.js-conv-event-check');
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            if (String(el.getAttribute('data-discipline') ?? '') === discipline) el.checked = true;
+          });
+          applyConvCatalogDisciplineFilter(catalogRoot);
+          return;
+        }
+
+        const selectVisibleEventsBtn = targetEl.closest('.js-conv-select-visible-events');
+        if (selectVisibleEventsBtn instanceof HTMLElement) {
+          const catalogRoot = selectVisibleEventsBtn.closest('.js-conv-catalog');
+          if (!catalogRoot) return;
+          applyConvCatalogDisciplineFilter(catalogRoot);
+          const eventChecks = catalogRoot.querySelectorAll('.js-conv-event-check');
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            const eventRow = (el.closest('label') || el.parentElement);
+            const isVisible = el.dataset.hiddenByDiscipline !== '1' && !(eventRow instanceof HTMLElement && eventRow.hidden);
+            if (isVisible) el.checked = true;
+          });
+          syncConvCatalogHidden(catalogRoot);
+          return;
+        }
+
+        const clearVisibleEventsBtn = targetEl.closest('.js-conv-clear-visible-events');
+        if (clearVisibleEventsBtn instanceof HTMLElement) {
+          const catalogRoot = clearVisibleEventsBtn.closest('.js-conv-catalog');
+          if (!catalogRoot) return;
+          applyConvCatalogDisciplineFilter(catalogRoot);
+          const eventChecks = catalogRoot.querySelectorAll('.js-conv-event-check');
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            const eventRow = (el.closest('label') || el.parentElement);
+            const isVisible = el.dataset.hiddenByDiscipline !== '1' && !(eventRow instanceof HTMLElement && eventRow.hidden);
+            if (isVisible) el.checked = false;
+          });
+          syncConvCatalogHidden(catalogRoot);
+          return;
+        }
+
+        if (targetEl.closest('.js-conv-discipline-check')) {
+          const catalogRoot = targetEl.closest('.js-conv-catalog');
+          if (catalogRoot) applyConvCatalogDisciplineFilter(catalogRoot);
           return;
         }
 
@@ -2922,6 +4224,222 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         if (container.querySelectorAll('.js-repeat-item').length <= 1) return;
         item.remove();
       });
+
+      document.addEventListener('astro:page-load', () => {
+        initAllGeoScopes();
+        initAllConvCatalogs();
+      });
+      baseState.handlersBound = true;
+      }
+
+      initAllGeoScopes();
+      initAllConvCatalogs();
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        if (globalThis.__adminConvCatalogV3Bound === true) return;
+        globalThis.__adminConvCatalogV3Bound = true;
+
+        const norm = (value) => String(value || '').trim().toLowerCase();
+
+        const bindCatalog = (catalogRoot) => {
+          if (!(catalogRoot instanceof HTMLElement)) return;
+          if (catalogRoot.dataset.convCatalogV2Bound === '1') return;
+          catalogRoot.dataset.convCatalogV2Bound = '1';
+
+          const disciplineSelect = catalogRoot.querySelector('.js-conv-discipline-select-v3');
+          const eventChecks = Array.from(catalogRoot.querySelectorAll('.js-conv-event-check-v3'));
+          const selectVisibleBtn = catalogRoot.querySelector('.js-conv-select-visible-events-v3');
+          const clearVisibleBtn = catalogRoot.querySelector('.js-conv-clear-visible-events-v3');
+          const disciplinesHidden = catalogRoot.querySelector('.js-conv-disciplines-hidden-v3');
+          const eventsHidden = catalogRoot.querySelector('.js-conv-events-hidden-v3');
+          const selectedCount = catalogRoot.querySelector('.js-conv-events-count-v3');
+
+          if (
+            !(disciplineSelect instanceof HTMLSelectElement) ||
+            !(disciplinesHidden instanceof HTMLTextAreaElement) ||
+            !(eventsHidden instanceof HTMLTextAreaElement)
+          ) return;
+
+          const syncHidden = () => {
+            const selectedDiscipline = String(disciplineSelect.value || '').trim();
+            const selectedEvents = eventChecks
+              .filter((el) => el instanceof HTMLInputElement && el.checked)
+              .map((el) => (el instanceof HTMLInputElement ? String(el.value || '').trim() : ''))
+              .filter(Boolean);
+            disciplinesHidden.value = selectedDiscipline ? selectedDiscipline : '';
+            eventsHidden.value = selectedEvents.join('\n');
+            if (selectedCount instanceof HTMLElement) selectedCount.textContent = String(selectedEvents.length);
+          };
+
+          const refresh = () => {
+            const selectedDiscipline = norm(disciplineSelect.value);
+
+            eventChecks.forEach((el) => {
+              if (!(el instanceof HTMLInputElement)) return;
+              const row = el.closest('label') || el.parentElement;
+              const discipline = norm(el.getAttribute('data-discipline'));
+              const visible = !selectedDiscipline || discipline === selectedDiscipline;
+              el.disabled = !visible;
+              if (row instanceof HTMLElement) {
+                row.style.display = visible ? '' : 'none';
+                row.setAttribute('aria-hidden', visible ? 'false' : 'true');
+              }
+            });
+
+            syncHidden();
+          };
+
+          const initFromHidden = () => {
+            const selectedDiscipline = String(disciplinesHidden.value || '')
+              .split(/\r?\n/)
+              .map((item) => String(item || '').trim())
+              .find(Boolean) || '';
+            const selectedEvents = new Set(
+              String(eventsHidden.value || '')
+                .split(/\r?\n/)
+                .map((item) => norm(item))
+                .filter(Boolean)
+            );
+
+            disciplineSelect.value = selectedDiscipline;
+            eventChecks.forEach((el) => {
+              if (!(el instanceof HTMLInputElement)) return;
+              el.checked = selectedEvents.has(norm(el.value));
+            });
+            refresh();
+          };
+
+          disciplineSelect.addEventListener('change', (event) => {
+            event.stopPropagation();
+            refresh();
+          });
+
+          eventChecks.forEach((el) => {
+            if (!(el instanceof HTMLInputElement)) return;
+            el.addEventListener('change', (event) => {
+              event.stopPropagation();
+              syncHidden();
+            });
+            el.addEventListener('click', (event) => event.stopPropagation());
+          });
+
+          if (selectVisibleBtn instanceof HTMLButtonElement) {
+            selectVisibleBtn.addEventListener('click', (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              refresh();
+              eventChecks.forEach((ev) => {
+                if (!(ev instanceof HTMLInputElement)) return;
+                if (!ev.disabled) ev.checked = true;
+              });
+              syncHidden();
+            });
+          }
+
+          if (clearVisibleBtn instanceof HTMLButtonElement) {
+            clearVisibleBtn.addEventListener('click', (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              refresh();
+              eventChecks.forEach((ev) => {
+                if (!(ev instanceof HTMLInputElement)) return;
+                if (!ev.disabled) ev.checked = false;
+              });
+              syncHidden();
+            });
+          }
+
+          initFromHidden();
+        };
+
+        const bindAll = () => {
+          document.querySelectorAll('.js-conv-catalog-v3').forEach((item) => bindCatalog(item));
+        };
+
+        bindAll();
+        setTimeout(bindAll, 0);
+
+        const observer = new MutationObserver(() => bindAll());
+        observer.observe(document.body, { childList: true, subtree: true });
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const pickerState = globalThis.__adminDisciplinePickerState || (globalThis.__adminDisciplinePickerState = { handlersBound: false });
+
+        const syncCount = (root) => {
+          if (!(root instanceof HTMLElement)) return;
+          const countEl = root.querySelector('.js-discipline-count');
+          if (!(countEl instanceof HTMLElement)) return;
+          const checked = root.querySelectorAll('input[name="disciplines"]:checked').length;
+          countEl.textContent = String(checked);
+        };
+
+        const closePanel = (root) => {
+          const panel = root.querySelector('.js-discipline-panel');
+          const toggle = root.querySelector('.js-discipline-toggle');
+          if (panel instanceof HTMLElement) panel.classList.add('hidden');
+          if (toggle instanceof HTMLButtonElement) toggle.setAttribute('aria-expanded', 'false');
+        };
+
+        const openPanel = (root) => {
+          const panel = root.querySelector('.js-discipline-panel');
+          const toggle = root.querySelector('.js-discipline-toggle');
+          if (panel instanceof HTMLElement) panel.classList.remove('hidden');
+          if (toggle instanceof HTMLButtonElement) toggle.setAttribute('aria-expanded', 'true');
+        };
+
+        const bindPicker = (root) => {
+          if (!(root instanceof HTMLElement)) return;
+          if (root.dataset.boundDisciplinesPicker === '1') return;
+          root.dataset.boundDisciplinesPicker = '1';
+
+          const toggle = root.querySelector('.js-discipline-toggle');
+          const panel = root.querySelector('.js-discipline-panel');
+          if (!(toggle instanceof HTMLButtonElement) || !(panel instanceof HTMLElement)) return;
+
+          toggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const isOpen = !panel.classList.contains('hidden');
+            if (isOpen) closePanel(root);
+            else openPanel(root);
+          });
+
+          root.querySelectorAll('input[name="disciplines"]').forEach((input) => {
+            input.addEventListener('change', () => syncCount(root));
+          });
+
+          syncCount(root);
+        };
+
+        const bindAll = () => {
+          document.querySelectorAll('.js-discipline-picker').forEach((root) => bindPicker(root));
+        };
+
+        if (!pickerState.handlersBound) {
+          document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            document.querySelectorAll('.js-discipline-picker').forEach((root) => {
+              if (!(root instanceof HTMLElement)) return;
+              if (!root.contains(target)) closePanel(root);
+            });
+          });
+
+          document.addEventListener('astro:page-load', () => {
+            bindAll();
+            setTimeout(bindAll, 0);
+          });
+          pickerState.handlersBound = true;
+        }
+
+        bindAll();
+        setTimeout(bindAll, 0);
+      })();
     </script>
   </AdminShell>
 </BaseLayout>
+

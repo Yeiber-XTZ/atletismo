@@ -181,9 +181,47 @@ CREATE TABLE IF NOT EXISTS athletes (
   gender TEXT,
   birthdate DATE,
   club TEXT,
+  photo_url TEXT,
   category TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS document TEXT;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS document_type TEXT DEFAULT 'CC';
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS municipality TEXT;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS coach TEXT;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS eps TEXT;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS emergency_contact TEXT;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS photo_url TEXT;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS club_id INTEGER REFERENCES clubs(id) ON DELETE SET NULL;
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
+ALTER TABLE athletes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+CREATE UNIQUE INDEX IF NOT EXISTS uq_athletes_document ON athletes(document) WHERE document IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS athlete_disciplines (
+  id SERIAL PRIMARY KEY,
+  athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+  discipline TEXT NOT NULL,
+  specialty_level TEXT,
+  personal_best TEXT,
+  personal_best_date DATE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (athlete_id, discipline)
+);
+
+CREATE TABLE IF NOT EXISTS club_athletes (
+  club_id INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+  joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status TEXT NOT NULL DEFAULT 'active',
+  PRIMARY KEY (club_id, athlete_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_athlete_disciplines_athlete_id ON athlete_disciplines(athlete_id);
+CREATE INDEX IF NOT EXISTS idx_club_athletes_club_id ON club_athletes(club_id);
+CREATE INDEX IF NOT EXISTS idx_club_athletes_athlete_id ON club_athletes(athlete_id);
 
 -- Marks / records
 CREATE TABLE IF NOT EXISTS marks (
@@ -260,10 +298,14 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   published_date DATE,
   tags JSONB NOT NULL DEFAULT '[]'::jsonb,
   image_url TEXT,
+  video_url TEXT,
   body JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE IF EXISTS blog_posts
+  ADD COLUMN IF NOT EXISTS video_url TEXT;
 
 -- Official documents (PDFs, images, etc.)
 CREATE TABLE IF NOT EXISTS documents (
@@ -293,6 +335,7 @@ CREATE TABLE IF NOT EXISTS convocatorias (
   category TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'Próximamente',
   status_mode TEXT NOT NULL DEFAULT 'auto',
+  max_events_per_athlete INTEGER NOT NULL DEFAULT 1,
   open_date DATE,
   close_date DATE,
   location TEXT NOT NULL DEFAULT '',
@@ -337,7 +380,18 @@ CREATE TABLE IF NOT EXISTS postulations (
 CREATE INDEX IF NOT EXISTS idx_postulations_club_id ON postulations(club_id);
 CREATE INDEX IF NOT EXISTS idx_postulations_status ON postulations(status);
 CREATE INDEX IF NOT EXISTS idx_postulations_created_at ON postulations(created_at);
-CREATE INDEX IF NOT EXISTS idx_postulations_submitted_by ON postulations(submitted_by_user_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'postulations'
+      AND column_name = 'submitted_by_user_id'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_postulations_submitted_by ON postulations(submitted_by_user_id)';
+  END IF;
+END $$;
 
 -- Clubs
 CREATE TABLE IF NOT EXISTS clubs (
@@ -390,8 +444,31 @@ CREATE INDEX IF NOT EXISTS idx_convocatorias_created_at ON convocatorias(created
 CREATE INDEX IF NOT EXISTS idx_convocatoria_categories_name ON convocatoria_categories(name);
 CREATE INDEX IF NOT EXISTS idx_competencias_date ON competencias(event_date);
 CREATE INDEX IF NOT EXISTS idx_clubs_name ON clubs(name);
-CREATE INDEX IF NOT EXISTS idx_rankings_municipality ON rankings(municipality);
-CREATE INDEX IF NOT EXISTS idx_rankings_club ON rankings(club);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'rankings'
+      AND column_name = 'municipality'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_rankings_municipality ON rankings(municipality)';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'rankings'
+      AND column_name = 'club'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_rankings_club ON rankings(club)';
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS assembly_meetings (
   id SERIAL PRIMARY KEY,
@@ -435,6 +512,79 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_notifications_target_role ON notifications(target_role);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_active ON notifications(is_active);
+
+CREATE TABLE IF NOT EXISTS catalog_sexes (
+  code TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS catalog_countries (
+  iso2 TEXT PRIMARY KEY,
+  iso3 TEXT,
+  code_num TEXT,
+  name TEXT NOT NULL,
+  short_name TEXT NOT NULL,
+  demonym TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS catalog_departments (
+  code TEXT PRIMARY KEY,
+  country_iso2 TEXT NOT NULL REFERENCES catalog_countries(iso2) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS catalog_municipalities (
+  code TEXT PRIMARY KEY,
+  department_code TEXT NOT NULL REFERENCES catalog_departments(code) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  is_capital BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS sport_catalogs (
+  code TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'INDIVIDUAL',
+  is_olympic BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS sport_disciplines (
+  id SERIAL PRIMARY KEY,
+  sport_code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (sport_code, name)
+);
+
+CREATE TABLE IF NOT EXISTS sport_events (
+  id SERIAL PRIMARY KEY,
+  sport_code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  short_name TEXT,
+  discipline_name TEXT NOT NULL,
+  gender TEXT NOT NULL DEFAULT 'TODOS',
+  unit TEXT NOT NULL DEFAULT '',
+  is_relay BOOLEAN NOT NULL DEFAULT FALSE,
+  is_team BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (sport_code, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_departments_country ON catalog_departments(country_iso2);
+CREATE INDEX IF NOT EXISTS idx_catalog_municipalities_department ON catalog_municipalities(department_code);
+CREATE INDEX IF NOT EXISTS idx_sport_catalogs_active_sort ON sport_catalogs(is_active, sort_order, name);
+CREATE INDEX IF NOT EXISTS idx_sport_disciplines_sport ON sport_disciplines(sport_code);
+CREATE INDEX IF NOT EXISTS idx_sport_events_sport ON sport_events(sport_code);
+CREATE INDEX IF NOT EXISTS idx_sport_events_discipline ON sport_events(sport_code, discipline_name);
 
 CREATE TABLE IF NOT EXISTS approval_requests (
   id BIGSERIAL PRIMARY KEY,
@@ -512,3 +662,15 @@ ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS lower_is_better BOOLEAN 
 ALTER TABLE IF EXISTS rankings ADD COLUMN IF NOT EXISTS source_result_id INTEGER REFERENCES results(id) ON DELETE SET NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rankings_ranking_key_unique ON rankings(ranking_key) WHERE ranking_key IS NOT NULL;
 ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS status_mode TEXT NOT NULL DEFAULT 'auto';
+ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS max_events_per_athlete INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS photo_url TEXT;
+ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS sex_code TEXT REFERENCES catalog_sexes(code) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS country_iso2 TEXT REFERENCES catalog_countries(iso2) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS department_code TEXT REFERENCES catalog_departments(code) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS athletes ADD COLUMN IF NOT EXISTS municipality_code TEXT REFERENCES catalog_municipalities(code) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS disciplines JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE IF EXISTS convocatorias ADD COLUMN IF NOT EXISTS events JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE IF EXISTS postulations ADD COLUMN IF NOT EXISTS athlete_id INTEGER REFERENCES athletes(id) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS postulations ADD COLUMN IF NOT EXISTS discipline TEXT NOT NULL DEFAULT '';
+ALTER TABLE IF EXISTS postulations ADD COLUMN IF NOT EXISTS event_name TEXT NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_postulations_athlete_id ON postulations(athlete_id);

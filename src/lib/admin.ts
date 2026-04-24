@@ -257,14 +257,15 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
       const c = normalizedInput[rowId - 1];
       await client.query(
         `INSERT INTO convocatorias
-          (id, title, category, status, status_mode, open_date, close_date, location, audience, description, requirements, categories, image_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+          (id, title, category, status, status_mode, max_events_per_athlete, open_date, close_date, location, audience, description, requirements, categories, disciplines, events, image_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          ON CONFLICT (id)
          DO UPDATE SET
            title = EXCLUDED.title,
            category = EXCLUDED.category,
            status = EXCLUDED.status,
            status_mode = EXCLUDED.status_mode,
+           max_events_per_athlete = EXCLUDED.max_events_per_athlete,
            open_date = EXCLUDED.open_date,
            close_date = EXCLUDED.close_date,
            location = EXCLUDED.location,
@@ -272,6 +273,8 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
            description = EXCLUDED.description,
            requirements = EXCLUDED.requirements,
            categories = EXCLUDED.categories,
+           disciplines = EXCLUDED.disciplines,
+           events = EXCLUDED.events,
            image_url = EXCLUDED.image_url,
            updated_at = NOW()`,
         [
@@ -280,6 +283,7 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
           c.category ?? '',
           c.status ?? 'Proximamente',
           c.statusMode ?? 'auto',
+          Math.max(1, Number((c as any).maxEventsPerAthlete ?? 1) || 1),
           c.openDate ? c.openDate : null,
           c.closeDate ? c.closeDate : null,
           c.location ?? '',
@@ -287,6 +291,8 @@ export async function upsertConvocatorias(input: Store['convocatorias']) {
           c.description ?? '',
           JSON.stringify(c.requirements ?? []),
           JSON.stringify(c.categories ?? []),
+          JSON.stringify((c as any).disciplines ?? []),
+          JSON.stringify((c as any).events ?? []),
           c.imageUrl ?? null
         ]
       );
@@ -546,36 +552,74 @@ export async function upsertBlogPosts(input: Store['blogPosts']) {
 
   try {
     await db.transaction(async (client) => {
+      const hasVideoUrlColumnRes = await client.query(
+        `SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = current_schema()
+            AND table_name = 'blog_posts'
+            AND column_name = 'video_url'
+        ) AS "hasColumn"`
+      );
+      const hasVideoUrlColumn = Boolean(hasVideoUrlColumnRes.rows[0]?.hasColumn);
       const keptSlugs: string[] = [];
       for (const p of input) {
         const slug = String(p.slug ?? '').trim();
         if (!slug) continue;
         keptSlugs.push(slug);
-
-        await client.query(
-          `INSERT INTO blog_posts (slug, type, title, excerpt, published_date, tags, image_url, body)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-           ON CONFLICT (slug)
-           DO UPDATE SET
-             type = EXCLUDED.type,
-             title = EXCLUDED.title,
-             excerpt = EXCLUDED.excerpt,
-             published_date = EXCLUDED.published_date,
-             tags = EXCLUDED.tags,
-             image_url = EXCLUDED.image_url,
-             body = EXCLUDED.body,
-             updated_at = NOW()`,
-          [
-            slug,
-            p.type ?? 'Tecnico',
-            p.title,
-            p.excerpt ?? '',
-            p.date ? p.date : null,
-            JSON.stringify(Array.isArray(p.tags) ? p.tags : []),
-            p.imageUrl ?? null,
-            JSON.stringify(Array.isArray(p.body) ? p.body : [])
-          ]
-        );
+        if (hasVideoUrlColumn) {
+          await client.query(
+            `INSERT INTO blog_posts (slug, type, title, excerpt, published_date, tags, image_url, video_url, body)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             ON CONFLICT (slug)
+             DO UPDATE SET
+               type = EXCLUDED.type,
+               title = EXCLUDED.title,
+               excerpt = EXCLUDED.excerpt,
+               published_date = EXCLUDED.published_date,
+               tags = EXCLUDED.tags,
+               image_url = EXCLUDED.image_url,
+               video_url = EXCLUDED.video_url,
+               body = EXCLUDED.body,
+               updated_at = NOW()`,
+            [
+              slug,
+              p.type ?? 'Tecnico',
+              p.title,
+              p.excerpt ?? '',
+              p.date ? p.date : null,
+              JSON.stringify(Array.isArray(p.tags) ? p.tags : []),
+              p.imageUrl ?? null,
+              p.videoUrl ?? null,
+              JSON.stringify(Array.isArray(p.body) ? p.body : [])
+            ]
+          );
+        } else {
+          await client.query(
+            `INSERT INTO blog_posts (slug, type, title, excerpt, published_date, tags, image_url, body)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+             ON CONFLICT (slug)
+             DO UPDATE SET
+               type = EXCLUDED.type,
+               title = EXCLUDED.title,
+               excerpt = EXCLUDED.excerpt,
+               published_date = EXCLUDED.published_date,
+               tags = EXCLUDED.tags,
+               image_url = EXCLUDED.image_url,
+               body = EXCLUDED.body,
+               updated_at = NOW()`,
+            [
+              slug,
+              p.type ?? 'Tecnico',
+              p.title,
+              p.excerpt ?? '',
+              p.date ? p.date : null,
+              JSON.stringify(Array.isArray(p.tags) ? p.tags : []),
+              p.imageUrl ?? null,
+              JSON.stringify(Array.isArray(p.body) ? p.body : [])
+            ]
+          );
+        }
       }
 
       if (keptSlugs.length === 0) {

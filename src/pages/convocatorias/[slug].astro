@@ -6,6 +6,8 @@ import { getHomeData } from '../../lib/content';
 import { slugify } from '../../lib/slug';
 import { getClubByOwnerUserId } from '../../lib/clubs';
 import { hasPermission } from '../../lib/rbac';
+import { listAthletes } from '../../lib/athletes-admin';
+import { listAthleticsCatalogs } from '../../lib/catalogs';
 
 const data = await getHomeData();
 const { settings, convocatorias } = data;
@@ -23,50 +25,117 @@ if (!effectiveClubId && user?.role === 'CLUB' && user?.id) {
 
 const postulationErrorMessage =
   error === 'duplicate'
-    ? 'Ese atleta ya fue postulado por tu club en esta convocatoria.'
-    : error === 'not_open'
-      ? 'La convocatoria aún no está habilitada para postulaciones.'
-    : error === 'closed'
-      ? 'La convocatoria está cerrada y ya no admite nuevas postulaciones.'
-      : error === 'not_found'
-        ? 'La convocatoria no fue encontrada.'
-        : error
-          ? 'No se pudo enviar la postulación. Verifica los datos.'
-          : '';
+    ? 'Ese atleta ya fue postulado en esa misma prueba para esta convocatoria.'
+    : error === 'max_events_reached'
+      ? 'El atleta ya alcanzó el maximo de pruebas permitidas por esta convocatoria.'
+    : error === 'athlete_not_found'
+      ? 'El atleta seleccionado no pertenece a tu club.'
+      : error === 'invalid_event'
+        ? 'Debes seleccionar una prueba valida.'
+        : error === 'discipline_disabled'
+          ? 'La disciplina del atleta no esta habilitada en esta convocatoria.'
+          : error === 'event_disabled'
+            ? 'La prueba seleccionada no esta habilitada en esta convocatoria.'
+              : error === 'athlete_discipline_mismatch'
+                ? 'El atleta no tiene registrada la disciplina de la prueba seleccionada.'
+                : error === 'invalid_batch'
+                  ? 'La lista de postulaciones esta vacia o tiene datos invalidos.'
+                : error === 'not_open'
+                  ? 'La convocatoria aun no esta habilitada para postulaciones.'
+                : error === 'closed'
+                  ? 'La convocatoria esta cerrada y ya no admite nuevas postulaciones.'
+                  : error === 'not_found'
+                    ? 'La convocatoria no fue encontrada.'
+                    : error
+                      ? 'No se pudo enviar la postulacion. Verifica los datos.'
+                      : '';
+const postulationSuccessMessage = postulated
+  ? (Number(postulated) > 1 ? `Se enviaron ${postulated} postulaciones correctamente.` : 'Postulacion enviada correctamente.')
+  : '';
 
 if (!convocatoria) {
   Astro.response.status = 404;
 }
+
+const clubAthletes = user?.role === 'CLUB' && effectiveClubId
+  ? await listAthletes({ clubId: effectiveClubId, status: 'active' })
+  : [];
+
+const athleticsCatalog = await listAthleticsCatalogs();
+const convocatoriaDisciplines = Array.isArray((convocatoria as any)?.disciplines)
+  ? (convocatoria as any).disciplines.map((item: string) => String(item).trim()).filter(Boolean)
+  : [];
+const convocatoriaEvents = Array.isArray((convocatoria as any)?.events)
+  ? (convocatoria as any).events.map((item: string) => String(item).trim()).filter(Boolean)
+  : [];
+const fallbackAthleticsEvents = convocatoriaEvents.length === 0 ? athleticsCatalog.events.map((item) => item.name) : [];
+const eventOptions = convocatoriaEvents.length > 0 ? convocatoriaEvents : fallbackAthleticsEvents;
+const normalizeText = (value: string) =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+const convocatoriaDisciplineNormSet = new Set(convocatoriaDisciplines.map((item) => normalizeText(item)).filter(Boolean));
+const athleticsEventMap = new Map(
+  (athleticsCatalog.events ?? []).map((item) => [String(item.name ?? '').trim().toLowerCase(), item])
+);
+const eventOptionsPayload = eventOptions
+  .map((eventName) => {
+    const eventItem = athleticsEventMap.get(String(eventName).toLowerCase());
+    const discipline = String(eventItem?.disciplineName ?? '').trim();
+    const gender = String((eventItem as any)?.gender ?? '').trim();
+    return {
+      name: String(eventName),
+      discipline,
+      gender
+    };
+  })
+  .filter((item) => {
+    if (convocatoriaEvents.length > 0) return true;
+    return !convocatoriaDisciplines.length || !item.discipline || convocatoriaDisciplineNormSet.has(normalizeText(item.discipline));
+  });
+const effectiveConvocatoriaDisciplineNormSet = (() => {
+  if (convocatoriaEvents.length > 0) {
+    const fromEvents = new Set(
+      eventOptionsPayload
+        .map((item) => normalizeText(item.discipline))
+        .filter(Boolean)
+    );
+    if (fromEvents.size > 0) return fromEvents;
+  }
+  return convocatoriaDisciplineNormSet;
+})();
+const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsPerAthlete ?? 1) || 1);
 ---
 <BaseLayout
-  title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Chocó`}
-  description="Detalle de convocatoria y requisitos de postulación."
+  title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Choco`}
+  description="Detalle de convocatoria y requisitos de postulacion."
 >
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
-  <main class="pt-[72px]">
-    <section class="page-hero">
-      <div class="container mx-auto px-6">
-        <nav class="page-breadcrumb">
-          <a href="/" class="page-breadcrumb-link">
+  <main class="convocatoria-page">
+    <section class="convocatoria-hero">
+      <img src={heroImage} alt={convocatoria?.title || 'Convocatoria'} class="convocatoria-hero-image" referrerpolicy="no-referrer" />
+      <div class="convocatoria-hero-overlay"></div>
+      <span class="hero-track hero-track-a" aria-hidden="true"></span>
+      <span class="hero-track hero-track-b" aria-hidden="true"></span>
+      <div class="container convocatoria-hero-content">
+        <nav class="convocatoria-breadcrumb">
+          <a href="/" class="convocatoria-breadcrumb-link">
             <span class="material-symbols-outlined text-sm">home</span>
             Inicio
           </a>
           <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <a href="/convocatorias" class="page-breadcrumb-link">Convocatorias</a>
+          <a href="/convocatorias" class="convocatoria-breadcrumb-link">Convocatorias</a>
           <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <span class="page-breadcrumb-current">{convocatoria ? convocatoria.title : 'No encontrada'}</span>
+          <span class="convocatoria-breadcrumb-current">{convocatoria ? convocatoria.title : 'No encontrada'}</span>
         </nav>
-        <h1 class="page-title">{convocatoria ? convocatoria.title : 'Convocatoria no encontrada'}</h1>
-        <p class="page-subtitle">
-          {convocatoria ? convocatoria.description : 'La convocatoria solicitada no existe o fue retirada.'}
-        </p>
-      </div>
-    </section>
 
     <section class="page-section">
       <div class="container mx-auto px-6">
         {convocatoria ? (
+          <>
           <div class="grid gap-10 md:grid-cols-3">
             <div class="md:col-span-2">
               <h2 class="section-heading">Requisitos</h2>
@@ -76,7 +145,7 @@ if (!convocatoria) {
                 ))}
               </ul>
 
-              <h2 class="section-heading mt-10">Categorías</h2>
+              <h2 class="section-heading mt-10">Categorias</h2>
               <div class="flex flex-wrap gap-2">
                 {convocatoria.categories.map((c) => (
                   <span class="rounded-full bg-[#f1f5f9] px-3 py-1 text-sm font-semibold text-[#334155]">{c}</span>
@@ -95,55 +164,44 @@ if (!convocatoria) {
                   {convocatoria.status}
                 </span>
               </div>
-              <div class="mt-6 space-y-3 text-sm text-[var(--text-secondary)]">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-base">event</span>
-                  Apertura: <strong class="text-[#0f172a]">{convocatoria.openDate}</strong>
+              <div class="convocatoria-quick-dates">
+                <div>
+                  <span class="material-symbols-outlined">event_upcoming</span>
+                  <strong>Apertura</strong>
+                  <p>{convocatoria.openDate}</p>
+                </div>
+                <div>
+                  <span class="material-symbols-outlined">event_busy</span>
+                  <strong>Cierre</strong>
+                  <p>{convocatoria.closeDate}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-base">event_busy</span>
-                  Cierre: <strong class="text-[#0f172a]">{convocatoria.closeDate}</strong>
+                  <span class="material-symbols-outlined text-base">rule</span>
+                  Maximo pruebas por deportista: <strong class="text-[#0f172a]">{maxEventsPerAthlete}</strong>
                 </div>
               </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
 
               <div class="mt-8 flex flex-col gap-3">
-                {postulated ? (
-                  <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    Postulación enviada correctamente.
-                  </div>
-                ) : null}
-                {error ? (
-                  <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    {postulationErrorMessage}
-                  </div>
-                ) : null}
-
                 {user?.role === 'CLUB' ? (
                   effectiveClubId ? (
-                    <form method="POST" action="/api/dashboard/club/postulaciones" encType="multipart/form-data" class="grid gap-3">
-                      <input type="hidden" name="clubId" value={String(effectiveClubId)} />
-                      <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
-                      <input type="hidden" name="convocatoriaSlug" value={slug} />
-                      <label class="form-label">Nombre del atleta a postular *</label>
-                      <input class="form-input" name="athleteName" placeholder="Nombre completo del atleta" required />
-                      <label class="form-label">Soporte documental (opcional)</label>
-                      <input class="form-input" type="file" name="supportFile" accept=".pdf,.jpg,.jpeg,.png,.webp" />
-                      <label class="form-label">Observaciones</label>
-                      <textarea class="form-input min-h-[90px]" name="notes" placeholder="Opcional"></textarea>
-                      <button type="submit" class="btn-primary">
-                        <span class="material-symbols-outlined">send</span>
-                        Postular atleta
-                      </button>
-                    </form>
+                    <a href="#postulacion-club-panel" class="btn-primary">
+                      <span class="material-symbols-outlined">how_to_reg</span>
+                      Abrir panel de postulación
+                    </a>
                   ) : (
-                    <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
+                    <div class="alert warn">
                       <span class="material-symbols-outlined text-base align-middle mr-1">warning</span>
                       Tu cuenta no tiene un club asignado. Contacta al administrador de la Liga.
                     </div>
                   )
                 ) : user?.role === 'SUPERADMIN' || user?.role === 'ADMIN' || user?.role === 'LIGA' ? (
-                  <div class="grid gap-3">
-                    <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <div class="post-actions">
+                    <div class="alert info">
                       <span class="material-symbols-outlined text-base align-middle mr-1">admin_panel_settings</span>
                       Como administrador puedes revisar y gestionar todas las postulaciones a esta convocatoria.
                     </div>
@@ -153,34 +211,160 @@ if (!convocatoria) {
                     </a>
                   </div>
                 ) : user && (hasPermission(user, 'assembly:self_panel') || hasPermission(user, 'asambleas:manage')) ? (
-                  <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+                  <div class="alert info">
                     <span class="material-symbols-outlined text-base align-middle mr-1">visibility</span>
-                    Puedes consultar el estado de esta convocatoria desde tu <a href="/admin?tab=convocatorias" class="font-semibold underline">panel</a>.
+                    Puedes consultar el estado de esta convocatoria desde tu <a href="/admin?tab=convocatorias" class="inline-link">panel</a>.
                   </div>
                 ) : (
-                  /* Visitante anónimo */
                   <>
                     <p class="text-sm text-[var(--text-secondary)]">Los clubes afiliados pueden postular atletas a esta convocatoria.</p>
                     <a href={`/login?next=${encodeURIComponent(`/convocatorias/${slug}`)}`} class="btn-primary">
                       <span class="material-symbols-outlined">login</span>
-                      Iniciar sesión
+                      Iniciar sesion
                     </a>
                     <a href="/registro/club" class="btn-secondary">
                       <span class="material-symbols-outlined">person_add</span>
-                      Registro Atleta
+                      Registro Club
                     </a>
-                  </>
+                  </div>
                 )}
+
+                <p class="post-note">El estado de la postulaciÃ³n se consulta en el panel del club.</p>
               </div>
-              <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulación se consulta en el panel del club.</p>
+              <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulacion se consulta en el panel del club.</p>
             </aside>
           </div>
-        ) : (
-          <div class="rounded-2xl border border-[var(--border)] bg-white p-8">
-            <p class="text-[var(--text-secondary)]">Vuelve al listado de convocatorias para continuar.</p>
-            <div class="mt-6">
-              <a href="/convocatorias" class="btn-primary">Ver convocatorias</a>
+          {user?.role === 'CLUB' && effectiveClubId ? (
+            <section id="postulacion-club-panel" class="mt-8 rounded-2xl border border-[var(--border)] bg-white p-6">
+              <h3 class="text-lg font-bold text-[#0f172a] mb-4">Panel de Postulación de Deportistas</h3>
+              <form
+                method="POST"
+                action="/api/dashboard/club/postulaciones"
+                class="grid gap-4 lg:grid-cols-2 js-postulation-batch-form"
+                data-convocatoria-disciplines={Array.from(effectiveConvocatoriaDisciplineNormSet).join('|')}
+              >
+                <input type="hidden" name="clubId" value={String(effectiveClubId)} />
+                <input type="hidden" name="convocatoriaTitle" value={convocatoria.title} />
+                <input type="hidden" name="convocatoriaSlug" value={slug} />
+                <input type="hidden" name="entriesJson" value="[]" class="js-post-entries-json" />
+
+                <div class="space-y-3">
+                  <label class="form-label">Atleta *</label>
+                  <select class="form-input js-post-athlete">
+                    <option value="">Selecciona atleta</option>
+                    {clubAthletes.map((athlete) => (
+                      <option
+                        value={String(athlete.id)}
+                        data-disciplines={(Array.isArray(athlete.disciplines) ? athlete.disciplines : []).join('|')}
+                        data-sex-code={String(athlete.sexCode ?? athlete.gender ?? '')}
+                        data-club-name={String(athlete.clubName ?? '')}
+                      >
+                        {athlete.fullName} - {athlete.documentType} {athlete.document}
+                      </option>
+                    ))}
+                  </select>
+
+                  <label class="form-label">Prueba *</label>
+                  <div class="rounded-xl border border-gray-300 bg-gray-50 js-post-events-picker" data-max-events={String(maxEventsPerAthlete)}>
+                    <button
+                      type="button"
+                      class="js-post-events-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                      aria-expanded="false"
+                    >
+                      <span>Selección pruebas</span>
+                      <span class="js-post-events-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                    </button>
+                    <div class="js-post-events-panel hidden max-h-52 overflow-auto border-t border-gray-300 p-2">
+                      <div class="grid gap-1 js-post-events-list">
+                        {eventOptionsPayload.map((eventItem) => (
+                          <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-white">
+                            <input
+                              type="checkbox"
+                              class="js-post-event-check"
+                              value={eventItem.name}
+                              data-discipline={eventItem.discipline}
+                              data-gender={eventItem.gender}
+                            />
+                            <span>{eventItem.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-xs text-[var(--text-muted)]">Esta convocatoria permite hasta {maxEventsPerAthlete} prueba(s) por deportista.</p>
+                  <button type="button" class="btn-secondary js-post-add-item opacity-50 pointer-events-none" disabled>
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar a lista
+                  </button>
+                  <p class="js-post-warning hidden rounded-md border border-amber-200 bg-amber-50 px-2 py-2 text-xs text-amber-800"></p>
+                </div>
+
+                <div class="space-y-3 lg:col-span-1">
+                  <div class="rounded-lg border border-[var(--border)] bg-[#f8fafc] p-3">
+                    <div class="mb-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                      <span>Lista de postulaciones</span>
+                      <span><strong class="js-post-count">0</strong> seleccionadas</span>
+                    </div>
+                    <div class="overflow-x-auto js-post-list-wrapper hidden">
+                      <table class="min-w-full text-sm">
+                        <thead>
+                          <tr class="text-left text-gray-500">
+                            <th class="px-2 py-1">Deportista</th>
+                            <th class="px-2 py-1">Club</th>
+                            <th class="px-2 py-1 text-center">Pruebas</th>
+                            <th class="px-2 py-1 text-right">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody class="js-post-table-body"></tbody>
+                      </table>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] js-post-empty">No hay atletas/pruebas agregados.</p>
+                  </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                  <button type="submit" class="btn-primary js-post-submit w-full sm:w-auto" disabled>
+                    <span class="material-symbols-outlined">send</span>
+                    Enviar postulaciones
+                  </button>
+                </div>
+              </form>
+            </section>
+          ) : null}
+          <div class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/50 p-4 js-post-modal">
+            <div class="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl">
+              <div class="mb-3 flex items-center justify-between">
+                <h4 class="text-sm font-semibold text-gray-800 js-post-modal-title">Pruebas del deportista</h4>
+                <button type="button" class="rounded-md border border-gray-200 px-2 py-1 text-xs js-post-modal-close">Cerrar</button>
+              </div>
+              <div class="max-h-72 overflow-auto rounded-md border border-gray-200 p-2">
+                <ul class="list-disc pl-5 text-sm text-gray-700 js-post-modal-list"></ul>
+              </div>
             </div>
+          </div>
+          <div
+            class="fixed inset-0 z-[95] hidden items-center justify-center bg-black/50 p-4 js-post-result-modal"
+            data-message={postulationSuccessMessage || postulationErrorMessage}
+            data-type={postulationSuccessMessage ? 'success' : postulationErrorMessage ? 'error' : ''}
+          >
+            <div class="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+              <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined js-post-result-icon text-2xl">check_circle</span>
+                <div class="flex-1">
+                  <h4 class="text-base font-semibold text-[#0f172a] js-post-result-title">Resultado</h4>
+                  <p class="mt-1 text-sm text-gray-700 js-post-result-message"></p>
+                </div>
+              </div>
+              <div class="mt-4 flex justify-end">
+                <button type="button" class="rounded-md border border-gray-300 px-3 py-1.5 text-sm js-post-result-close">Entendido</button>
+              </div>
+            </div>
+          </div>
+          </>
+        ) : (
+          <div class="not-found-card">
+            <p>Vuelve al listado de convocatorias para continuar.</p>
+            <a href="/convocatorias" class="btn-primary">Ver convocatorias</a>
           </div>
         )}
       </div>
@@ -188,4 +372,887 @@ if (!convocatoria) {
   </main>
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
+  <script is:inline>
+    (() => {
+      const normalize = (value) => String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+      const parsePipeSet = (raw) =>
+        new Set(
+          String(raw || '')
+            .split(/[|,;\n\r]+/g)
+            .map((item) => normalize(item))
+            .filter(Boolean)
+        );
+
+      const initPostulationBatchForm = () => {
+        try {
+        const form = document.querySelector('.js-postulation-batch-form');
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.dataset.postBatchBound === '1') return;
+        form.dataset.postBatchBound = '1';
+
+        const athleteSelect = form.querySelector('.js-post-athlete');
+        const eventsPicker = form.querySelector('.js-post-events-picker');
+        const eventsToggle = form.querySelector('.js-post-events-toggle');
+        const eventsPanel = form.querySelector('.js-post-events-panel');
+        const eventsCount = form.querySelector('.js-post-events-count');
+        const eventChecks = Array.from(form.querySelectorAll('.js-post-event-check'));
+        const addBtn = form.querySelector('.js-post-add-item');
+        const entriesInput = form.querySelector('.js-post-entries-json');
+        const listTableWrapper = form.querySelector('.js-post-list-wrapper');
+        const tableBody = form.querySelector('.js-post-table-body');
+        const emptyText = form.querySelector('.js-post-empty');
+        const countEl = form.querySelector('.js-post-count');
+        const submitBtn = form.querySelector('.js-post-submit');
+        const warningEl = form.querySelector('.js-post-warning');
+        const modal = document.querySelector('.js-post-modal');
+        const modalTitle = document.querySelector('.js-post-modal-title');
+        const modalList = document.querySelector('.js-post-modal-list');
+        const modalClose = document.querySelector('.js-post-modal-close');
+        if (
+          !(athleteSelect instanceof HTMLSelectElement) ||
+          !(eventsPicker instanceof HTMLElement) ||
+          !(eventsToggle instanceof HTMLButtonElement) ||
+          !(eventsPanel instanceof HTMLElement) ||
+          !(eventsCount instanceof HTMLElement) ||
+          !(addBtn instanceof HTMLButtonElement) ||
+          !(entriesInput instanceof HTMLInputElement) ||
+          !(listTableWrapper instanceof HTMLElement) ||
+          !(tableBody instanceof HTMLElement) ||
+          !(emptyText instanceof HTMLElement) ||
+          !(countEl instanceof HTMLElement) ||
+          !(submitBtn instanceof HTMLButtonElement) ||
+          !(warningEl instanceof HTMLElement) ||
+          !(modal instanceof HTMLElement) ||
+          !(modalTitle instanceof HTMLElement) ||
+          !(modalList instanceof HTMLElement) ||
+          !(modalClose instanceof HTMLButtonElement)
+        ) return;
+
+        const maxEventsPerAthlete = Math.max(1, Number(eventsPicker.dataset.maxEvents ?? 1) || 1);
+        const convocatoriaDisciplines = parsePipeSet(form.dataset.convocatoriaDisciplines || '');
+        const athleteMap = new Map(
+          Array.from(athleteSelect.options)
+            .filter((opt) => String(opt.value || '').trim())
+            .map((opt) => [
+              String(opt.value),
+              {
+                label: String(opt.textContent || '').trim(),
+                fullName: String(opt.textContent || '').split(' - ')[0]?.trim() || String(opt.textContent || '').trim(),
+                clubName: String(opt.dataset.clubName || ''),
+                sexCode: normalize(opt.dataset.sexCode || ''),
+                disciplines: parsePipeSet(opt.dataset.disciplines || '')
+              }
+            ])
+        );
+        const allEvents = eventChecks
+          .filter((input) => input instanceof HTMLInputElement)
+          .map((input) => ({
+            input,
+            name: String(input.value || '').trim(),
+            discipline: normalize(input.dataset.discipline || ''),
+            gender: normalize(input.dataset.gender || '')
+          }));
+
+        const state = [];
+        const norm = normalize;
+
+        const genderBucket = (sexCode) => {
+          const value = norm(sexCode);
+          if (!value) return 'unknown';
+          if (value.includes('f') || value.includes('muj') || value.includes('femen')) return 'f';
+          if (value.includes('m') || value.includes('hom') || value.includes('mascul')) return 'm';
+          return 'unknown';
+        };
+
+        const eventMatchesGender = (eventGender, athleteSexCode) => {
+          const eg = norm(eventGender);
+          const ag = genderBucket(athleteSexCode);
+          if (!eg || eg === 'todos' || eg === 'mixto' || eg.includes('mix')) return true;
+          if (ag === 'f') return eg.includes('fem');
+          if (ag === 'm') return eg.includes('masc');
+          return true;
+        };
+        let pickerDisabled = true;
+
+        const setWarning = (message) => {
+          const text = String(message || '').trim();
+          if (!text) {
+            warningEl.textContent = '';
+            warningEl.classList.add('hidden');
+            return;
+          }
+          warningEl.textContent = text;
+          warningEl.classList.remove('hidden');
+        };
+
+        const setAddDisabled = (disabled) => {
+          addBtn.disabled = Boolean(disabled);
+          addBtn.classList.toggle('opacity-50', Boolean(disabled));
+          addBtn.classList.toggle('pointer-events-none', Boolean(disabled));
+        };
+
+        const setPickerOpen = (open) => {
+          eventsPanel.classList.toggle('hidden', !open);
+          eventsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+
+        const clearEventChecks = () => {
+          allEvents.forEach((item) => {
+            item.input.checked = false;
+          });
+        };
+
+        const getSelectedEventNames = () => {
+          return allEvents
+            .filter((item) => !item.input.disabled && item.input.checked)
+            .map((item) => item.name)
+            .filter(Boolean);
+        };
+
+        const syncEventsCount = () => {
+          eventsCount.textContent = String(getSelectedEventNames().length);
+        };
+
+        const syncAddButtonState = () => {
+          const hasAthlete = Boolean(String(athleteSelect.value || '').trim());
+          const hasEventsSelected = getSelectedEventNames().length > 0;
+          setAddDisabled(!hasAthlete || pickerDisabled || !hasEventsSelected);
+        };
+
+        const renderEventsByAthlete = () => {
+          const athleteId = String(athleteSelect.value || '');
+          const athlete = athleteMap.get(athleteId);
+          const disciplines = athlete?.disciplines instanceof Set ? athlete.disciplines : new Set();
+
+          clearEventChecks();
+          syncEventsCount();
+          if (!athleteId || !athlete) {
+            pickerDisabled = true;
+            allEvents.forEach((item) => {
+              const row = item.input.closest('label') || item.input.parentElement;
+              item.input.disabled = true;
+              if (row instanceof HTMLElement) row.style.display = '';
+            });
+            syncAddButtonState();
+            setWarning('Selecciona un deportista para ver sus pruebas habilitadas.');
+            return;
+          }
+
+          const hasEnabledDiscipline =
+            convocatoriaDisciplines.size === 0 ||
+            Array.from(disciplines).some(
+              (discipline) =>
+                convocatoriaDisciplines.has(discipline) ||
+                Array.from(convocatoriaDisciplines).some(
+                  (enabledDiscipline) =>
+                    discipline.includes(enabledDiscipline) || enabledDiscipline.includes(discipline)
+                )
+            );
+          if (!hasEnabledDiscipline) {
+            pickerDisabled = true;
+            allEvents.forEach((item) => {
+              const row = item.input.closest('label') || item.input.parentElement;
+              item.input.disabled = true;
+              if (row instanceof HTMLElement) row.style.display = 'none';
+            });
+            syncAddButtonState();
+            setWarning('La disciplina del deportista no está habilitada en esta convocatoria.');
+            return;
+          }
+
+          const allowedEvents = allEvents.filter((eventItem) => {
+            if (!eventItem.discipline) return false;
+            const disciplineMatch =
+              disciplines.has(eventItem.discipline) ||
+              Array.from(disciplines).some(
+                (discipline) => discipline.includes(eventItem.discipline) || eventItem.discipline.includes(discipline)
+              );
+            if (!disciplineMatch) return false;
+            return eventMatchesGender(eventItem.gender, athlete.sexCode);
+          });
+
+          allEvents.forEach((eventItem) => {
+            const row = eventItem.input.closest('label') || eventItem.input.parentElement;
+            const visible = allowedEvents.includes(eventItem);
+            eventItem.input.disabled = !visible;
+            eventItem.input.checked = false;
+            if (row instanceof HTMLElement) row.style.display = visible ? '' : 'none';
+          });
+
+          pickerDisabled = allowedEvents.length === 0;
+          syncEventsCount();
+          syncAddButtonState();
+          if (allowedEvents.length === 0) {
+            setWarning('No hay pruebas habilitadas para las disciplinas de este deportista.');
+          } else {
+            setWarning('');
+          }
+        };
+
+        const updateStateOutputs = () => {
+          entriesInput.value = JSON.stringify(
+            state.map((item) => ({ athleteId: Number(item.athleteId), eventName: item.eventName }))
+          );
+          countEl.textContent = String(state.length);
+          emptyText.classList.toggle('hidden', state.length > 0);
+          submitBtn.disabled = state.length === 0;
+        };
+
+        const renderList = () => {
+          tableBody.innerHTML = '';
+          const grouped = new Map();
+          state.forEach((item) => {
+            const key = String(item.athleteId);
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(item.eventName);
+          });
+
+          Array.from(grouped.entries()).forEach(([athleteId, eventNames]) => {
+            const athlete = athleteMap.get(String(athleteId));
+            const tr = document.createElement('tr');
+            tr.className = 'border-t border-gray-200';
+
+            const tdAthlete = document.createElement('td');
+            tdAthlete.className = 'px-2 py-2 text-gray-700';
+            tdAthlete.textContent = String(athlete?.fullName || athlete?.label || athleteId);
+
+            const tdClub = document.createElement('td');
+            tdClub.className = 'px-2 py-2 text-gray-600';
+            tdClub.textContent = String(athlete?.clubName || '-');
+
+            const tdCount = document.createElement('td');
+            tdCount.className = 'px-2 py-2 text-center';
+            const countBtn = document.createElement('button');
+            countBtn.type = 'button';
+            countBtn.className = 'rounded px-2 py-1 text-sm font-semibold text-blue-700 hover:bg-blue-50';
+            countBtn.textContent = String(eventNames.length);
+
+            const tdActions = document.createElement('td');
+            tdActions.className = 'px-2 py-2 text-right';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'rounded bg-red-50 px-2 py-1 text-[11px] text-red-700';
+            removeBtn.textContent = 'Quitar';
+            removeBtn.addEventListener('click', () => {
+              for (let i = state.length - 1; i >= 0; i -= 1) {
+                if (String(state[i].athleteId) === String(athleteId)) state.splice(i, 1);
+              }
+              renderList();
+              updateStateOutputs();
+            });
+
+            tdActions.appendChild(removeBtn);
+            tdCount.appendChild(countBtn);
+
+            tr.appendChild(tdAthlete);
+            tr.appendChild(tdClub);
+            tr.appendChild(tdCount);
+            tr.appendChild(tdActions);
+            tableBody.appendChild(tr);
+
+            countBtn.addEventListener('click', () => {
+              modalTitle.textContent = `Pruebas de ${String(athlete?.fullName || athlete?.label || athleteId)}`;
+              modalList.innerHTML = '';
+              eventNames.forEach((eventName) => {
+                const li = document.createElement('li');
+                li.textContent = String(eventName);
+                modalList.appendChild(li);
+              });
+              modal.classList.remove('hidden');
+              modal.classList.add('flex');
+            });
+          });
+
+          listTableWrapper.classList.toggle('hidden', grouped.size === 0);
+        };
+
+        athleteSelect.addEventListener('change', () => {
+          renderEventsByAthlete();
+        });
+        eventsToggle.addEventListener('click', (event) => {
+          event.preventDefault();
+          if (pickerDisabled) return;
+          const isOpen = !eventsPanel.classList.contains('hidden');
+          setPickerOpen(!isOpen);
+        });
+        allEvents.forEach((eventItem) => {
+          eventItem.input.addEventListener('change', () => {
+            if (maxEventsPerAthlete <= 1 && eventItem.input.checked) {
+              allEvents.forEach((other) => {
+                if (other !== eventItem) other.input.checked = false;
+              });
+            }
+            syncEventsCount();
+            syncAddButtonState();
+          });
+        });
+        document.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          if (!eventsPicker.contains(target)) setPickerOpen(false);
+        });
+        modalClose.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        });
+        modal.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          if (target === modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+          }
+        });
+        addBtn.addEventListener('click', () => {
+          const athleteId = String(athleteSelect.value || '').trim();
+          const selectedEventNames = getSelectedEventNames();
+          if (!athleteId || selectedEventNames.length === 0) return;
+
+          const athlete = athleteMap.get(athleteId);
+          if (!athlete) return;
+
+          let selectedCountForAthlete = state.filter((item) => String(item.athleteId) === athleteId).length;
+          let addedAny = false;
+
+          for (const eventName of selectedEventNames) {
+            if (selectedCountForAthlete >= maxEventsPerAthlete) {
+              setWarning(`Este deportista ya tiene ${maxEventsPerAthlete} prueba(s) en la lista.`);
+              break;
+            }
+
+            const exists = state.some((item) => String(item.athleteId) === athleteId && norm(item.eventName) === norm(eventName));
+            if (exists) continue;
+
+            state.push({
+              athleteId,
+              athleteLabel: String(athlete.label || athleteId),
+              eventName
+            });
+            selectedCountForAthlete += 1;
+            addedAny = true;
+          }
+
+          clearEventChecks();
+          syncEventsCount();
+          syncAddButtonState();
+          if (addedAny) setWarning('');
+          renderList();
+          updateStateOutputs();
+        });
+
+        renderEventsByAthlete();
+        renderList();
+        updateStateOutputs();
+      } catch (error) {
+        console.error('[convocatorias] postulation batch script failed', error);
+      }
+      };
+
+      initPostulationBatchForm();
+
+      const initPostulationResultModal = () => {
+        const modal = document.querySelector('.js-post-result-modal');
+        if (!(modal instanceof HTMLElement)) return;
+        if (modal.dataset.bound === '1') return;
+        modal.dataset.bound = '1';
+
+        const message = String(modal.dataset.message || '').trim();
+        const type = String(modal.dataset.type || '').trim();
+        if (!message || !type) return;
+
+        const titleEl = modal.querySelector('.js-post-result-title');
+        const messageEl = modal.querySelector('.js-post-result-message');
+        const iconEl = modal.querySelector('.js-post-result-icon');
+        const closeBtn = modal.querySelector('.js-post-result-close');
+        if (
+          !(titleEl instanceof HTMLElement) ||
+          !(messageEl instanceof HTMLElement) ||
+          !(iconEl instanceof HTMLElement) ||
+          !(closeBtn instanceof HTMLButtonElement)
+        ) return;
+
+        const isSuccess = type === 'success';
+        titleEl.textContent = isSuccess ? 'Postulación enviada' : 'No se pudo enviar';
+        messageEl.textContent = message;
+        iconEl.textContent = isSuccess ? 'check_circle' : 'error';
+        iconEl.classList.toggle('text-green-600', isSuccess);
+        iconEl.classList.toggle('text-red-600', !isSuccess);
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('postulated');
+          url.searchParams.delete('error');
+          window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+        } catch {}
+
+        const closeModal = () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          if (target === modal) closeModal();
+        });
+      };
+
+      initPostulationResultModal();
+      document.addEventListener('DOMContentLoaded', initPostulationBatchForm);
+      document.addEventListener('astro:page-load', initPostulationBatchForm);
+      document.addEventListener('DOMContentLoaded', initPostulationResultModal);
+      document.addEventListener('astro:page-load', initPostulationResultModal);
+    })();
+  </script>
 </BaseLayout>
+
+<style>
+  .convocatoria-page {
+    padding-top: var(--navbar-safe-space, 108px);
+    background:
+      radial-gradient(circle at 14% 12%, rgba(90, 172, 50, 0.16) 0, rgba(90, 172, 50, 0) 38%),
+      radial-gradient(circle at 90% 72%, rgba(234, 179, 8, 0.12) 0, rgba(234, 179, 8, 0) 32%),
+      linear-gradient(180deg, #f3f8f2 0%, #edf6ee 100%);
+  }
+
+  .convocatoria-hero {
+    position: relative;
+    min-height: 500px;
+    overflow: hidden;
+    border-bottom: 2px solid #b9d9be;
+  }
+
+  .convocatoria-hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.03);
+  }
+
+  .convocatoria-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 82% 18%, rgba(234, 179, 8, 0.22) 0%, rgba(234, 179, 8, 0) 42%),
+      linear-gradient(112deg, rgba(0, 31, 9, 0.84) 0%, rgba(7, 46, 16, 0.72) 40%, rgba(9, 31, 76, 0.72) 100%);
+  }
+
+  .hero-track {
+    position: absolute;
+    display: block;
+    height: 14px;
+    border-radius: 999px;
+    opacity: 0.88;
+    transform: rotate(-14deg);
+    z-index: 1;
+  }
+
+  .hero-track-a {
+    right: -60px;
+    top: 110px;
+    width: 360px;
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.9));
+  }
+
+  .hero-track-b {
+    right: 220px;
+    top: 152px;
+    width: 260px;
+    height: 10px;
+    background: linear-gradient(90deg, rgba(90, 172, 50, 0.15), rgba(90, 172, 50, 0.9));
+  }
+
+  .convocatoria-hero-content {
+    position: relative;
+    z-index: 2;
+    padding-top: 34px;
+    padding-bottom: 44px;
+  }
+
+  .convocatoria-breadcrumb {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(209, 255, 200, 0.24);
+    backdrop-filter: blur(6px);
+    color: #e4f0e6;
+    margin-bottom: 18px;
+    font-size: 13px;
+  }
+
+  .convocatoria-breadcrumb-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #e4f0e6;
+    transition: color 140ms ease;
+  }
+
+  .convocatoria-breadcrumb-link:hover {
+    color: #f7ffe5;
+  }
+
+  .convocatoria-breadcrumb-current {
+    color: #f7ffe5;
+    font-weight: 700;
+  }
+
+  .convocatoria-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 26px;
+    align-items: end;
+  }
+
+  .convocatoria-title {
+    margin: 0;
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 4.3rem);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: #f2ffe6;
+    text-wrap: balance;
+    text-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .convocatoria-subtitle {
+    margin-top: 16px;
+    max-width: 760px;
+    color: rgba(232, 250, 238, 0.95);
+    font-size: clamp(1rem, 1.15vw, 1.13rem);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+    padding-left: 16px;
+    border-left: 4px solid #eab308;
+  }
+
+  .convocatoria-quick-card {
+    border-radius: 20px;
+    padding: 18px;
+    background: linear-gradient(145deg, rgba(8, 28, 11, 0.86), rgba(18, 55, 25, 0.68));
+    border: 1px solid rgba(209, 255, 200, 0.34);
+    backdrop-filter: blur(12px);
+    color: #f1ffe8;
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.25);
+  }
+
+  .convocatoria-quick-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .convocatoria-audience {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #d9f5e0;
+  }
+
+  .convocatoria-status {
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .status-open {
+    background: #9bfc96;
+    color: #0b3f15;
+  }
+
+  .status-closed {
+    background: rgba(226, 232, 240, 0.24);
+    color: #f3f7fa;
+  }
+
+  .convocatoria-quick-dates {
+    display: grid;
+    gap: 10px;
+  }
+
+  .convocatoria-quick-dates > div {
+    display: grid;
+    grid-template-columns: 20px auto;
+    gap: 2px 8px;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .convocatoria-quick-dates .material-symbols-outlined {
+    font-size: 18px;
+    color: #d1ffc8;
+    grid-row: span 2;
+  }
+
+  .convocatoria-quick-dates strong {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #cee8d5;
+  }
+
+  .convocatoria-quick-dates p {
+    margin: 0;
+    font-weight: 700;
+    color: #f7ffe5;
+  }
+
+  .convocatoria-section {
+    padding: 36px 0 78px;
+  }
+
+  .convocatoria-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .convocatoria-main-stack {
+    display: grid;
+    gap: 18px;
+  }
+
+  .content-card {
+    position: relative;
+    border-radius: 18px;
+    border: 1px solid #c9e3cf;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fcf7 100%);
+    padding: 22px 22px 20px;
+    box-shadow: 0 10px 32px rgba(9, 34, 13, 0.06);
+    overflow: hidden;
+  }
+
+  .content-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 180px;
+    height: 6px;
+    background: linear-gradient(90deg, #5aac32 0%, #eab308 100%);
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+  }
+
+  .content-card h2 {
+    margin: 2px 0 14px;
+    font-family: 'Sora', sans-serif;
+    font-size: 1.42rem;
+    color: #093316;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+
+  .desc-break {
+    margin: 0;
+    color: #4b5e56;
+    line-height: 1.68;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+  }
+
+  .requirement-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding-left: 18px;
+    color: #334155;
+  }
+
+  .requirement-list li::marker {
+    color: #5aac32;
+  }
+
+  .category-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .category-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: linear-gradient(180deg, #f4fff2 0%, #e6f8e1 100%);
+    color: #135122;
+    border: 1px solid #b9e4bc;
+  }
+
+  .empty-copy {
+    margin: 0;
+    color: #64748b;
+  }
+
+  .convocatoria-side {
+    position: sticky;
+    top: calc(var(--navbar-safe-space, 108px) + 14px);
+  }
+
+  .post-card {
+    border-radius: 20px;
+    border: 1px solid #b7d5be;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 244, 0.96) 100%);
+    padding: 20px;
+    box-shadow: 0 14px 30px rgba(9, 34, 13, 0.12);
+    display: grid;
+    gap: 10px;
+  }
+
+  .post-card h3 {
+    margin: 0;
+    font-family: 'Sora', sans-serif;
+    font-size: 1.18rem;
+    color: #093316;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .post-card > p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .post-form {
+    display: grid;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .post-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .alert {
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    border: 1px solid;
+  }
+
+  .alert.ok {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  .alert.error {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+
+  .alert.warn {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+  }
+
+  .alert.info {
+    border-color: #bbd9c0;
+    background: #eef8ef;
+    color: #165f2b;
+  }
+
+  .inline-link {
+    text-decoration: underline;
+    font-weight: 700;
+  }
+
+  .muted-copy {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .post-note {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .not-found-card {
+    border-radius: 18px;
+    border: 1px solid #bfe0c6;
+    background: linear-gradient(180deg, #fff 0%, #f4fbf5 100%);
+    padding: 24px;
+    display: grid;
+    gap: 14px;
+    justify-items: start;
+  }
+
+  .not-found-card p {
+    margin: 0;
+    color: #475569;
+  }
+
+  @media (max-width: 1080px) {
+    .convocatoria-hero-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .convocatoria-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .convocatoria-side {
+      position: static;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .convocatoria-page {
+      padding-top: var(--navbar-safe-space, 96px);
+    }
+
+    .convocatoria-hero {
+      min-height: 380px;
+    }
+
+    .convocatoria-hero-content {
+      padding-top: 16px;
+      padding-bottom: 24px;
+    }
+
+    .convocatoria-breadcrumb {
+      font-size: 12px;
+      padding: 7px 10px;
+    }
+
+    .hero-track {
+      display: none;
+    }
+
+    .content-card,
+    .post-card {
+      padding: 16px;
+    }
+  }
+</style>

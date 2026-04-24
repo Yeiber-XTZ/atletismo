@@ -42,3 +42,28 @@ const { title = 'Admin', logoUrl = '/logo.png', siteName = 'Liga de Atletismo' }
     <span class="material-symbols-outlined">bolt</span>
   </a>
 </div>
+<script is:inline>
+  const navRoot = document.querySelector('.sidebar-nav');
+  const sidebarScrollKey = 'admin.sidebar.scrollTop';
+
+  if (navRoot instanceof HTMLElement) {
+    const savedScroll = sessionStorage.getItem(sidebarScrollKey);
+    if (savedScroll !== null) {
+      const top = Number(savedScroll);
+      if (Number.isFinite(top)) {
+        navRoot.scrollTop = top;
+      }
+    }
+
+    const persistSidebarScroll = () => {
+      sessionStorage.setItem(sidebarScrollKey, String(navRoot.scrollTop));
+    };
+
+    navRoot.addEventListener('scroll', persistSidebarScroll, { passive: true });
+    window.addEventListener('beforeunload', persistSidebarScroll);
+
+    navRoot.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', persistSidebarScroll);
+    });
+  }
+</script>

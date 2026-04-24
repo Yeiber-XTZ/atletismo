@@ -112,6 +112,7 @@ export async function listAuditLogs(filters?: {
   from?: string;
   to?: string;
   limit?: number;
+  offset?: number;
 }) {
   await ensureAuditSchema();
   const columns = await getAuditColumns();
@@ -152,38 +153,59 @@ export async function listAuditLogs(filters?: {
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  const limit = Math.max(1, Math.min(1000, Number(filters?.limit ?? 200)));
-  params.push(limit);
+  const limit = Math.max(1, Math.min(200, Number(filters?.limit ?? 25)));
+  const offset = Math.max(0, Number(filters?.offset ?? 0));
 
-  const res = await db.query(
-    `SELECT id,
-            user_id as "userId",
-            action,
-            ${hasTableName ? 'table_name' : "''::text"} as "tableName",
-            ${hasEntityType ? 'entity_type' : "''::text"} as "entityType",
-            ${hasEntityId ? 'entity_id' : "''::text"} as "entityId",
-            ${hasMeta ? 'meta' : "'{}'::jsonb"} as meta,
-            ${hasIp ? 'ip' : 'NULL::text'} as ip,
-            ${hasUserAgent ? 'user_agent' : 'NULL::text'} as "userAgent",
-            ${hasTimestamp ? '"timestamp"' : 'created_at'} as "timestamp",
-            created_at as "createdAt"
+  const countRes = await db.query(
+    `SELECT COUNT(*)::int AS total
      FROM audit_log
-     ${where}
-     ORDER BY ${hasTimestamp ? '"timestamp"' : 'created_at'} DESC
-     LIMIT $${params.length}`,
+     ${where}`,
     params
   );
-  return res.rows as Array<{
-    id: number;
-    userId: number | null;
-    action: string;
-    tableName: string;
-    entityType: string;
-    entityId: string;
-    meta: Record<string, unknown>;
-    ip: string | null;
-    userAgent: string | null;
-    timestamp: string;
-    createdAt: string;
-  }>;
+  const total = Number(countRes.rows[0]?.total ?? 0);
+
+  const rowParams = [...params, limit, offset];
+  const res = await db.query(
+    `SELECT audit_log.id,
+            audit_log.user_id as "userId",
+            audit_log.action,
+            ${hasTableName ? 'audit_log.table_name' : "''::text"} as "tableName",
+            ${hasEntityType ? 'audit_log.entity_type' : "''::text"} as "entityType",
+            ${hasEntityId ? 'audit_log.entity_id' : "''::text"} as "entityId",
+            ${hasMeta ? 'audit_log.meta' : "'{}'::jsonb"} as meta,
+            ${hasIp ? 'audit_log.ip' : 'NULL::text'} as ip,
+            ${hasUserAgent ? 'audit_log.user_agent' : 'NULL::text'} as "userAgent",
+            ${hasTimestamp ? 'audit_log."timestamp"' : 'audit_log.created_at'} as "timestamp",
+            audit_log.created_at as "createdAt",
+            COALESCE(u.display_name, '') as "userDisplayName",
+            COALESCE(u.email, '') as "userEmail"
+     FROM audit_log
+     LEFT JOIN users u ON u.id = audit_log.user_id
+     ${where}
+     ORDER BY ${hasTimestamp ? 'audit_log."timestamp"' : 'audit_log.created_at'} DESC
+     LIMIT $${params.length + 1}
+     OFFSET $${params.length + 2}`,
+    rowParams
+  );
+
+  return {
+    total,
+    limit,
+    offset,
+    rows: res.rows as Array<{
+      id: number;
+      userId: number | null;
+      action: string;
+      tableName: string;
+      entityType: string;
+      entityId: string;
+      meta: Record<string, unknown>;
+      ip: string | null;
+      userAgent: string | null;
+      timestamp: string;
+      createdAt: string;
+      userDisplayName: string;
+      userEmail: string;
+    }>
+  };
 }

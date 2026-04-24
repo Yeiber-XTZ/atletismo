@@ -88,6 +88,9 @@ export async function getHomeData() {
     } catch (error) {
       if (isMissingColumnError(error)) {
         cachedHasConvocatoriasStatusMode = false;
+      } else if (isDbUnavailableError(error)) {
+        // La caída de BD se maneja por el fallback global de getHomeData.
+        // Evitamos ruido duplicado en consola por cada request.
       } else {
         console.warn('[content] Convocatorias auto-update (status_mode) fallback.', error);
       }
@@ -155,7 +158,7 @@ export async function getHomeData() {
        LIMIT 12`
     );
 
-    // Resultados: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Resultados: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let results: Store['results'] = storeFallback.results;
     try {
       const resultsRes = await db.query(
@@ -189,7 +192,7 @@ export async function getHomeData() {
       console.warn('[content] Results table unavailable, falling back to local store.', error);
     }
 
-    // Rankings: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Rankings: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let rankings: Store['rankings'] = storeFallback.rankings;
     try {
       const rankingsRes = await db.query(
@@ -223,7 +226,7 @@ export async function getHomeData() {
       console.warn('[content] Rankings table unavailable, falling back to local store.', error);
     }
 
-    // Noticias: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Noticias: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let news: Store['news'] = storeFallback.news;
     try {
       const newsRes = await db.query(
@@ -251,10 +254,12 @@ export async function getHomeData() {
       console.warn('[content] News table unavailable, falling back to local store.', error);
     }
 
-    // Blog: tabla opcional (si el esquema aÃºn no se ha actualizado, caemos a store)
+    // Blog: tabla opcional (si el esquema aún no se ha actualizado, caemos a store)
     let blogPosts: Store['blogPosts'] = storeFallback.blogPosts;
     try {
-      const blogRes = await db.query(
+      let blogRes;
+      try {
+        blogRes = await db.query(
         `SELECT slug,
                 COALESCE(type, 'Técnico') as type,
                 title,
@@ -262,11 +267,28 @@ export async function getHomeData() {
                 COALESCE(published_date::text, '') as date,
                 COALESCE(tags, '[]'::jsonb) as tags,
                 COALESCE(image_url, '') as "imageUrl",
+                COALESCE(video_url, '') as "videoUrl",
                 COALESCE(body, '[]'::jsonb) as body
          FROM blog_posts
          ORDER BY COALESCE(published_date, created_at) DESC, id DESC
          LIMIT 500`
-      );
+        );
+      } catch (error) {
+        blogRes = await db.query(
+          `SELECT slug,
+                  COALESCE(type, 'Técnico') as type,
+                  title,
+                  COALESCE(excerpt, '') as excerpt,
+                  COALESCE(published_date::text, '') as date,
+                  COALESCE(tags, '[]'::jsonb) as tags,
+                  COALESCE(image_url, '') as "imageUrl",
+                  COALESCE(body, '[]'::jsonb) as body
+           FROM blog_posts
+           ORDER BY COALESCE(published_date, created_at) DESC, id DESC
+           LIMIT 500`
+        );
+        blogRes.rows = blogRes.rows.map((row: any) => ({ ...row, videoUrl: '' }));
+      }
       blogPosts = blogRes.rows.map((p: any) => ({
         slug: p.slug ?? '',
         type: p.type ?? 'Técnico',
@@ -275,6 +297,7 @@ export async function getHomeData() {
         date: p.date ?? '',
         tags: Array.isArray(p.tags) ? p.tags.map((x: any) => String(x)) : [],
         imageUrl: p.imageUrl || undefined,
+        videoUrl: p.videoUrl || undefined,
         body: Array.isArray(p.body) ? p.body.map((x: any) => String(x)) : []
       }));
     } catch (error) {
@@ -295,6 +318,7 @@ export async function getHomeData() {
                   category,
                   status,
                   COALESCE(status_mode, 'auto') as "statusMode",
+                  COALESCE(max_events_per_athlete, 1)::int as "maxEventsPerAthlete",
                   COALESCE(open_date::text, '') as "openDate",
                   COALESCE(close_date::text, '') as "closeDate",
                   location,
@@ -302,6 +326,8 @@ export async function getHomeData() {
                   description,
                   requirements,
                   categories,
+                  COALESCE(disciplines, '[]'::jsonb) as disciplines,
+                  COALESCE(events, '[]'::jsonb) as events,
                   COALESCE(image_url, '') as "imageUrl"
            FROM convocatorias
            ORDER BY COALESCE(open_date, created_at) DESC`
@@ -316,6 +342,7 @@ export async function getHomeData() {
           `SELECT title,
                   category,
                   status,
+                  1::int as "maxEventsPerAthlete",
                   COALESCE(open_date::text, '') as "openDate",
                   COALESCE(close_date::text, '') as "closeDate",
                   location,
@@ -323,6 +350,8 @@ export async function getHomeData() {
                   description,
                   requirements,
                   categories,
+                  '[]'::jsonb as disciplines,
+                  '[]'::jsonb as events,
                   COALESCE(image_url, '') as "imageUrl"
            FROM convocatorias
            ORDER BY COALESCE(open_date, created_at) DESC`
@@ -335,12 +364,15 @@ export async function getHomeData() {
           openDate: r.openDate ?? '',
           status: computeConvocatoriaStatus({ openDate: r.openDate, closeDate: r.closeDate }),
           statusMode: 'auto',
+          maxEventsPerAthlete: Math.max(1, Number(r.maxEventsPerAthlete ?? 1) || 1),
           closeDate: r.closeDate ?? '',
           location: r.location ?? '',
           audience: r.audience ?? '',
           description: r.description ?? '',
           requirements: Array.isArray(r.requirements) ? r.requirements : [],
           categories: Array.isArray(r.categories) ? r.categories : [],
+          disciplines: Array.isArray(r.disciplines) ? r.disciplines : [],
+          events: Array.isArray(r.events) ? r.events : [],
           imageUrl: r.imageUrl || undefined
         };
       });

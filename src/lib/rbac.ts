@@ -13,6 +13,8 @@ export const PERMISSIONS = [
   'competencias:manage',
   'results:manage',
   'records:manage',
+  'athletes:manage',
+  'athletes:self_manage',
   'rankings:manage',
   'news:manage',
   'blog:manage',
@@ -59,6 +61,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'competencias:manage',
     'results:manage',
     'records:manage',
+    'athletes:manage',
     'rankings:manage',
     'news:manage',
     'blog:manage',
@@ -82,6 +85,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'competencias:manage',
     'results:manage',
     'records:manage',
+    'athletes:manage',
     'rankings:manage',
     'documents:manage',
     'postulations:approve',
@@ -98,6 +102,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'competencias:manage',
     'results:manage',
     'records:manage',
+    'athletes:manage',
     'rankings:manage',
     'documents:manage',
     'postulations:approve',
@@ -105,7 +110,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'asambleas:manage',
     'notificaciones:manage'
   ]),
-  CLUB: new Set<Permission>(['club:self_manage'])
+  CLUB: new Set<Permission>(['club:self_manage', 'athletes:self_manage'])
 };
 
 export function isRole(value: string): value is Role {

@@ -82,7 +82,9 @@ try {
     ['convocatorias:manage', 'Gestionar convocatorias'],
     ['competencias:manage', 'Gestionar competencias'],
     ['results:manage', 'Gestionar resultados'],
-    ['records:manage', 'Gestionar récords'],
+    ['records:manage', 'Gestionar records'],
+    ['athletes:manage', 'Gestionar atletas de todos los clubes'],
+    ['athletes:self_manage', 'Gestionar atletas del propio club'],
     ['rankings:manage', 'Gestionar ranking'],
     ['news:manage', 'Gestionar noticias'],
     ['blog:manage', 'Gestionar blog'],
@@ -120,6 +122,7 @@ try {
       'competencias:manage',
       'results:manage',
       'records:manage',
+      'athletes:manage',
       'rankings:manage',
       'news:manage',
       'blog:manage',
@@ -141,6 +144,7 @@ try {
       'competencias:manage',
       'results:manage',
       'records:manage',
+      'athletes:manage',
       'rankings:manage',
       'documents:manage',
       'postulations:approve',
@@ -155,12 +159,13 @@ try {
       'competencias:manage',
       'results:manage',
       'records:manage',
+      'athletes:manage',
       'rankings:manage',
       'documents:manage',
       'postulations:approve',
       'approvals:manage'
     ],
-    CLUB: ['club:self_manage'],
+    CLUB: ['club:self_manage', 'athletes:self_manage'],
   };
   for (const role of Object.keys(rolePerms)) {
     for (const perm of rolePerms[role]) {
@@ -271,4 +276,5 @@ try {
 } finally {
   await client.end();
 }
+
 
