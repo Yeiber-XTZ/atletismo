@@ -52,7 +52,7 @@ const errorMessage = Astro.url.searchParams.get('message');
             </div>
             <div>
               <label class="form-label">Telefono *</label>
-              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+\\-\\s()]{7,20}$" inputmode="tel" />
+              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+() -]{7,20}$" inputmode="tel" />
             </div>
             <div>
               <label class="form-label">Pais *</label>
@@ -242,7 +242,7 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     const validateEmail = () => {
       const value = (emailInput?.value || '').trim();
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         setFieldError(emailInput, 'Ingresa un correo valido (ejemplo@correo.com).');
         return false;
       }
@@ -252,7 +252,7 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     const validatePhone = () => {
       const value = (phoneInput?.value || '').trim();
-      if (!/^[0-9+\\-\\s()]{7,20}$/.test(value)) {
+      if (!/^[0-9+() -]{7,20}$/.test(value)) {
         setFieldError(phoneInput, 'El telefono solo puede tener numeros y simbolos validos (+ - ( )).');
         return false;
       }
