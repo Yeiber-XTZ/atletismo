@@ -88,6 +88,9 @@ export async function getHomeData() {
     } catch (error) {
       if (isMissingColumnError(error)) {
         cachedHasConvocatoriasStatusMode = false;
+      } else if (isDbUnavailableError(error)) {
+        // La caída de BD se maneja por el fallback global de getHomeData.
+        // Evitamos ruido duplicado en consola por cada request.
       } else {
         console.warn('[content] Convocatorias auto-update (status_mode) fallback.', error);
       }

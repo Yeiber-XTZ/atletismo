@@ -48,14 +48,12 @@ const activeTab = navAliases[requestedTab] ?? requestedTab;
 const contentTab = tabAliases[requestedTab] ?? requestedTab;
 const saved = Astro.url.searchParams.get('saved');
 const error = Astro.url.searchParams.get('error');
-<<<<<<< HEAD
 const settingsViewParam = (Astro.url.searchParams.get('settingsView') ?? '').trim().toLowerCase();
 const settingsViews = new Set(['general', 'hero', 'home']);
 const settingsView = settingsViews.has(settingsViewParam) ? settingsViewParam : '';
 const ligaViewParam = (Astro.url.searchParams.get('ligaView') ?? '').trim().toLowerCase();
 const ligaViews = new Set(['hero', 'info', 'estructura']);
 const ligaView = ligaViews.has(ligaViewParam) ? ligaViewParam : '';
-=======
 const errorMessages: Record<string, string> = {
   invalid_schema: 'Hay campos inválidos o incompletos. Revisa el formulario.',
   missing_club: 'Tu usuario no tiene club asociado para registrar atletas.',
@@ -63,7 +61,6 @@ const errorMessages: Record<string, string> = {
   duplicate_document: 'Ya existe un atleta con ese número de documento.'
 };
 const errorMessage = error ? (errorMessages[error] ?? 'Error al guardar los cambios') : '';
->>>>>>> 42d45f5663921116ac0765d520c7dd7e0dce8f8c
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
 const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
 const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
@@ -3632,9 +3629,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
             <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button>
           </div>
         </div>
-<<<<<<< HEAD
-      </details>
-=======
         <div>
           <label class="admin-label">Estado</label>
           <input class="admin-input" value="Próximamente (automático)" disabled />
@@ -3681,7 +3675,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
         <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
         <div class="md:col-span-3 flex justify-end"><button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button></div>
       </div>
->>>>>>> 42d45f5663921116ac0765d520c7dd7e0dce8f8c
+      </details>
     </template>
         <template id="tpl-competencia">
       <details class="js-repeat-item rounded-xl border border-gray-200 bg-white shadow-sm" open data-accordion-group="#competencias-container">
@@ -3838,7 +3832,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     <script is:inline define:vars={{ geoDepartments, geoMunicipalities }}>
       (() => {
       const root = document;
-<<<<<<< HEAD
       root.addEventListener('toggle', (event) => {
         const details = event.target instanceof HTMLDetailsElement ? event.target : null;
         if (!details || !details.open) return;
@@ -3852,7 +3845,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           }
         });
       }, true);
-=======
       const baseState = globalThis.__adminBaseBindingsState || (globalThis.__adminBaseBindingsState = { handlersBound: false });
       const GEO_DEPARTMENTS = geoDepartments;
       const GEO_MUNICIPALITIES = geoMunicipalities;
@@ -4073,7 +4065,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           if (catalogRoot) applyConvCatalogDisciplineFilter(catalogRoot);
         }
       });
->>>>>>> 42d45f5663921116ac0765d520c7dd7e0dce8f8c
 
       root.addEventListener('click', (event) => {
         const targetEl = event.target instanceof HTMLElement ? event.target : null;
