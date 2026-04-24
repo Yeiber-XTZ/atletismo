@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import FooterKinetic from '../../components/FooterKinetic.astro';
@@ -27,33 +27,33 @@ const postulationErrorMessage =
   error === 'duplicate'
     ? 'Ese atleta ya fue postulado en esa misma prueba para esta convocatoria.'
     : error === 'max_events_reached'
-      ? 'El atleta ya alcanzó el máximo de pruebas permitidas por esta convocatoria.'
+      ? 'El atleta ya alcanzÃ³ el mÃ¡ximo de pruebas permitidas por esta convocatoria.'
       : error === 'athlete_not_found'
         ? 'El atleta seleccionado no pertenece a tu club.'
         : error === 'invalid_event'
-          ? 'Debes seleccionar una prueba válida.'
+          ? 'Debes seleccionar una prueba vÃ¡lida.'
           : error === 'discipline_disabled'
-            ? 'La disciplina del atleta no está habilitada en esta convocatoria.'
+            ? 'La disciplina del atleta no estÃ¡ habilitada en esta convocatoria.'
             : error === 'event_disabled'
-              ? 'La prueba seleccionada no está habilitada en esta convocatoria.'
+              ? 'La prueba seleccionada no estÃ¡ habilitada en esta convocatoria.'
               : error === 'athlete_discipline_mismatch'
                 ? 'El atleta no tiene registrada la disciplina de la prueba seleccionada.'
                 : error === 'invalid_batch'
-                  ? 'La lista de postulaciones está vacía o tiene datos inválidos.'
+                  ? 'La lista de postulaciones estÃ¡ vacÃ­a o tiene datos invÃ¡lidos.'
                   : error === 'not_open'
-                    ? 'La convocatoria aún no está habilitada para postulaciones.'
+                    ? 'La convocatoria aÃºn no estÃ¡ habilitada para postulaciones.'
                     : error === 'closed'
-                      ? 'La convocatoria está cerrada y ya no admite nuevas postulaciones.'
+                      ? 'La convocatoria estÃ¡ cerrada y ya no admite nuevas postulaciones.'
                       : error === 'not_found'
                         ? 'La convocatoria no fue encontrada.'
                         : error
-                          ? 'No se pudo enviar la postulación. Verifica los datos.'
+                          ? 'No se pudo enviar la postulaciÃ³n. Verifica los datos.'
                           : '';
 
 const postulationSuccessMessage = postulated
   ? Number(postulated) > 1
     ? `Se enviaron ${String(postulated)} postulaciones correctamente.`
-    : 'Postulación enviada correctamente.'
+    : 'PostulaciÃ³n enviada correctamente.'
   : '';
 
 if (!convocatoria) {
@@ -110,7 +110,7 @@ const effectiveConvocatoriaDisciplineNormSet = (() => {
 })();
 
 const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsPerAthlete ?? 1) || 1);
-const pageTitle = `${String(convocatoria ? convocatoria.title : 'Convocatoria no encontrada')} | Liga de Atletismo del Chocó`;
+const pageTitle = `${String(convocatoria ? convocatoria.title : 'Convocatoria no encontrada')} | Liga de Atletismo del ChocÃ³`;
 const statusText = String(convocatoria?.status ?? '').toLowerCase();
 const isStatusOpen = statusText.includes('abierta') || statusText.includes('open');
 const todayIso = new Date().toISOString().slice(0, 10);
@@ -125,7 +125,7 @@ const isClubUser = user?.role === 'CLUB';
 const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 ---
 
-<BaseLayout title={pageTitle} description="Detalle de convocatoria y panel de postulación.">
+<BaseLayout title={pageTitle} description="Detalle de convocatoria y panel de postulaciÃ³n.">
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
   <main class="convocatoria-page">
@@ -133,23 +133,22 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
       <>
         <section class="convocatoria-tech-bar-wrap">
           <div class="container">
+            <nav class="conv-breadcrumb-top">
+              <a href="/" class="conv-breadcrumb-link">
+                <span class="material-symbols-outlined text-sm">home</span>
+                Inicio
+              </a>
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+              <a href="/convocatorias" class="conv-breadcrumb-link">Convocatorias</a>
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+              <span class="conv-breadcrumb-current">{convocatoria.title}</span>
+            </nav>
             <div class="convocatoria-tech-bar">
-              <nav class="convocatoria-breadcrumb">
-                <a href="/" class="convocatoria-breadcrumb-link">
-                  <span class="material-symbols-outlined text-sm">home</span>
-                  Inicio
-                </a>
-                <span class="material-symbols-outlined text-sm">chevron_right</span>
-                <a href="/convocatorias" class="convocatoria-breadcrumb-link">Convocatorias</a>
-                <span class="material-symbols-outlined text-sm">chevron_right</span>
-                <span class="convocatoria-breadcrumb-current">{convocatoria.title}</span>
-              </nav>
-
               <div class="tech-main">
                 <div class="tech-title-wrap">
                   <p class="tech-kicker">Convocatoria oficial</p>
                   <h1 class="tech-title">{convocatoria.title}</h1>
-                  <p class="tech-audience">{convocatoria.audience || 'Público general'}</p>
+                  <p class="tech-audience">{convocatoria.audience || 'PÃºblico general'}</p>
                 </div>
                 <div class="tech-meta">
                   <span class:list={['tech-status', convocatoriaIsOpen ? 'status-open' : 'status-closed']}>
@@ -165,7 +164,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                   </span>
                   <span class="tech-chip">
                     <span class="material-symbols-outlined">rule</span>
-                    Máx. pruebas: {maxEventsPerAthlete}
+                    MÃ¡x. pruebas: {maxEventsPerAthlete}
                   </span>
                 </div>
                 <a href="/convocatorias" class="btn-secondary tech-secondary-cta">Ver convocatorias</a>
@@ -178,21 +177,19 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
           <div class="container">
             <div class="convocatoria-grid">
               <div class="convocatoria-main-stack">
-                <article class="content-card">
+                <article class="content-card content-card-combo">
                   <h2>Resumen operativo</h2>
-                  <p class="desc-break js-summary-short">{summaryShort || 'Sin descripción disponible.'}</p>
+                  <p class="desc-break js-summary-short">{summaryShort || 'Sin descripciÃ³n disponible.'}</p>
                   {needsSummaryExpand ? (
                     <>
                       <p class="desc-break js-summary-full hidden">{summaryText}</p>
-                      <button type="button" class="summary-toggle-btn js-summary-toggle">Ver más</button>
+                      <button type="button" class="summary-toggle-btn js-summary-toggle">Ver mÃ¡s</button>
                     </>
                   ) : null}
-                </article>
-
-                <article class="content-card">
+                  <div class="speed-line opacity-20"></div>
                   <h2>Requisitos</h2>
                   {convocatoria.requirements.length > 0 ? (
-                    <ul class="requirement-list">
+                    <ul class="requirement-list requirement-grid">
                       {convocatoria.requirements.map((r) => (
                         <li>{r}</li>
                       ))}
@@ -200,15 +197,13 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                   ) : (
                     <p class="empty-copy">No hay requisitos publicados.</p>
                   )}
-                </article>
-
-                <article class="content-card">
-                  <h2>Categorías habilitadas</h2>
+                  <div class="speed-line opacity-20"></div>
+                  <h2>CategorÃ­as habilitadas</h2>
                   <div class="category-grid">
                     {convocatoria.categories.length > 0 ? (
                       convocatoria.categories.map((c) => <span class="category-pill">{c}</span>)
                     ) : (
-                      <p class="empty-copy">No hay categorías configuradas.</p>
+                      <p class="empty-copy">No hay categorÃ­as configuradas.</p>
                     )}
                   </div>
                 </article>
@@ -217,16 +212,16 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                   <article id="postulacion-club-panel" class="post-card">
                     <div class="post-head">
                       <h3>Postular deportistas</h3>
-                      <p>Carga rápida tipo carrito: agrega atletas y pruebas antes de enviar.</p>
+                      <p>Carga rÃ¡pida tipo carrito: agrega atletas y pruebas antes de enviar.</p>
                     </div>
 
                     {!effectiveClubId ? (
                       <div class="alert warn">
-                        Tu usuario CLUB no tiene un club asociado. Solicita al administrador la asociación del club para poder postular.
+                        Tu usuario CLUB no tiene un club asociado. Solicita al administrador la asociaciÃ³n del club para poder postular.
                       </div>
                     ) : !convocatoriaIsOpen ? (
                       <div class="alert warn">
-                        Esta convocatoria no está abierta para postulaciones en este momento.
+                        Esta convocatoria no estÃ¡ abierta para postulaciones en este momento.
                       </div>
                     ) : null}
 
@@ -243,55 +238,59 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                         <input type="hidden" name="entriesJson" value="[]" class="js-post-entries-json" />
 
                         <section class="post-zone post-zone-picker">
-                          <h4>1) Selector rápido</h4>
-                          <label class="form-label">Atleta *</label>
-                          <select class="form-input js-post-athlete" disabled={!canPostulate}>
-                            <option value="">Selecciona atleta</option>
-                            {clubAthletes.map((athlete) => (
-                              <option
-                                value={String(athlete.id)}
-                                data-disciplines={(Array.isArray(athlete.disciplines) ? athlete.disciplines : []).join('|')}
-                                data-sex-code={String(athlete.sexCode ?? athlete.gender ?? '')}
-                                data-club-name={String(athlete.clubName ?? '')}
-                              >
-                                {athlete.fullName} - {athlete.documentType} {athlete.document}
-                              </option>
-                            ))}
-                          </select>
-                          <p class="field-error js-post-error-athlete hidden"></p>
-
-                          <label class="form-label">Pruebas *</label>
-                          <div class="event-picker js-post-events-picker" data-max-events={String(maxEventsPerAthlete)}>
-                            <button
-                              type="button"
-                              class="js-post-events-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
-                              aria-expanded="false"
-                              disabled={!canPostulate}
-                            >
-                              <span>Selecciona pruebas</span>
-                              <span class="js-post-events-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
-                            </button>
-                            <div class="js-post-events-panel hidden max-h-52 overflow-auto border-t border-gray-300 p-2">
-                              <div class="grid gap-1 js-post-events-list">
-                                {eventOptionsPayload.map((eventItem) => (
-                                  <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-white">
-                                    <input
-                                      type="checkbox"
-                                      class="js-post-event-check"
-                                      value={eventItem.name}
-                                      data-discipline={eventItem.discipline}
-                                      data-gender={eventItem.gender}
-                                      disabled={!canPostulate}
-                                    />
-                                    <span>{eventItem.name}</span>
-                                  </label>
+                          <h4>1) Selector rÃ¡pido</h4>
+                          <div class="selector-grid">
+                            <div>
+                              <label class="form-label">Atleta *</label>
+                              <select class="form-input js-post-athlete" disabled={!canPostulate}>
+                                <option value="">Selecciona atleta</option>
+                                {clubAthletes.map((athlete) => (
+                                  <option
+                                    value={String(athlete.id)}
+                                    data-disciplines={(Array.isArray(athlete.disciplines) ? athlete.disciplines : []).join('|')}
+                                    data-sex-code={String(athlete.sexCode ?? athlete.gender ?? '')}
+                                    data-club-name={String(athlete.clubName ?? '')}
+                                  >
+                                    {athlete.fullName} - {athlete.documentType} {athlete.document}
+                                  </option>
                                 ))}
+                              </select>
+                              <p class="field-error js-post-error-athlete hidden"></p>
+                            </div>
+                            <div>
+                              <label class="form-label">Pruebas *</label>
+                              <div class="event-picker js-post-events-picker" data-max-events={String(maxEventsPerAthlete)}>
+                                <button
+                                  type="button"
+                                  class="js-post-events-toggle flex w-full items-center justify-between px-3 py-2 text-sm text-gray-700"
+                                  aria-expanded="false"
+                                  disabled={!canPostulate}
+                                >
+                                  <span>Selecciona pruebas</span>
+                                  <span class="js-post-events-count inline-flex min-w-[28px] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">0</span>
+                                </button>
+                                <div class="js-post-events-panel hidden max-h-52 overflow-auto border-t border-gray-300 p-2">
+                                  <div class="grid gap-1 js-post-events-list">
+                                    {eventOptionsPayload.map((eventItem) => (
+                                      <label class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-white">
+                                        <input
+                                          type="checkbox"
+                                          class="js-post-event-check"
+                                          value={eventItem.name}
+                                          data-discipline={eventItem.discipline}
+                                          data-gender={eventItem.gender}
+                                          disabled={!canPostulate}
+                                        />
+                                        <span>{eventItem.name}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
                               </div>
+                              <p class="field-error js-post-error-events hidden"></p>
                             </div>
                           </div>
                           <p class="field-help">Esta convocatoria permite hasta {maxEventsPerAthlete} prueba(s) por deportista.</p>
-                          <p class="field-error js-post-error-events hidden"></p>
-
                           <button type="button" class="btn-secondary js-post-add-item opacity-50 pointer-events-none" disabled={!canPostulate}>
                             <span class="material-symbols-outlined">add</span>
                             Agregar a lista
@@ -327,7 +326,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                             <span class="material-symbols-outlined">send</span>
                             Enviar postulaciones (<span class="js-post-submit-count">0</span>)
                           </button>
-                          <p class="muted-copy">Solo se enviarán las filas válidas del carrito.</p>
+                          <p class="muted-copy">Solo se enviarÃ¡n las filas vÃ¡lidas del carrito.</p>
                         </section>
 
                         <button type="submit" class="btn-primary js-post-submit js-post-submit-mobile post-submit-mobile" disabled={!canPostulate}>
@@ -342,12 +341,12 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 
               <aside class="convocatoria-side">
                 <article class="quick-side-card">
-                  <h3>Ficha técnica</h3>
+                  <h3>Ficha tÃ©cnica</h3>
                   <ul class="quick-side-list">
                     <li>
                       <span class="material-symbols-outlined">groups</span>
                       <div>
-                        <strong>Público objetivo</strong>
+                        <strong>PÃºblico objetivo</strong>
                         <p>{convocatoria.audience || 'General'}</p>
                       </div>
                     </li>
@@ -361,14 +360,14 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                     <li>
                       <span class="material-symbols-outlined">calendar_month</span>
                       <div>
-                        <strong>Ventana de postulación</strong>
+                        <strong>Ventana de postulaciÃ³n</strong>
                         <p>{convocatoria.openDate || '-'} a {convocatoria.closeDate || '-'}</p>
                       </div>
                     </li>
                     <li>
                       <span class="material-symbols-outlined">flag</span>
                       <div>
-                        <strong>Máximo por atleta</strong>
+                        <strong>MÃ¡ximo por atleta</strong>
                         <p>{maxEventsPerAthlete} prueba(s)</p>
                       </div>
                     </li>
@@ -376,12 +375,12 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                 </article>
 
                 <article class="quick-side-card help-card">
-                  <h3>Guía rápida</h3>
+                  <h3>GuÃ­a rÃ¡pida</h3>
                   <ol>
                     <li>Selecciona un atleta activo de tu club.</li>
                     <li>Elige sus pruebas habilitadas.</li>
                     <li>Agrega al carrito y revisa el resumen.</li>
-                    <li>Envía todas las postulaciones en un solo clic.</li>
+                    <li>EnvÃ­a todas las postulaciones en un solo clic.</li>
                   </ol>
                 </article>
               </aside>
@@ -462,7 +461,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
           expanded = !expanded;
           shortEl.classList.toggle('hidden', expanded);
           fullEl.classList.toggle('hidden', !expanded);
-          btn.textContent = expanded ? 'Ver menos' : 'Ver más';
+          btn.textContent = expanded ? 'Ver menos' : 'Ver mÃ¡s';
         });
       };
 
@@ -660,7 +659,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
                 if (row instanceof HTMLElement) row.style.display = 'none';
               });
               syncAddButtonState();
-              setWarning('La disciplina del deportista no está habilitada en esta convocatoria.');
+              setWarning('La disciplina del deportista no estÃ¡ habilitada en esta convocatoria.');
               return;
             }
 
@@ -894,7 +893,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
         ) return;
 
         const isSuccess = type === 'success';
-        titleEl.textContent = isSuccess ? 'Postulación enviada' : 'No se pudo enviar';
+        titleEl.textContent = isSuccess ? 'PostulaciÃ³n enviada' : 'No se pudo enviar';
         messageEl.textContent = message;
         iconEl.textContent = isSuccess ? 'check_circle' : 'error';
         iconEl.classList.toggle('text-green-600', isSuccess);
@@ -937,7 +936,11 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 </BaseLayout>
 
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
   .convocatoria-page {
+    --font-headline-conv: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+    --font-body-conv: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     padding-top: var(--navbar-safe-space, 108px);
     background:
       radial-gradient(circle at 15% 12%, rgba(90, 172, 50, 0.16) 0, rgba(90, 172, 50, 0) 38%),
@@ -946,11 +949,11 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
   }
 
   .convocatoria-tech-bar-wrap {
-    position: sticky;
-    top: var(--navbar-safe-space, 88px);
-    z-index: 20;
-    padding: 14px 0 10px;
-    backdrop-filter: blur(8px);
+    position: static;
+    top: auto;
+    z-index: 1;
+    padding: 8px 0 12px;
+    backdrop-filter: none;
   }
 
   .convocatoria-tech-bar {
@@ -1005,11 +1008,12 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 
   .tech-title {
     margin: 0;
-    font-family: 'Sora', sans-serif;
+    font-family: var(--font-headline-conv);
     color: #f4ffe8;
     text-transform: uppercase;
-    font-size: clamp(1.15rem, 2.2vw, 1.7rem);
-    line-height: 1.1;
+    font-size: clamp(1.24rem, 1.9vw, 1.6rem);
+    line-height: 1.08;
+    white-space: nowrap;
   }
 
   .tech-audience {
@@ -1065,7 +1069,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
   }
 
   .convocatoria-section {
-    padding: 22px 0 86px;
+    padding: 18px 0 86px;
   }
 
   .convocatoria-grid {
@@ -1109,10 +1113,10 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 
   .content-card h2 {
     margin: 2px 0 12px;
-    font-family: 'Sora', sans-serif;
+    font-family: var(--font-headline-conv);
     text-transform: uppercase;
     color: #073317;
-    font-size: 1.18rem;
+    font-size: 1.08rem;
   }
 
   .desc-break {
@@ -1177,10 +1181,10 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 
   .post-head h3 {
     margin: 0;
-    font-family: 'Sora', sans-serif;
+    font-family: var(--font-headline-conv);
     text-transform: uppercase;
     color: #0a3a1a;
-    font-size: 1.15rem;
+    font-size: 1.08rem;
   }
 
   .post-head p {
@@ -1264,7 +1268,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 
   .convocatoria-side {
     position: sticky;
-    top: calc(var(--navbar-safe-space, 98px) + 68px);
+    top: calc(var(--navbar-safe-space, 98px) + 22px);
     display: grid;
     gap: 14px;
   }
@@ -1275,7 +1279,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 
   .quick-side-card h3 {
     margin: 0 0 10px;
-    font-family: 'Sora', sans-serif;
+    font-family: var(--font-headline-conv);
     text-transform: uppercase;
     color: #0b3418;
     font-size: 1rem;
@@ -1392,7 +1396,8 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
     }
 
     .convocatoria-tech-bar-wrap {
-      top: var(--navbar-safe-space, 76px);
+      position: static;
+      top: auto;
     }
 
     .convocatoria-tech-bar {
@@ -1421,4 +1426,228 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
       box-shadow: 0 12px 24px rgba(11, 63, 25, 0.25);
     }
   }
+
+  /* Conv exact visual sync (repo conv) */
+  .convocatoria-page {
+    font-family: var(--font-body-conv);
+    background:
+      radial-gradient(circle at 16% 8%, rgba(90, 172, 50, 0.17) 0, rgba(90, 172, 50, 0) 38%),
+      radial-gradient(circle at 90% 84%, rgba(234, 179, 8, 0.16) 0, rgba(234, 179, 8, 0) 32%),
+      linear-gradient(180deg, #f2f8f1 0%, #edf5ef 100%);
+  }
+
+  .convocatoria-page .container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .convocatoria-tech-bar {
+    border-radius: 18px;
+    border: 1px solid rgba(178, 224, 182, 0.72);
+    background: linear-gradient(112deg, #073118 0%, #0e4f22 55%, #1c5a30 100%);
+    padding: 18px 18px 16px;
+    color: #effde8;
+    box-shadow: 0 16px 36px rgba(8, 54, 25, 0.24);
+  }
+
+  .convocatoria-breadcrumb {
+    border-radius: 999px;
+    padding: 5px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(227, 252, 226, 0.23);
+    margin-bottom: 14px;
+  }
+
+  .tech-main {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) auto;
+    gap: 16px;
+  }
+
+  .tech-kicker {
+    font-family: var(--font-headline-conv);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: #c8eecf;
+  }
+
+  .tech-title {
+    font-family: var(--font-headline-conv);
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    font-size: clamp(1.36rem, 2vw, 1.85rem);
+    color: #effde8;
+    white-space: nowrap;
+  }
+
+  .tech-audience {
+    color: #d6f3db;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 3px;
+  }
+
+  .tech-meta {
+    justify-content: flex-start;
+    gap: 7px;
+  }
+
+  .tech-status {
+    padding: 6px 14px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(231, 253, 229, 0.33);
+  }
+
+  .status-open {
+    background: #9efc8f;
+    color: #124d1e;
+  }
+
+  .tech-chip {
+    font-size: 12px;
+    padding: 6px 11px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(222, 247, 220, 0.24);
+  }
+
+  .tech-secondary-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 24px;
+    border-radius: 12px;
+    background: #eab308;
+    border: 1px solid #d5a106;
+    color: #22410b;
+    font-family: var(--font-headline-conv);
+    font-size: 0.98rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+  }
+
+  .tech-secondary-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 16px rgba(0, 0, 0, 0.16);
+  }
+
+  .convocatoria-grid {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+    gap: 22px;
+    align-items: start;
+  }
+
+  .content-card,
+  .post-card,
+  .quick-side-card {
+    border-radius: 16px;
+    border: 1px solid #c8dfcc;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fcf7 100%);
+    box-shadow: 0 12px 30px rgba(11, 52, 24, 0.08);
+  }
+
+  .content-card::before,
+  .post-card::before,
+  .quick-side-card::before {
+    height: 4px;
+    width: 162px;
+    background: linear-gradient(90deg, #59ab32 0%, #e3b110 100%);
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+  }
+
+  .content-card h2,
+  .post-head h3,
+  .quick-side-card h3 {
+    font-family: var(--font-headline-conv);
+    font-style: normal;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+
+  .post-head h3 {
+    font-size: 1.78rem;
+  }
+
+  .post-head p {
+    font-size: 15px;
+  }
+
+  .post-zone {
+    border-radius: 13px;
+    border: 1px solid #d2e7d4;
+    background: #fbfffa;
+    padding: 12px 13px;
+  }
+
+  .post-zone h4 {
+    font-family: var(--font-headline-conv);
+    font-size: 1.03rem;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-weight: 900;
+  }
+
+  .post-count-pill {
+    border: 1px solid #cfe7d2;
+    background: #eff8ec;
+    color: #176329;
+    font-size: 12px;
+  }
+
+  .event-picker {
+    background: #f6fbf7;
+  }
+
+  .convocatoria-side {
+    top: calc(var(--navbar-safe-space, 98px) + 72px);
+  }
+
+  .quick-side-list strong {
+    font-size: 13px;
+  }
+
+  .quick-side-list p,
+  .help-card ol {
+    font-size: 14px;
+  }
+
+  @media (max-width: 1100px) {
+    .tech-title {
+      white-space: normal;
+    }
+    .post-head h3 {
+      font-size: 1.45rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .convocatoria-tech-bar-wrap {
+      position: static;
+      padding-top: 6px;
+      padding-bottom: 4px;
+      backdrop-filter: none;
+    }
+
+    .convocatoria-page .container {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .tech-title {
+      font-size: clamp(1.28rem, 8vw, 1.8rem);
+      white-space: normal;
+    }
+
+    .tech-secondary-cta {
+      width: 100%;
+      min-height: 46px;
+    }
+  }
 </style>
+
