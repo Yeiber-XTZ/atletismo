@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import FooterKinetic from '../../components/FooterKinetic.astro';
@@ -16,30 +16,29 @@ const error = Astro.url.searchParams.get('error');
 const radicado = Astro.url.searchParams.get('radicado');
 const errorMessage = Astro.url.searchParams.get('message');
 ---
+
 <BaseLayout title="Registro Club | Liga de Atletismo del Choco" description="Solicitud de afiliacion/registro de club ante la Liga.">
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
-  <main class="pt-[72px]">
-    <section class="page-hero">
-      <div class="container mx-auto px-6">
-        <nav class="page-breadcrumb">
-          <a href="/" class="page-breadcrumb-link">
-            <span class="material-symbols-outlined text-sm">home</span>
-            Inicio
-          </a>
-          <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <a href="/registro" class="page-breadcrumb-link">Registro</a>
-          <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <span class="page-breadcrumb-current">Club</span>
-        </nav>
-        <h1 class="page-title">Registro de Club</h1>
-        <p class="page-subtitle">Radica tu solicitud. La Liga revisara documentos y notificara el estado de aprobacion.</p>
+  <main class="clubreg-page">
+    <section class="clubreg-hero">
+      <img
+        alt="Atleta de alto rendimiento"
+        class="clubreg-hero-image"
+        src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop"
+        referrerpolicy="no-referrer"
+      />
+      <div class="clubreg-hero-overlay"></div>
+      <div class="clubreg-hero-inner">
+        <span class="clubreg-kicker">Afiliacion 2026</span>
+        <h1>Unete a la <span>Elite del Choco</span></h1>
+        <p>Formaliza tu club ante la Liga de Atletismo del Choco y obten el respaldo tecnico para competir en el circuito nacional e internacional.</p>
       </div>
     </section>
 
-    <section class="page-section">
-      <div class="container mx-auto px-6">
-        <form method="POST" action="/api/registro" encType="multipart/form-data" class="rounded-2xl border border-[var(--border)] bg-white p-8">
+    <section class="clubreg-shell">
+      <div class="clubreg-container">
+        <form method="POST" action="/api/registro" encType="multipart/form-data" class="clubreg-form">
           <input type="hidden" name="profile" value="club" />
           <div class="grid gap-5 md:grid-cols-2">
             <div class="md:col-span-2">
@@ -52,7 +51,7 @@ const errorMessage = Astro.url.searchParams.get('message');
             </div>
             <div>
               <label class="form-label">Telefono *</label>
-              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+\\-\\s()]{7,20}$" inputmode="tel" />
+              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+() -]{7,20}$" inputmode="tel" />
             </div>
             <div>
               <label class="form-label">Pais *</label>
@@ -102,12 +101,126 @@ const errorMessage = Astro.url.searchParams.get('message');
             </div>
           </div>
 
-          <div class="mt-8 flex items-center justify-end">
-            <button class="btn-primary" type="submit">
+          <article class="clubreg-card">
+            <header class="clubreg-card-head head-accent-yellow">
+              <span>Paso 01</span>
+              <h2>Identidad del club</h2>
+            </header>
+            <div class="clubreg-grid grid-3">
+              <label>
+                <small>Nombre oficial del club</small>
+                <input class="clubreg-input" type="text" name="name" required placeholder="Ej: Rayos del Atrato" />
+              </label>
+              <label>
+                <small>Correo electronico</small>
+                <input class="clubreg-input" type="email" name="email" required placeholder="contacto@club.com" />
+              </label>
+              <label>
+                <small>Telefono de contacto</small>
+                <input class="clubreg-input" type="tel" name="phone" required placeholder="+57 300 000 0000" pattern="^[0-9+\-\s()]{7,20}$" inputmode="tel" />
+              </label>
+              <label>
+                <small>Pais</small>
+                <select class="clubreg-input js-geo-country" name="countryIso2" required>
+                  <option value="">Selecciona pais</option>
+                  {geoCountries.map((country) => (
+                    <option value={country.iso2} selected={country.iso2 === 'CO'}>{country.shortName}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <small>Departamento</small>
+                <select class="clubreg-input js-geo-department" name="departmentCode" required>
+                  <option value="">Selecciona departamento</option>
+                </select>
+              </label>
+              <label>
+                <small>Municipio</small>
+                <select class="clubreg-input js-geo-municipality" name="municipalityCode" required>
+                  <option value="">Selecciona municipio</option>
+                </select>
+                <input type="hidden" name="municipality" class="js-geo-municipality-name" />
+              </label>
+            </div>
+          </article>
+
+          <article class="clubreg-card">
+            <header class="clubreg-card-head head-accent-green">
+              <span>Paso 02</span>
+              <h2>Fundamentos legales</h2>
+            </header>
+            <div class="clubreg-grid grid-2">
+              <label>
+                <small>NIT del club</small>
+                <input class="clubreg-input" type="text" name="nit" placeholder="000.000.000-0" pattern="^[0-9-]{5,20}$" inputmode="numeric" />
+              </label>
+              <label>
+                <small>Representante legal</small>
+                <input class="clubreg-input" type="text" name="legalRepresentative" required placeholder="Nombre completo" />
+              </label>
+              <label class="span-2">
+                <small>Reconocimiento deportivo (URL o referencia)</small>
+                <input class="clubreg-input" type="text" name="recognitionDoc" placeholder="mindeporte.gov.co/resolucion-123" />
+              </label>
+            </div>
+          </article>
+
+          <section class="clubreg-last-row">
+            <article class="clubreg-card">
+              <header class="clubreg-card-head head-accent-blue">
+                <span>Paso 03</span>
+                <h2>Anexos y credenciales</h2>
+              </header>
+
+              <div class="upload-grid">
+                <label class="upload-box">
+                  <small>Estatutos del club (PDF)</small>
+                  <input type="file" name="statutesFile" accept=".pdf" />
+                </label>
+                <label class="upload-box">
+                  <small>ID representante legal (PDF)</small>
+                  <input type="file" name="legalIdFile" accept=".pdf" />
+                </label>
+                <label class="upload-box">
+                  <small>Listado de miembros (XLSX/PDF)</small>
+                  <input type="file" name="membersFile" accept=".xlsx,.xls,.pdf" />
+                </label>
+                <label class="upload-box">
+                  <small>Logo del club (PNG/JPG/SVG)</small>
+                  <input type="file" name="logoFile" accept="image/*" />
+                </label>
+              </div>
+
+              <div class="clubreg-grid grid-2 mt-4">
+                <label class="span-2">
+                  <small>Documentos anexos (texto / referencias)</small>
+                  <textarea class="clubreg-input clubreg-textarea" name="documents" placeholder="Estatutos, acta, certificados, etc."></textarea>
+                </label>
+                <label class="span-2">
+                  <small>Contrasena de acceso</small>
+                  <input class="clubreg-input" type="password" name="password" required minlength="8" maxlength="200" placeholder="Minimo 8 caracteres" />
+                </label>
+              </div>
+            </article>
+
+            <aside class="clubreg-sidecard">
+              <div class="clubreg-side-circle">
+                <span class="material-symbols-outlined">shield</span>
+              </div>
+              <h3>Escudo del club</h3>
+              <p>Sube el logo oficial en alta resolucion para mostrarlo en perfiles y listados.</p>
+            </aside>
+          </section>
+
+          <section class="clubreg-actions">
+            <p>
+              Al radicar confirmas que la informacion es veridica y aceptas los reglamentos vigentes de la Liga y la Federacion.
+            </p>
+            <button class="clubreg-submit" type="submit">
               <span class="material-symbols-outlined">send</span>
               Radicar solicitud
             </button>
-          </div>
+          </section>
         </form>
       </div>
     </section>
@@ -125,6 +238,81 @@ const errorMessage = Astro.url.searchParams.get('message');
       </div>
     </div>
   </dialog>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+    .clubreg-page {
+      --club-bg: #ddffe2;
+      --club-surface: #ffffff;
+      --club-primary: #006b1b;
+      --club-secondary: #fdd835;
+      --club-text: #0b361d;
+      --club-border: #8bb79566;
+      background: var(--club-bg);
+      padding-top: var(--navbar-safe-space, 88px);
+      font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+      color: var(--club-text);
+    }
+
+    .clubreg-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .clubreg-hero { position: relative; height: 560px; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); background: #001205; }
+    .clubreg-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.5; filter: contrast(1.2) saturate(1.35); }
+    .clubreg-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 18, 5, 0.25) 0%, rgba(0, 18, 5, 0.86) 80%); }
+    .clubreg-hero-inner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 0 24px; }
+    .clubreg-kicker { display: inline-block; width: fit-content; border-radius: 4px; padding: 6px 12px; margin-bottom: 18px; background: var(--club-secondary); color: #5b4b00; text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; font-weight: 800; font-family: 'Lexend', sans-serif; }
+    .clubreg-hero h1 { margin: 0; font-family: 'Lexend', sans-serif; font-weight: 900; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.02em; font-size: clamp(2.8rem, 8vw, 6.4rem); color: #fff; max-width: 920px; }
+    .clubreg-hero h1 span { color: #d1ffc8; }
+    .clubreg-hero p { margin: 18px 0 0; max-width: 620px; color: #ffffffd9; font-size: 1.08rem; line-height: 1.5; font-weight: 500; }
+    .clubreg-shell { margin-top: -120px; padding-bottom: 80px; position: relative; z-index: 2; }
+    .clubreg-form { display: grid; gap: 28px; }
+    .clubreg-card { background: var(--club-surface); border: 1px solid var(--club-border); border-radius: 14px; padding: 32px; box-shadow: 0 24px 45px rgba(0, 107, 27, 0.07); }
+    .clubreg-card-head { border-left: 8px solid; padding-left: 16px; margin-bottom: 26px; }
+    .head-accent-yellow { border-left-color: var(--club-secondary); }
+    .head-accent-green { border-left-color: var(--club-primary); }
+    .head-accent-blue { border-left-color: #4252b4; }
+    .clubreg-card-head span { display: block; color: #4252b4; text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; font-weight: 800; font-family: 'Lexend', sans-serif; }
+    .clubreg-card-head h2 { margin: 6px 0 0; font-family: 'Lexend', sans-serif; font-size: clamp(1.45rem, 2.7vw, 2.2rem); text-transform: uppercase; letter-spacing: -0.01em; font-weight: 900; }
+    .clubreg-grid { display: grid; gap: 18px; }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .span-2 { grid-column: span 2; }
+    .mt-4 { margin-top: 16px; }
+    .clubreg-grid label { display: grid; gap: 8px; }
+    .clubreg-grid small { text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; font-weight: 800; color: #0b361d99; font-family: 'Lexend', sans-serif; }
+    .clubreg-input { width: 100%; min-height: 52px; border-radius: 10px; border: 1px solid #8bb79544; background: #cafdd433; padding: 12px 14px; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; font-size: 15px; }
+    .clubreg-input:focus { border-color: var(--club-primary); box-shadow: 0 0 0 3px rgba(0, 107, 27, 0.16); background: #fff; }
+    .clubreg-textarea { min-height: 110px; resize: vertical; }
+    .clubreg-last-row { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+    .upload-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .upload-box { border: 2px dashed #8bb79566; border-radius: 12px; padding: 18px; background: #f7fff8; display: grid; gap: 10px; }
+    .upload-box input[type='file'] { width: 100%; font-size: 13px; }
+    .clubreg-sidecard { background: #acecbb; border: 1px solid #8bb79566; border-bottom: 8px solid #fdd835; border-radius: 14px; padding: 28px; text-align: center; box-shadow: 0 20px 36px rgba(0, 107, 27, 0.1); }
+    .clubreg-side-circle { width: 150px; height: 150px; border-radius: 999px; margin: 0 auto 18px; display: grid; place-items: center; background: #fff; border: 4px solid #fff; box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16); }
+    .clubreg-side-circle .material-symbols-outlined { font-size: 56px; color: #6f8c76; }
+    .clubreg-sidecard h3 { margin: 0 0 8px; font-family: 'Lexend', sans-serif; text-transform: uppercase; font-size: 1.5rem; font-weight: 900; }
+    .clubreg-sidecard p { margin: 0; line-height: 1.55; color: #0b361db3; font-weight: 500; }
+    .clubreg-actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid #8bb79544; padding-top: 20px; }
+    .clubreg-actions p { margin: 0; max-width: 700px; color: #0b361db3; line-height: 1.5; font-size: 14px; }
+    .clubreg-submit { display: inline-flex; align-items: center; gap: 12px; min-height: 72px; padding: 0 44px; background: #006b1b; color: #d1ffc8; border: none; border-radius: 6px; clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%); box-shadow: 0 20px 35px rgba(0, 107, 27, 0.35); font-family: 'Lexend', sans-serif; text-transform: uppercase; letter-spacing: 0.06em; font-size: 1.35rem; font-weight: 900; cursor: pointer; transition: transform 0.2s ease; }
+    .clubreg-submit:hover { transform: translateY(-2px); }
+
+    @media (max-width: 1100px) {
+      .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .clubreg-last-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .clubreg-hero { height: 460px; }
+      .clubreg-shell { margin-top: -70px; }
+      .clubreg-container { padding: 0 14px; }
+      .clubreg-card { padding: 18px; }
+      .grid-3, .grid-2, .upload-grid { grid-template-columns: 1fr; }
+      .span-2 { grid-column: span 1; }
+      .clubreg-actions { flex-direction: column; align-items: stretch; }
+      .clubreg-submit { width: 100%; justify-content: center; font-size: 1.1rem; min-height: 58px; }
+    }
+  </style>
 
   <script is:inline define:vars={{ geoDepartments, geoMunicipalities }}>
     const GEO_DEPARTMENTS = geoDepartments;
@@ -242,7 +430,7 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     const validateEmail = () => {
       const value = (emailInput?.value || '').trim();
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         setFieldError(emailInput, 'Ingresa un correo valido (ejemplo@correo.com).');
         return false;
       }
@@ -252,7 +440,7 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     const validatePhone = () => {
       const value = (phoneInput?.value || '').trim();
-      if (!/^[0-9+\\-\\s()]{7,20}$/.test(value)) {
+      if (!/^[0-9+() -]{7,20}$/.test(value)) {
         setFieldError(phoneInput, 'El telefono solo puede tener numeros y simbolos validos (+ - ( )).');
         return false;
       }
@@ -283,18 +471,9 @@ const errorMessage = Astro.url.searchParams.get('message');
     const validateGeo = () => {
       if (!(countrySelect instanceof HTMLSelectElement) || !(departmentSelect instanceof HTMLSelectElement) || !(municipalitySelect instanceof HTMLSelectElement)) return true;
       let valid = true;
-      if (!countrySelect.value) {
-        setFieldError(countrySelect, 'Selecciona un pais.');
-        valid = false;
-      } else clearFieldError(countrySelect);
-      if (!departmentSelect.value) {
-        setFieldError(departmentSelect, 'Selecciona un departamento.');
-        valid = false;
-      } else clearFieldError(departmentSelect);
-      if (!municipalitySelect.value) {
-        setFieldError(municipalitySelect, 'Selecciona un municipio.');
-        valid = false;
-      } else clearFieldError(municipalitySelect);
+      if (!countrySelect.value) { setFieldError(countrySelect, 'Selecciona un pais.'); valid = false; } else clearFieldError(countrySelect);
+      if (!departmentSelect.value) { setFieldError(departmentSelect, 'Selecciona un departamento.'); valid = false; } else clearFieldError(departmentSelect);
+      if (!municipalitySelect.value) { setFieldError(municipalitySelect, 'Selecciona un municipio.'); valid = false; } else clearFieldError(municipalitySelect);
       syncMunicipalityName();
       return valid;
     };
@@ -314,13 +493,6 @@ const errorMessage = Astro.url.searchParams.get('message');
         showModal('Dato invalido', 'Corrige los campos marcados en rojo para continuar.');
       }
     });
-
-    form?.addEventListener('invalid', (event) => {
-      event.preventDefault();
-      const target = event.target;
-      const label = target?.closest('div')?.querySelector('label')?.textContent?.replace('*', '').trim() || 'campo';
-      showModal('Dato invalido', `Revisa el campo "${label}" y vuelve a intentarlo.`);
-    }, true);
 
     const flags = document.getElementById('registroFlags');
     const successValue = flags?.dataset?.success || '';

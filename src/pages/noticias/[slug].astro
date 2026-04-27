@@ -15,7 +15,13 @@ if (!item) {
 }
 
 const itemDate = item?.date ? new Date(item.date) : null;
-const formattedDate = itemDate ? itemDate.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+const formattedDate = itemDate
+  ? itemDate.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })
+  : '';
+
+const related = items.filter((n) => n.slug !== slug).slice(0, 3);
+const articleBody = Array.isArray(item?.body) ? item?.body : [];
+const fallbackHero = '/uploads/default-hero.jpg';
 ---
 <BaseLayout
   title={`${item ? item.title : 'Noticia no encontrada'} | Liga de Atletismo del Chocó`}
@@ -23,57 +29,626 @@ const formattedDate = itemDate ? itemDate.toLocaleDateString('es-CO', { year: 'n
 >
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
-  <main class="pt-[80px] bg-gray-50">
-    <section class="page-hero">
-      <div class="container mx-auto px-6">
-        <nav class="page-breadcrumb">
-          <a href="/" class="page-breadcrumb-link">
-            <span class="material-symbols-outlined text-sm">home</span>
-            Inicio
-          </a>
-          <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <a href="/noticias" class="page-breadcrumb-link">Noticias</a>
-          <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <span class="page-breadcrumb-current">{item ? item.title : 'No encontrada'}</span>
-        </nav>
-        <h1 class="page-title">{item ? item.title : 'Noticia no encontrada'}</h1>
-        <p class="page-subtitle">{item ? item.excerpt : 'La noticia solicitada no existe o fue retirada.'}</p>
-      </div>
-    </section>
-
-    <section class="page-section">
-      <div class="container mx-auto px-6">
-        {item ? (
-          <article class="rounded-2xl border border-[var(--border)] bg-white p-8">
-            {item.imageUrl ? (
-              <div class="mb-8 overflow-hidden rounded-2xl ring-1 ring-slate-100">
-                <img src={item.imageUrl} alt={item.title} class="w-full max-h-[420px] object-cover" referrerpolicy="no-referrer" />
-              </div>
-            ) : null}
-            <div class="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
-              <span class="rounded-full bg-[#e8f5e0] px-3 py-1 text-xs font-bold text-[#006b1b]">{item.category}</span>
-              <span class="inline-flex items-center gap-2">
-                <span class="material-symbols-outlined text-base">calendar_month</span>
-                {formattedDate}
-              </span>
-            </div>
-            <div class="mt-8 space-y-4 text-[var(--text-secondary)] leading-relaxed">
-              {(Array.isArray(item.body) ? item.body : []).map((p) => (
-                <p>{p}</p>
-              ))}
-            </div>
-          </article>
-        ) : (
-          <div class="rounded-2xl border border-[var(--border)] bg-white p-8">
-            <p class="text-[var(--text-secondary)]">Vuelve a noticias para continuar.</p>
-            <div class="mt-6">
-              <a href="/noticias" class="btn-primary">Ver noticias</a>
-            </div>
+  <main class="not-detail-page">
+    {item ? (
+      <>
+        <section class="not-hero">
+          <div class="not-container">
+            <nav class="not-breadcrumb">
+              <a href="/">Inicio</a>
+              <span>›</span>
+              <a href="/noticias">Noticias</a>
+              <span>›</span>
+              <span class="current">{item.title}</span>
+            </nav>
+            <h1>{item.title}</h1>
+            <p>{item.excerpt || 'Comunicado oficial de la Liga de Atletismo del Chocó.'}</p>
           </div>
-        )}
-      </div>
-    </section>
+        </section>
+
+        <section class="not-content-wrap">
+          <div class="not-container not-grid">
+            <article class="not-article">
+              <header class="article-head">
+                <div class="chips">
+                  <span class="chip chip-primary">{item.category || 'Noticia'}</span>
+                  <span class="chip chip-secondary">Destacado</span>
+                </div>
+                <div class="author-line">
+                  <div class="author-box">
+                    <div class="author-avatar">
+                      <img
+                        src={(settings.logoUrl || '/logo.png')}
+                        alt="Autor"
+                        referrerpolicy="no-referrer"
+                      />
+                    </div>
+                    <div>
+                      <p class="author-kicker">Escrito por</p>
+                      <p class="author-name">Liga del Chocó</p>
+                    </div>
+                  </div>
+                  <div class="v-sep"></div>
+                  <div>
+                    <p class="author-kicker">Publicado</p>
+                    <p class="author-name">{formattedDate || 'Sin fecha'}</p>
+                  </div>
+                  <div class="actions">
+                    <button type="button" aria-label="Compartir">↗</button>
+                    <button type="button" aria-label="Guardar">☆</button>
+                  </div>
+                </div>
+              </header>
+
+              <div class="media-box">
+                <img
+                  src={item.imageUrl || fallbackHero}
+                  alt={item.title}
+                  referrerpolicy="no-referrer"
+                />
+                <div class="media-caption">
+                  <p>{item.title}</p>
+                </div>
+              </div>
+
+              <div class="article-content">
+                {articleBody.length > 0 ? (
+                  articleBody.map((paragraph) => <p>{paragraph}</p>)
+                ) : (
+                  <p>{item.excerpt || 'Sin contenido adicional.'}</p>
+                )}
+              </div>
+
+              <footer class="tag-row">
+                <span class="tag-kicker">Etiquetas:</span>
+                <a href="#">#LigaChocó</a>
+                <a href="#">#Atletismo</a>
+                <a href="#">#Noticias</a>
+              </footer>
+            </article>
+
+            <aside class="not-aside">
+              <section class="aside-block">
+                <div class="aside-head">
+                  <h3>Relacionados</h3>
+                  <div class="line"></div>
+                </div>
+                <div class="related-list">
+                  {related.length > 0 ? (
+                    related.map((post) => (
+                      <a class="related-item" href={`/noticias/${post.slug}`}>
+                        <div class="thumb">
+                          <img src={post.imageUrl || fallbackHero} alt={post.title} referrerpolicy="no-referrer" />
+                        </div>
+                        <div class="rel-text">
+                          <span>{post.category || 'Noticia'}</span>
+                          <h4>{post.title}</h4>
+                          <p>{post.date ? new Date(post.date).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) : '-'}</p>
+                        </div>
+                      </a>
+                    ))
+                  ) : (
+                    <p class="empty">No hay noticias relacionadas.</p>
+                  )}
+                </div>
+              </section>
+
+              <section class="newsletter">
+                <h3>No te pierdas nada</h3>
+                <p>Recibe noticias, resultados y convocatorias en tu correo.</p>
+                <form class="newsletter-form" action="#" method="post">
+                  <input type="email" placeholder="Tu email" />
+                  <button type="button">Suscribirme ahora</button>
+                </form>
+              </section>
+            </aside>
+          </div>
+        </section>
+      </>
+    ) : (
+      <section class="not-content-wrap">
+        <div class="not-container">
+          <article class="not-article">
+            <h1 style="font-size:2rem;margin-bottom:.5rem;">Noticia no encontrada</h1>
+            <p>La URL solicitada no corresponde a una noticia vigente.</p>
+            <a href="/noticias" class="back-link">Volver a noticias</a>
+          </article>
+        </div>
+      </section>
+    )}
   </main>
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+    .not-detail-page {
+      --nd-primary: #006b1b;
+      --nd-primary-dark: #0b361d;
+      --nd-secondary: #fdd835;
+      --nd-text: #0b361d;
+      --nd-text-soft: #567164;
+      --nd-border: #d9e6de;
+      --nd-surface: #ffffff;
+      --nd-bg: #f5f8f7;
+      padding-top: var(--navbar-safe-space, 96px);
+      background: var(--nd-bg);
+      font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+      color: var(--nd-text);
+      min-height: 100vh;
+    }
+
+    .not-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .not-hero {
+      background: linear-gradient(100deg, #0b1b44 0%, #132e63 46%, #1e2a48 100%);
+      color: #fff;
+      padding: 42px 0 54px;
+    }
+
+    .not-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .not-breadcrumb a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .not-breadcrumb .current {
+      color: #f4fffc;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .not-hero h1 {
+      margin: 0;
+      font-family: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+      font-size: clamp(2.5rem, 4.6vw, 4.6rem);
+      line-height: 1.02;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      text-transform: uppercase;
+      max-width: 980px;
+    }
+
+    .not-hero p {
+      margin: 14px 0 0;
+      color: rgba(255, 255, 255, .78);
+      font-size: 1.04rem;
+      font-weight: 500;
+      max-width: 760px;
+    }
+
+    .not-content-wrap {
+      padding: 56px 0 88px;
+    }
+
+    .not-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .not-article {
+      background: var(--nd-surface);
+      border: 1px solid var(--nd-border);
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 12px 28px rgba(11, 54, 29, 0.06);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .chip-primary {
+      background: #e5f7e8;
+      color: #0a6d25;
+    }
+
+    .chip-secondary {
+      background: #fff5cb;
+      color: #6f5900;
+    }
+
+    .author-line {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      border-top: 1px solid #e6ece8;
+      border-bottom: 1px solid #e6ece8;
+      padding: 14px 0;
+      margin-bottom: 20px;
+    }
+
+    .author-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .author-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e9f2eb;
+      border: 1px solid #d8e3db;
+      flex: none;
+    }
+
+    .author-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .author-kicker {
+      margin: 0;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .11em;
+      color: #7b8f83;
+    }
+
+    .author-name {
+      margin: 2px 0 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--nd-primary);
+    }
+
+    .v-sep {
+      width: 1px;
+      height: 34px;
+      background: #dde7df;
+    }
+
+    .actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .actions button {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid #d9e4dc;
+      background: #f6faf7;
+      color: #314f3f;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .media-box {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #e0e9e2;
+      background: #f8fcf9;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .media-box img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+
+    .media-caption {
+      position: absolute;
+      left: 20px;
+      bottom: 20px;
+      background: rgba(0, 107, 27, .88);
+      color: #fff;
+      padding: 9px 14px;
+      border-radius: 10px;
+      backdrop-filter: blur(4px);
+    }
+
+    .media-caption p {
+      margin: 0;
+      font-family: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .article-content {
+      font-size: 1.08rem;
+      line-height: 1.84;
+      color: #223f31;
+    }
+
+    .article-content p {
+      margin: 0 0 1.25rem;
+      overflow-wrap: anywhere;
+    }
+
+    .tag-row {
+      margin-top: 22px;
+      border-top: 1px solid #e7ece9;
+      padding-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .tag-kicker {
+      font-size: 12px;
+      color: #698073;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-right: 6px;
+    }
+
+    .tag-row a {
+      border-radius: 999px;
+      border: 1px solid #d8e4dc;
+      background: #f3f8f5;
+      padding: 7px 12px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+      color: #2d4e3d;
+    }
+
+    .not-aside {
+      position: sticky;
+      top: 110px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .aside-block {
+      background: #fff;
+      border: 1px solid var(--nd-border);
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 10px 22px rgba(11, 54, 29, 0.06);
+    }
+
+    .aside-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .aside-head h3 {
+      margin: 0;
+      font-family: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+      font-size: 1.22rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -.01em;
+      color: #102f21;
+    }
+
+    .aside-head .line {
+      height: 2px;
+      background: linear-gradient(90deg, rgba(0, 107, 27, .4), rgba(0, 107, 27, 0));
+      flex: 1;
+    }
+
+    .related-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .related-item {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+      border-radius: 12px;
+      padding: 6px;
+      transition: background .15s ease;
+    }
+
+    .related-item:hover {
+      background: #f6fbf7;
+    }
+
+    .thumb {
+      width: 86px;
+      height: 86px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #dce7df;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .rel-text span {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: #0b7b2a;
+    }
+
+    .rel-text h4 {
+      margin: 4px 0 0;
+      font-family: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.28;
+      font-weight: 800;
+      color: #163728;
+      text-transform: uppercase;
+    }
+
+    .rel-text p {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: #738679;
+      font-weight: 700;
+    }
+
+    .newsletter {
+      background: #ccf6d6;
+      border: 1px solid #b0e8bd;
+      border-radius: 26px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .newsletter::before {
+      content: '';
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      right: -44px;
+      top: -74px;
+      border-radius: 999px;
+      background: rgba(0, 107, 27, .08);
+    }
+
+    .newsletter h3 {
+      margin: 0 0 8px;
+      font-family: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+      font-size: 1.48rem;
+      font-weight: 900;
+      color: #104326;
+      letter-spacing: -.01em;
+    }
+
+    .newsletter p {
+      margin: 0 0 14px;
+      color: #345a44;
+      font-size: .95rem;
+      line-height: 1.5;
+      font-weight: 600;
+    }
+
+    .newsletter-form {
+      display: grid;
+      gap: 8px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .newsletter-form input {
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid #b8dfc0;
+      background: #fff;
+      padding: 0 12px;
+      font-size: 14px;
+      color: #153c2a;
+    }
+
+    .newsletter-form button {
+      height: 44px;
+      border: 0;
+      border-radius: 10px;
+      background: #006b1b;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0, 107, 27, .22);
+    }
+
+    .back-link {
+      display: inline-flex;
+      margin-top: 12px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      text-decoration: none;
+      background: #006b1b;
+      color: #fff;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: .05em;
+    }
+
+    .empty {
+      margin: 0;
+      color: #6e8377;
+      font-size: 14px;
+    }
+
+    @media (max-width: 1120px) {
+      .not-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .not-aside {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .not-container {
+        padding: 0 14px;
+      }
+
+      .not-hero {
+        padding: 28px 0 34px;
+      }
+
+      .not-hero h1 {
+        font-size: clamp(2rem, 10vw, 3rem);
+      }
+
+      .not-article {
+        padding: 16px;
+      }
+
+      .author-line {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .v-sep {
+        display: none;
+      }
+
+      .actions {
+        margin-left: 0;
+      }
+    }
+  </style>
 </BaseLayout>

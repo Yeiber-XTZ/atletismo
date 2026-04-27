@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
-import { requireRoles, requireUser } from '../lib/guards';
+import { requireUser } from '../lib/guards';
 import { listPostulaciones } from '../lib/postulaciones';
 import { redirectInternal } from '../lib/http-redirect';
+import { hasPermission } from '../lib/rbac';
 
 function toCsvCell(value: unknown) {
   const text = String(value ?? '');
@@ -12,7 +13,9 @@ function toCsvCell(value: unknown) {
 export const GET: APIRoute = async ({ cookies, request }) => {
   try {
     const user = await requireUser(cookies);
-    requireRoles(user, ['SUPERADMIN', 'ADMIN', 'LIGA']);
+    if (!hasPermission(user, 'approvals:manage')) {
+      return new Response('Forbidden', { status: 403 });
+    }
 
     const url = new URL(request.url);
     const status = url.searchParams.get('status') ?? 'all';
@@ -82,6 +85,8 @@ export const GET: APIRoute = async ({ cookies, request }) => {
     const status = Number(error?.status || 500);
     if (status === 401) return redirectInternal('/login?next=/admin?tab=convocatorias', 302);
     if (status === 403) return redirectInternal('/acceso-denegado', 302);
+    if (status === 401) return Response.redirect(new URL('/login?next=/admin?tab=aprobaciones', request.url), 302);
+    if (status === 403) return Response.redirect(new URL('/acceso-denegado', request.url), 302);
     return new Response('Internal error', { status: 500 });
   }
 };
