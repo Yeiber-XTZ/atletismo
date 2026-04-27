@@ -4,6 +4,9 @@ set -e
 echo ">>> Aplicando schema y seed..."
 USE_LOCAL_DB=true node scripts/db-init.mjs
 
+echo ">>> Seed de datos..."
+node scripts/seed-catalogs.mjs
+
 echo ">>> Creando/actualizando superusuario..."
 node scripts/create-superuser.mjs
 

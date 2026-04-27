@@ -11,16 +11,19 @@ export function getSessionId(cookies: AstroCookies) {
 
 export async function getUserFromCookies(cookies: AstroCookies): Promise<AuthUser | null> {
   const sessionId = getSessionId(cookies);
+  console.log('[auth] sessionId:', sessionId ? 'present' : 'empty'); // ← temporal
   if (!sessionId) return null;
   try {
     return await getUserFromSession(sessionId);
-  } catch {
+  } catch (e) {
+    console.error('[auth] getUserFromSession error:', e); // ← temporal
     return null;
   }
 }
 
 export async function isAuthenticated(cookies: AstroCookies) {
   const user = await getUserFromCookies(cookies);
+  console.log('[auth] isAuthenticated:', Boolean(user)); // ← temporal
   return Boolean(user);
 }
 
@@ -33,7 +36,7 @@ export async function setSessionCookie(
   cookies.set(COOKIE_NAME, id, {
     httpOnly: true,
     sameSite: 'lax',
-    secure,
+    secure: false,
     path: '/',
     maxAge: SESSION_TTL_SECONDS
   });

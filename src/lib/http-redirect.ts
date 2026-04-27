@@ -11,10 +11,10 @@ export function normalizeInternalPath(path: string, fallback = '/'): string {
 
 export function redirectInternal(path: string, status = 302): Response {
   const target = normalizeInternalPath(path);
+  const origin = (import.meta.env.ORIGIN ?? '').replace(/\/$/, '');
+  const location = origin ? `${origin}${target}` : target;
   return new Response(null, {
     status,
-    headers: {
-      Location: target
-    }
+    headers: { Location: location }
   });
 }

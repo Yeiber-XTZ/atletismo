@@ -107,6 +107,12 @@ const effectiveConvocatoriaDisciplineNormSet = (() => {
   return convocatoriaDisciplineNormSet;
 })();
 const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsPerAthlete ?? 1) || 1);
+const isClubUser = user?.role === 'CLUB';
+const isAdminUser = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN' || user?.role === 'LIGA';
+const canSeeAssemblyPanel = Boolean(user && (hasPermission(user, 'assembly:self_panel') || hasPermission(user, 'asambleas:manage')));
+const shouldShowGuestActions = !user || (!isClubUser && !isAdminUser && !canSeeAssemblyPanel);
+const convocatoriaPath = `/convocatorias/${slug}`;
+const loginHref = `/login?next=${encodeURIComponent(convocatoriaPath)}`;
 ---
 <BaseLayout
   title={`${convocatoria ? convocatoria.title : 'Convocatoria no encontrada'} | Liga de Atletismo del Choco`}
@@ -180,26 +186,23 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
                   Maximo pruebas por deportista: <strong class="text-[#0f172a]">{maxEventsPerAthlete}</strong>
                 </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </section>
-
+              
               <div class="mt-8 flex flex-col gap-3">
-                {user?.role === 'CLUB' ? (
-                  effectiveClubId ? (
-                    <a href="#postulacion-club-panel" class="btn-primary">
-                      <span class="material-symbols-outlined">how_to_reg</span>
-                      Abrir panel de postulación
-                    </a>
-                  ) : (
-                    <div class="alert warn">
-                      <span class="material-symbols-outlined text-base align-middle mr-1">warning</span>
-                      Tu cuenta no tiene un club asignado. Contacta al administrador de la Liga.
-                    </div>
-                  )
-                ) : user?.role === 'SUPERADMIN' || user?.role === 'ADMIN' || user?.role === 'LIGA' ? (
+                {isClubUser && effectiveClubId && (
+                  <a href="#postulacion-club-panel" class="btn-primary">
+                    <span class="material-symbols-outlined">how_to_reg</span>
+                    Abrir panel de postulacion
+                  </a>
+                )}
+
+                {isClubUser && !effectiveClubId && (
+                  <div class="alert warn">
+                    <span class="material-symbols-outlined text-base align-middle mr-1">warning</span>
+                    Tu cuenta no tiene un club asignado. Contacta al administrador de la Liga.
+                  </div>
+                )}
+
+                {isAdminUser && (
                   <div class="post-actions">
                     <div class="alert info">
                       <span class="material-symbols-outlined text-base align-middle mr-1">admin_panel_settings</span>
@@ -210,15 +213,19 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
                       Gestionar postulaciones
                     </a>
                   </div>
-                ) : user && (hasPermission(user, 'assembly:self_panel') || hasPermission(user, 'asambleas:manage')) ? (
+                )}
+
+                {user && canSeeAssemblyPanel && !isAdminUser && (
                   <div class="alert info">
                     <span class="material-symbols-outlined text-base align-middle mr-1">visibility</span>
                     Puedes consultar el estado de esta convocatoria desde tu <a href="/admin?tab=convocatorias" class="inline-link">panel</a>.
                   </div>
-                ) : (
+                )}
+
+                {shouldShowGuestActions && (
                   <>
                     <p class="text-sm text-[var(--text-secondary)]">Los clubes afiliados pueden postular atletas a esta convocatoria.</p>
-                    <a href={`/login?next=${encodeURIComponent(`/convocatorias/${slug}`)}`} class="btn-primary">
+                    <a href={loginHref} class="btn-primary">
                       <span class="material-symbols-outlined">login</span>
                       Iniciar sesion
                     </a>
@@ -226,10 +233,10 @@ const maxEventsPerAthlete = Math.max(1, Number((convocatoria as any)?.maxEventsP
                       <span class="material-symbols-outlined">person_add</span>
                       Registro Club
                     </a>
-                  </div>
+                  </>
                 )}
 
-                <p class="post-note">El estado de la postulaciÃ³n se consulta en el panel del club.</p>
+                <p class="post-note">El estado de la postulacion se consulta en el panel del club.</p>
               </div>
               <p class="mt-4 text-xs text-[var(--text-muted)]">El estado de tu postulacion se consulta en el panel del club.</p>
             </aside>

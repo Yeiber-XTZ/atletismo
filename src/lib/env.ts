@@ -51,17 +51,17 @@ export function parseRequireDatabase(raw: unknown): boolean {
   return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
 }
 
+export function getAllowedHosts() {
+  const raw: unknown = process.env.ALLOWED_HOSTS;
+  return parseAllowedHosts(raw);
+}
+
 export function getDatabaseUrl() {
-  const raw: unknown = import.meta.env.DATABASE_URL;
+  const raw: unknown = process.env.DATABASE_URL;
   return normalizeDatabaseUrl(raw);
 }
 
 export function requireDatabase() {
-  const raw: unknown = import.meta.env.REQUIRE_DB;
+  const raw: unknown = process.env.REQUIRE_DB;
   return parseRequireDatabase(raw);
-}
-
-export function getAllowedHosts() {
-  const raw: unknown = import.meta.env.ALLOWED_HOSTS;
-  return parseAllowedHosts(raw);
 }

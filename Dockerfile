@@ -2,20 +2,13 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-RUN apk add --no-cache postgresql-client
-# Instalar pnpm
+RUN apk add --no-cache postgresql-client python3 py3-pip
 RUN npm install -g pnpm
 
-# Copiar manifiestos de dependencias
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Instalar dependencias (incluye devDeps para el build)
 RUN pnpm install --frozen-lockfile
 
-# Copiar el resto del proyecto
 COPY . .
-
-# Build de Astro
 RUN pnpm run build
 
 # ── Etapa 2: runtime ──────────────────────────────────────────────────────────
@@ -23,26 +16,27 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache postgresql-client python3 py3-pip  # ✅ ya lo tenías
 RUN npm install -g pnpm
 
-# Solo los manifiestos para instalar dependencias de producción
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
-# Artefactos del build
 COPY --from=builder /app/dist ./dist
 
-# Scripts y archivos necesarios en runtime
 COPY scripts/ ./scripts/
 COPY schema.sql ./schema.sql
 COPY data/ ./data/
+COPY seeds/ ./seeds/
 
-# Entrypoint
+# ── Instalar dependencias Python del seed ─────────────────────────────────────
+# Solo si seeds/ tiene requirements.txt; si no, omite esta línea
+RUN pip install --no-cache-dir --break-system-packages -r seeds/requirements.txt 2>/dev/null || true
+# ─────────────────────────────────────────────────────────────────────────────
+
 COPY entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 
-# Cloud Run usa el puerto 8080 por defecto
 ENV HOST=0.0.0.0
 ENV PORT=8080
 
