@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import FooterKinetic from '../../components/FooterKinetic.astro';
@@ -15,12 +15,12 @@ if (!post) {
 }
 ---
 <BaseLayout
-  title={`${post ? post.title : 'Artículo no encontrado'} | Liga de Atletismo del Chocó`}
-  description="Artículo del blog de la Liga de Atletismo del Chocó."
+  title={`${post ? post.title : 'Articulo no encontrado'} | Liga de Atletismo del Choco`}
+  description="Articulo del blog de la Liga de Atletismo del Choco."
 >
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
-  <main class="pt-[80px] bg-gray-50">
+  <main class="blog-detail-page">
     <section class="page-hero">
       <div class="container mx-auto px-6">
         <nav class="page-breadcrumb">
@@ -33,40 +33,40 @@ if (!post) {
           <span class="material-symbols-outlined text-sm">chevron_right</span>
           <span class="page-breadcrumb-current">{post ? post.title : 'No encontrado'}</span>
         </nav>
-        <h1 class="page-title">{post ? post.title : 'Artículo no encontrado'}</h1>
-        <p class="page-subtitle">{post ? post.excerpt : 'El artículo solicitado no existe o fue retirado.'}</p>
+        <h1 class="page-title blog-title-wrap">{post ? post.title : 'Articulo no encontrado'}</h1>
+        <p class="page-subtitle blog-subtitle-wrap">{post ? post.excerpt : 'El articulo solicitado no existe o fue retirado.'}</p>
       </div>
     </section>
 
     <section class="page-section">
       <div class="container mx-auto px-6">
         {post ? (
-          <article class="rounded-2xl border border-[var(--border)] bg-white p-8">
+          <article class="blog-article-card">
             {post.imageUrl ? (
-              <div class="mb-8 overflow-hidden rounded-2xl ring-1 ring-slate-100">
-                <img src={post.imageUrl} alt={post.title} class="w-full max-h-[420px] object-cover" referrerpolicy="no-referrer" />
+              <div class="blog-media-box">
+                <img src={post.imageUrl} alt={post.title} class="blog-media-image" referrerpolicy="no-referrer" />
               </div>
             ) : null}
             {post.videoUrl ? (
-              <div class="mb-8 overflow-hidden rounded-2xl ring-1 ring-slate-100 bg-black">
-                <video class="w-full max-h-[420px]" controls preload="metadata" src={post.videoUrl}>
+              <div class="blog-media-box blog-media-video">
+                <video class="blog-video-player" controls preload="metadata" src={post.videoUrl}>
                   Tu navegador no soporta video HTML5.
                 </video>
               </div>
             ) : null}
-            <div class="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <div class="blog-meta-row">
               <span class="inline-flex items-center gap-2">
                 <span class="material-symbols-outlined text-base">calendar_month</span>
                 {post.date}
               </span>
-              <span class="text-[var(--text-muted)]">·</span>
+              <span class="text-[var(--text-muted)]">&middot;</span>
               <div class="flex flex-wrap gap-2">
                 {post.tags.map((t) => (
-                  <span class="rounded-full bg-[#f1f5f9] px-3 py-1 text-xs font-bold text-[#334155]">{t}</span>
+                  <span class="blog-tag">{t}</span>
                 ))}
               </div>
             </div>
-            <div class="mt-8 space-y-4 text-[var(--text-secondary)] leading-relaxed">
+            <div class="blog-content">
               {(Array.isArray(post.body) ? post.body : []).map((p) => (
                 <p>{p}</p>
               ))}
@@ -85,4 +85,111 @@ if (!post) {
   </main>
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
+
+  <style>
+    .blog-detail-page {
+      padding-top: var(--navbar-safe-space, 96px);
+      min-height: 100vh;
+      background: linear-gradient(180deg, #f8fafc 0%, #f3f6f5 100%);
+    }
+
+    .blog-title-wrap,
+    .blog-subtitle-wrap {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      text-wrap: pretty;
+      max-width: 100%;
+    }
+
+    .blog-article-card {
+      border-radius: 1rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: clamp(1rem, 2.2vw, 2rem);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+
+    .blog-media-box {
+      margin-bottom: 1.5rem;
+      border-radius: 1rem;
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      min-height: 280px;
+      max-height: 560px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .blog-media-image {
+      width: 100%;
+      height: min(72vh, 560px);
+      object-fit: contain;
+      object-position: center;
+      background: #fff;
+    }
+
+    .blog-media-video {
+      background: #000;
+    }
+
+    .blog-video-player {
+      width: 100%;
+      max-height: min(72vh, 560px);
+      background: #000;
+    }
+
+    .blog-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .blog-tag {
+      border-radius: 9999px;
+      background: #f1f5f9;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #334155;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .blog-content {
+      margin-top: 1.5rem;
+      display: grid;
+      gap: 1rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-size: clamp(1rem, 1.2vw, 1.08rem);
+    }
+
+    .blog-content p {
+      margin: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      hyphens: auto;
+      text-wrap: pretty;
+    }
+
+    @media (max-width: 768px) {
+      .blog-media-box {
+        min-height: 220px;
+      }
+
+      .blog-media-image,
+      .blog-video-player {
+        height: min(56vh, 360px);
+        max-height: 360px;
+      }
+    }
+  </style>
 </BaseLayout>
