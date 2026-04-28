@@ -3451,20 +3451,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Noticias</h4>
         </div>
         <div class="admin-card-body">
-          <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4">
-            <input type="hidden" name="pageKey" value="noticias" />
-            <input type="hidden" name="tab" value="noticias" />
-            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Noticias</h5>
-            <div>
-              <input class="admin-input" type="file" name="heroFile" accept="image/*" />
-              <input type="hidden" name="heroUrl" value={pageHeroMap.noticias ?? ''} />
-              {pageHeroMap.noticias ? <p class="text-xs text-gray-500 mt-1">Actual: {pageHeroMap.noticias}</p> : <p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>}
-            </div>
-            <div class="flex items-center justify-end">
-              <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Noticias</button>
-            </div>
-          </form>
-          <form method="POST" action="/api/admin/news" encType="multipart/form-data" class="grid gap-5 mt-6">
+          <form method="POST" action="/api/admin/news" encType="multipart/form-data" class="grid gap-5">
             <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
               <div>
                 <p class="text-sm font-semibold text-gray-700">Tarjetas de noticias</p>
@@ -3546,20 +3533,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Blog</h4>
         </div>
         <div class="admin-card-body">
-          <form method="POST" action="/api/admin/page-hero" encType="multipart/form-data" class="grid gap-3 rounded-xl border border-gray-200 bg-white p-4">
-            <input type="hidden" name="pageKey" value="blog" />
-            <input type="hidden" name="tab" value="blog" />
-            <h5 class="text-sm font-semibold text-gray-700">Hero de la vista Blog</h5>
-            <div>
-              <input class="admin-input" type="file" name="heroFile" accept="image/*" />
-              <input type="hidden" name="heroUrl" value={pageHeroMap.blog ?? ''} />
-              {pageHeroMap.blog ? <p class="text-xs text-gray-500 mt-1">Actual: {pageHeroMap.blog}</p> : <p class="text-xs text-gray-500 mt-1">Usando hero principal por defecto.</p>}
-            </div>
-            <div class="flex items-center justify-end">
-              <button class="admin-btn admin-btn-secondary" type="submit"><span class="material-symbols-outlined">image</span>Guardar hero de Blog</button>
-            </div>
-          </form>
-          <form method="POST" action="/api/admin/blog" encType="multipart/form-data" class="grid gap-5 mt-6">
+          <form method="POST" action="/api/admin/blog" encType="multipart/form-data" class="grid gap-5">
             <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
               <div>
                 <p class="text-sm font-semibold text-gray-700">Tarjetas de blog</p>

@@ -5,7 +5,7 @@ const {
   badge = 'EL CORAZON DEL PACIFICO',
   headlineHtml = 'La Fuerza del <br/> <span class="text-[#eab308]">Chocó</span> en Cada <br/> Zancada',
   subtitle = 'Forjando los campeones que llevarán la bandera de Colombia a lo más alto. Velocidad pura, talento natural, excelencia tropical.',
-  imageUrl = 'https://images.unsplash.com/photo-1530549387074-d56a99e148c9?w=4000&auto=format&fit=crop',
+  imageUrl = '/uploads/heroes/home-hero-generated-2400x1000.png',
   nextEventName = 'Grand Prix Quibdó',
   nextEventDateText = 'Agosto 24, 2024'
 } = Astro.props;
@@ -20,8 +20,6 @@ const canSeeConvocatoria = hasRole(user, ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB']
   >
     <img src={imageUrl} alt="" loading="eager" fetchpriority="high" decoding="async" class="sr-only" />
   </div>
-  <div class="hero-home-overlay"></div>
-
   <div class="hero-home-content">
     <div class="hero-home-copy">
       <span class="hero-home-badge">{badge}</span>
@@ -58,7 +56,7 @@ const canSeeConvocatoria = hasRole(user, ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB']
     min-height: 760px;
     max-height: 760px;
     padding-top: var(--navbar-safe-space, 108px);
-    background: #001205;
+    background: transparent;
   }
 
   .hero-home-bg {
@@ -69,15 +67,6 @@ const canSeeConvocatoria = hasRole(user, ['SUPERADMIN', 'ADMIN', 'LIGA', 'CLUB']
     background-position: center;
     background-repeat: no-repeat;
     transform: scale(1.02);
-  }
-
-  .hero-home-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      linear-gradient(122deg, rgba(0, 18, 5, 0.34) 0%, rgba(0, 18, 5, 0.1) 46%, rgba(234, 179, 8, 0.1) 100%),
-      linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.22) 100%);
   }
 
   .hero-home-content {
