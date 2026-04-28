@@ -98,6 +98,7 @@ async function ensureClubLinkedAtLogin(input: {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  console.log('[login] POST recibido');
   const secureCookie = shouldUseSecureCookies(request);
   const form = await request.formData();
   const payload = {
@@ -105,9 +106,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     password: String(form.get('password') ?? ''),
     next: String(form.get('next') ?? '')
   };
+  console.log('[login] email:', payload.email);
 
   const parsed = schema.safeParse(payload);
   if (!parsed.success) {
+    console.log('[login] schema inválido:', parsed.error.flatten()); // ← agregar
     return redirectInternal(invalidRedirectPath(payload.next), 302);
   }
 
