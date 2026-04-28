@@ -1,4 +1,9 @@
 function looksLikePlaceholderDatabaseUrl(raw: string) {
+  // Cloud SQL socket format: postgresql://user:pass@/dbname?host=/cloudsql/...
+  // new URL() throws on empty host, but this is a valid Cloud SQL URL.
+  const cloudSqlSocketPattern = /^postgresql:\/\/.+@\/[^?]+\?host=\/cloudsql\/.+/;
+  if (cloudSqlSocketPattern.test(raw)) return false;
+
   try {
     const parsed = new URL(raw);
     const hostname = (parsed.hostname || '').toLowerCase();
@@ -11,7 +16,6 @@ function looksLikePlaceholderDatabaseUrl(raw: string) {
     if (password === 'password') return true;
     if (pathname === '/dbname') return true;
   } catch {
-    // If it isn't a valid URL, treat it as "not configured" so we don't crash dev.
     return true;
   }
 
