@@ -1,6 +1,46 @@
 [
   {
     "profile": "club",
+    "name": "Sabores de Nelly",
+    "email": "franklin2mosquera@gmail.com",
+    "radicado": "REG-20260428-AF8DE6",
+    "createdAt": "2026-04-28T21:03:41.785Z",
+    "data": {
+      "phone": "3121213121",
+      "countryIso2": "CO",
+      "departmentCode": "27",
+      "municipalityCode": "27001",
+      "municipality": "Quibd�",
+      "nit": "31213212324",
+      "legalRepresentative": "Nelly Mosquera",
+      "recognitionDoc": "http://localhost:4321/registro/club",
+      "documents": "Estatus",
+      "logoFileUrl": "/files/10",
+      "passwordHash": "scrypt$16384$8$1$zAG2hESSpuUVP-2HfUEw0A$EiVPqVC1YI1x5EP-GgfgqDbJ5t-wd7l0llWvb_TXLVePEgvbfmTQ8dZUHUTHDtVw-Qa7hiIGg1plLi_ycbtqAA"
+    }
+  },
+  {
+    "profile": "club",
+    "name": "Ébano Company",
+    "email": "desarollosoftware91@gmail.com",
+    "radicado": "REG-20260428-3913F6",
+    "createdAt": "2026-04-28T20:53:06.853Z",
+    "data": {
+      "phone": "+573122694212",
+      "countryIso2": "CO",
+      "departmentCode": "27",
+      "municipalityCode": "27001",
+      "municipality": "Quibd�",
+      "nit": "727222222223",
+      "legalRepresentative": "Mayiris Palma",
+      "recognitionDoc": "http://localhost:4321/registro/club",
+      "documents": "Estatus",
+      "logoFileUrl": "/files/9",
+      "passwordHash": "scrypt$16384$8$1$a-TleLuLTXi7C_04fV0oUQ$yiKAwYc58I-ljL7rSzzqFgPLq1vw5zIvKM5OkTpA9u6X7DRBF9qFBbEPmI2NG9vntFSY3coGk96tQEGHTzOBjw"
+    }
+  },
+  {
+    "profile": "club",
     "name": "arenas360",
     "email": "arenas360@gmail.com",
     "radicado": "REG-20260421-E8DD5D",

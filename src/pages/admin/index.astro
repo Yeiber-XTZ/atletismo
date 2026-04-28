@@ -520,6 +520,21 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
 
       <div class="flex items-center gap-4">
+        {canManageApprovals ? (
+          <a
+            class="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-gray-600"
+            href="/admin?tab=solicitudes"
+            aria-label={`Solicitudes pendientes: ${registrationRadicados.length}`}
+            title={`Solicitudes pendientes: ${registrationRadicados.length}`}
+          >
+            <span class="material-symbols-outlined">notifications</span>
+            {registrationRadicados.length > 0 ? (
+              <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#e7d916] text-[#2d3e50] text-[10px] font-black leading-[18px] text-center">
+                {registrationRadicados.length > 99 ? '99+' : registrationRadicados.length}
+              </span>
+            ) : null}
+          </a>
+        ) : null}
         <a class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-gray-600" href="/admin?tab=settings" aria-label="Configuración">
           <span class="material-symbols-outlined">settings</span>
         </a>
