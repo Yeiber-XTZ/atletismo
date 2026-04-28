@@ -131,6 +131,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       await logAudit({ userId: user.id, action: 'login_failed_no_role', meta: { email: parsed.data.email }, request });
       return redirectInternal(invalidRedirectPath(parsed.data.next), 302);
     }
+
     let sessionClubId = user.clubId ?? null;
     if (role === 'CLUB') {
       sessionClubId = await ensureClubLinkedAtLogin({
@@ -140,24 +141,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         currentClubId: user.clubId
       });
     }
-    await setSessionCookie(cookies, {
+
+    // ✅ Ahora devuelve el header Set-Cookie serializado como string
+    const cookieHeader = await setSessionCookie(cookies, {
       userId: user.id,
       role,
       clubId: sessionClubId,
       userAgent: request.headers.get('user-agent'),
       ip: request.headers.get('x-forwarded-for')
     }, secureCookie);
+
     await logAudit({ userId: user.id, action: 'login_success', meta: { role }, request });
 
     const nextPath = safeNext(parsed.data.next);
     if (nextPath) {
       if (nextPath.startsWith('/admin') && !canAccessAdminByRole(role)) {
-        return redirectInternal(defaultRedirectForRole(role), 302);
+        return redirectInternal(defaultRedirectForRole(role), 302, cookieHeader);
       }
-      return redirectInternal(nextPath, 302);
+      return redirectInternal(nextPath, 302, cookieHeader);
     }
 
-    return redirectInternal(defaultRedirectForRole(role), 302);
+    return redirectInternal(defaultRedirectForRole(role), 302, cookieHeader);
+
   } catch (error) {
     if (isDbUnavailableError(error)) {
       return redirectInternal(dbRedirectPath(parsed.data.next), 302);
@@ -169,5 +174,3 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 export const GET: APIRoute = async ({ request }) => {
   return redirectInternal('/login', 302);
 };
-
-

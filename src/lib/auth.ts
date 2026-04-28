@@ -11,28 +11,30 @@ export function getSessionId(cookies: AstroCookies) {
 
 export async function getUserFromCookies(cookies: AstroCookies): Promise<AuthUser | null> {
   const sessionId = getSessionId(cookies);
-  console.log('[auth] sessionId:', sessionId ? 'present' : 'empty'); // ← temporal
+  console.log('[auth] sessionId:', sessionId ? 'present' : 'empty');
   if (!sessionId) return null;
   try {
     return await getUserFromSession(sessionId);
   } catch (e) {
-    console.error('[auth] getUserFromSession error:', e); // ← temporal
+    console.error('[auth] getUserFromSession error:', e);
     return null;
   }
 }
 
 export async function isAuthenticated(cookies: AstroCookies) {
   const user = await getUserFromCookies(cookies);
-  console.log('[auth] isAuthenticated:', Boolean(user)); // ← temporal
+  console.log('[auth] isAuthenticated:', Boolean(user));
   return Boolean(user);
 }
 
 export async function setSessionCookie(
   cookies: AstroCookies,
   input: { userId: number; role: Role; clubId?: number | null; ip?: string | null; userAgent?: string | null },
-  secure: boolean
-) {
+  _secure: boolean
+): Promise<string> {
   const { id } = await createDbSession(input);
+
+  // Setear en Astro (para compatibilidad con SSR pages que lean cookies)
   cookies.set(COOKIE_NAME, id, {
     httpOnly: true,
     sameSite: 'lax',
@@ -40,6 +42,9 @@ export async function setSessionCookie(
     path: '/',
     maxAge: SESSION_TTL_SECONDS
   });
+
+  // Devolver el header serializado manualmente para poder pegarlo en Response cruda
+  return `${COOKIE_NAME}=${id}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_SECONDS}`;
 }
 
 export async function clearSessionCookie(cookies: AstroCookies) {
@@ -52,4 +57,3 @@ export async function clearSessionCookie(cookies: AstroCookies) {
     // ignore
   }
 }
-

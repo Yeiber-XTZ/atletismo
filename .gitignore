@@ -12,3 +12,4 @@ docs/
 data/*
 data/uploads/*
 .env
+.vercel
