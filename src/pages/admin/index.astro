@@ -4,7 +4,7 @@ import AdminShell from '../../components/admin/AdminShell.astro';
 import { getAdminData, listDocuments } from '../../lib/admin';
 import { hasPermission, PERMISSIONS, ROLES, type AuthUser } from '../../lib/rbac';
 import { listRolePermissionMatrix } from '../../lib/role-permissions';
-import { listUsers } from '../../lib/users';
+import { getUserById, listUsers } from '../../lib/users';
 import { listPqrs } from '../../lib/pqrs';
 import { listPostulaciones, PostulationStatus, summarizePostulaciones } from '../../lib/postulaciones';
 import { listAssemblyMeetings, summarizeAssemblyAttendance, summarizeAssemblyMeetings } from '../../lib/asambleas';
@@ -13,6 +13,7 @@ import { getAdminAlerts } from '../../lib/alerts';
 import { listNotifications, listNotificationsForRole } from '../../lib/notificaciones';
 import { listAuditLogs } from '../../lib/audit';
 import { listRadicados } from '../../lib/radicados';
+import { listApprovalRequests } from '../../lib/approvals';
 import { listConvocatoriaCategories } from '../../lib/convocatoria-categories';
 import { listAthletes } from '../../lib/athletes-admin';
 import { getClubByOwnerUserId } from '../../lib/clubs';
@@ -58,9 +59,16 @@ const errorMessages: Record<string, string> = {
   invalid_schema: 'Hay campos inválidos o incompletos. Revisa el formulario.',
   missing_club: 'Tu usuario no tiene club asociado para registrar atletas.',
   missing_municipality: 'Debes seleccionar un municipio válido.',
-  duplicate_document: 'Ya existe un atleta con ese número de documento.'
+  duplicate_document: 'Ya existe un atleta con ese número de documento.',
+  duplicate_email: 'El correo ya está registrado por otro usuario.'
 };
 const errorMessage = error ? (errorMessages[error] ?? 'Error al guardar los cambios') : '';
+const savedMessages: Record<string, string> = {
+  '1': 'Cambios guardados exitosamente',
+  profile_updated: 'Perfil actualizado exitosamente',
+  profile_request_sent: 'Solicitud de cambio enviada. Se aplicará cuando sea aprobada.'
+};
+const savedMessage = saved ? (savedMessages[saved] ?? 'Cambios guardados exitosamente') : '';
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
 const postulationStatusFilter = Astro.url.searchParams.get('postStatus') ?? 'all';
 const postulationQuery = (Astro.url.searchParams.get('postQ') ?? '').trim();
@@ -76,6 +84,9 @@ const auditPageSize = Math.min(100, Math.max(10, Number(Astro.url.searchParams.g
 const data = await getAdminData();
 const sexCatalog = await listSexCatalog();
 const geoCatalog = await listGeoCatalogs();
+const geoCountries = geoCatalog.countries ?? [];
+const geoDepartments = geoCatalog.departments ?? [];
+const geoMunicipalities = geoCatalog.municipalities ?? [];
 const athleticsCatalog = await listAthleticsCatalogs();
 const managedConvocatoriaCategories = await listConvocatoriaCategories();
 const docs = await listDocuments();
@@ -88,6 +99,16 @@ const convocatoriaCategoryOptions = Array.from(
     ].filter(Boolean)
   )
 ).sort((a, b) => a.localeCompare(b, 'es-CO'));
+
+const normalizeGeoText = (value: unknown) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+const municipalityGeoIndex = new Map(
+  (geoMunicipalities ?? []).map((item) => [normalizeGeoText(item.name), item])
+);
 
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
@@ -128,6 +149,10 @@ if (contentTab === 'asambleas' && !canViewAsambleasPanel) {
 if (contentTab === 'athletes' && !canAccessAthletesTab) {
   return Astro.redirect('/acceso-denegado');
 }
+if (contentTab === 'perfil' && user?.role === 'SUPERADMIN') {
+  return Astro.redirect('/acceso-denegado');
+}
+const currentProfileUser = user?.id ? await getUserById(Number(user.id)) : null;
 const users = canManageUsers ? await listUsers() : [];
 const usersForUsersTab =
   user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN'
@@ -162,6 +187,9 @@ const alerts = canViewAlerts ? await getAdminAlerts() : [];
 const notificationsManaged = canManageNotifications ? await listNotifications() : [];
 const notificationsForUser = canViewNotifications && user?.role ? await listNotificationsForRole(user.role) : [];
 const registrationRadicados = canManageApprovals ? await listRadicados('pending') : [];
+const pendingProfileRequests = canManageApprovals
+  ? (await listApprovalRequests('pending')).filter((item) => item.module === 'profile_update')
+  : [];
 const auditLogResult = isAdminRoot
   ? await listAuditLogs({
       action: auditAction || undefined,
@@ -400,9 +428,6 @@ const clubsWithId = (data.clubs ?? [])
   .map((club: any) => ({ ...club, id: Number(club.id) }))
   .sort((a: any, b: any) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'es-CO'));
 const clubNameById = new Map<number, string>(clubsWithId.map((club: any) => [Number(club.id), String(club.name ?? '')]));
-const geoCountries = geoCatalog.countries ?? [];
-const geoDepartments = geoCatalog.departments ?? [];
-const geoMunicipalities = geoCatalog.municipalities ?? [];
 const athleticsDisciplineNames = (athleticsCatalog.disciplines ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
 const athleticsEventNames = (athleticsCatalog.events ?? []).map((item) => String(item.name ?? '')).filter(Boolean);
 const athleticsEventsCatalog = athleticsCatalog.events ?? [];
@@ -478,7 +503,7 @@ const NAV_PERMS: Record<string, Parameters<typeof hasPermission>[1] | 'admin:all
 };
 
 const navItems = rawNavItems.filter((item) => {
-  if (item.id === 'perfil') return true;
+  if (item.id === 'perfil') return user?.role !== 'SUPERADMIN';
   if (item.id === 'asambleas') return canViewAsambleasPanel;
   if (item.id === 'athletes') return canAccessAthletesTab;
   const r = user?.role;
@@ -520,6 +545,21 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
       </div>
 
       <div class="flex items-center gap-4">
+        {canManageApprovals ? (
+          <a
+            class="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-gray-600"
+            href="/admin?tab=solicitudes"
+            aria-label={`Solicitudes pendientes: ${registrationRadicados.length}`}
+            title={`Solicitudes pendientes: ${registrationRadicados.length}`}
+          >
+            <span class="material-symbols-outlined">notifications</span>
+            {registrationRadicados.length > 0 ? (
+              <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#e7d916] text-[#2d3e50] text-[10px] font-black leading-[18px] text-center">
+                {registrationRadicados.length > 99 ? '99+' : registrationRadicados.length}
+              </span>
+            ) : null}
+          </a>
+        ) : null}
         <a class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-gray-600" href="/admin?tab=settings" aria-label="Configuración">
           <span class="material-symbols-outlined">settings</span>
         </a>
@@ -537,7 +577,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
     {saved ? (
       <div class="admin-alert admin-alert-success">
         <span class="material-symbols-outlined">check_circle</span>
-        <span>Cambios guardados exitosamente</span>
+        <span>{savedMessage}</span>
       </div>
     ) : null}
 
@@ -570,48 +610,85 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Mi Perfil</h4>
         </div>
         <div class="admin-card-body space-y-4">
-          <p class="text-sm text-gray-500">Puedes modificar tu información aquí. Todos los cambios que realices se enviarán para revisión de la Liga y no se reflejarán hasta que sean aprobados.</p>
+          <p class="text-sm text-gray-500">
+            {user?.role === 'CLUB'
+              ? 'Puedes actualizar nombre y correo. En rol CLUB los cambios se envían a aprobación y solo se reflejan cuando sean aprobados.'
+              : 'Puedes actualizar tu nombre y correo directamente desde esta vista.'}
+          </p>
           <form method="POST" action="/api/admin/profile_request" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5">
             <h5 class="text-sm font-semibold text-gray-700">Información del Usuario</h5>
             <div class="grid gap-5 md:grid-cols-2">
               <div>
-                <label class="admin-label">Email</label>
-                <input class="admin-input" type="email" value={user?.email} disabled />
+                <label class="admin-label">Nombre</label>
+                <input class="admin-input" type="text" name="displayName" value={currentProfileUser?.displayName ?? ''} required />
               </div>
-              <div class="md:col-span-1">
-                <label class="admin-label">Rol</label>
-                <input class="admin-input" type="text" value={user?.role} disabled />
+              <div>
+                <label class="admin-label">Email</label>
+                <input class="admin-input" type="email" name="email" value={currentProfileUser?.email ?? user?.email ?? ''} required />
               </div>
             </div>
             
             {user?.clubId ? (
               <>
                 <h5 class="text-sm font-semibold text-gray-700 mt-4 border-t pt-4">Información del Club asociado</h5>
-                <div class="grid gap-5 md:grid-cols-3">
-                  {[data.clubs.find(c => c.id === user.clubId) || { name: '', municipality: '', coach: '' }].map(myClub => (
+                <div class="grid gap-5 md:grid-cols-4">
+                  {[data.clubs.find(c => c.id === user.clubId) || { name: '', municipality: '', coach: '' }].map(myClub => {
+                    const selectedGeoMunicipality = municipalityGeoIndex.get(normalizeGeoText(myClub.municipality));
+                    const selectedDepartmentCode = String(selectedGeoMunicipality?.departmentCode ?? '');
+                    const selectedMunicipalityCode = String(selectedGeoMunicipality?.code ?? '');
+                    return (
                     <>
                       <div class="md:col-span-1">
                           <label class="admin-label">Nombre del Club</label>
                           <input class="admin-input" name="clubName" value={myClub.name} required />
                       </div>
                       <div class="md:col-span-1">
+                          <label class="admin-label">Departamento</label>
+                          <select class="admin-input js-geo-country" data-geo-scope="profile-club" name="clubCountryIso2">
+                            <option value="CO" selected>Colombia</option>
+                          </select>
+                          <select
+                            class="admin-input mt-2 js-geo-department"
+                            data-geo-scope="profile-club"
+                            data-selected={selectedDepartmentCode}
+                            name="clubDepartmentCode"
+                            required
+                          >
+                            <option value="">Selecciona departamento</option>
+                          </select>
+                        </div>
+                        <div class="md:col-span-1">
                           <label class="admin-label">Municipio</label>
-                          <input class="admin-input" name="clubMunicipality" value={myClub.municipality} required />
+                          <select
+                            class="admin-input js-geo-municipality"
+                            data-geo-scope="profile-club"
+                            data-selected={selectedMunicipalityCode}
+                            required
+                          >
+                            <option value="">Selecciona municipio</option>
+                          </select>
+                          <input
+                            type="hidden"
+                            name="clubMunicipality"
+                            value={myClub.municipality}
+                            class="js-geo-municipality-name"
+                            data-geo-scope="profile-club"
+                          />
                       </div>
                       <div class="md:col-span-1">
                           <label class="admin-label">Entrenador</label>
                           <input class="admin-input" name="clubCoach" value={myClub.coach} required />
                       </div>
                     </>
-                  ))}
+                  )})}
                 </div>
               </>
             ) : null}
             
             <div class="flex items-center justify-end pt-2">
               <button class="admin-btn admin-btn-primary" type="submit">
-                <span class="material-symbols-outlined">send</span>
-                Solicitar Cambio
+                <span class="material-symbols-outlined">{user?.role === 'CLUB' ? 'send' : 'save'}</span>
+                {user?.role === 'CLUB' ? 'Solicitar Cambio' : 'Guardar cambios'}
               </button>
             </div>
           </form>
@@ -2225,6 +2302,58 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 No hay solicitudes pendientes.
               </div>
             ) : null}
+          </div>
+
+          <div class="pt-4 border-t border-gray-200">
+            <h5 class="text-sm font-semibold text-gray-700">Solicitudes de cambio de perfil (CLUB)</h5>
+            <p class="text-xs text-gray-500 mt-1">Aprueba o rechaza cambios de nombre/correo solicitados desde Mi Perfil.</p>
+            <div class="space-y-3 mt-3">
+              {pendingProfileRequests.map((item) => {
+                const payload = item.payload;
+                const requestedName = String(payload.displayName ?? '');
+                const requestedEmail = String(payload.email ?? '');
+                const requestedClubName = String(payload.clubName ?? '');
+                const requestedClubMunicipality = String(payload.clubMunicipality ?? '');
+                const requestedClubCoach = String(payload.clubCoach ?? '');
+                return (
+                  <form method="POST" action="/api/admin/approvals" class="rounded-xl border border-gray-200 bg-white p-4 grid gap-3 md:grid-cols-10">
+                    <input type="hidden" name="id" value={item.id} />
+                    <div class="md:col-span-3">
+                      <div class="text-xs uppercase tracking-wide text-gray-400">Solicitud</div>
+                      <div class="font-semibold text-gray-700">#{item.id} · {item.module}</div>
+                      <div class="text-xs text-gray-500 mt-1">{new Date(item.createdAt).toLocaleString('es-CO')}</div>
+                    </div>
+                    <div class="md:col-span-5">
+                      <div class="text-xs uppercase tracking-wide text-gray-400">Datos solicitados</div>
+                      <div class="text-sm text-gray-700"><strong>Nombre:</strong> {requestedName || '-'}</div>
+                      <div class="text-sm text-gray-700"><strong>Email:</strong> {requestedEmail || '-'}</div>
+                      <div class="text-sm text-gray-700"><strong>Club:</strong> {requestedClubName || '-'}</div>
+                      <div class="text-sm text-gray-700"><strong>Municipio:</strong> {requestedClubMunicipality || '-'}</div>
+                      <div class="text-sm text-gray-700"><strong>Entrenador:</strong> {requestedClubCoach || '-'}</div>
+                    </div>
+                    <div class="md:col-span-10">
+                      <label class="admin-label">Notas de revisión</label>
+                      <input class="admin-input" name="reviewNotes" placeholder="Opcional" />
+                    </div>
+                    <div class="md:col-span-2 flex items-end justify-end gap-2">
+                      <button class="admin-btn admin-btn-secondary" type="submit" name="decision" value="rejected">
+                        <span class="material-symbols-outlined">close</span>
+                        Rechazar
+                      </button>
+                      <button class="admin-btn admin-btn-primary" type="submit" name="decision" value="approved">
+                        <span class="material-symbols-outlined">check</span>
+                        Aprobar
+                      </button>
+                    </div>
+                  </form>
+                );
+              })}
+              {pendingProfileRequests.length === 0 ? (
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                  No hay solicitudes de cambio de perfil pendientes.
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </section>

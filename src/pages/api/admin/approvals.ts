@@ -4,6 +4,9 @@ import { requirePermissionOrRedirect } from '../../../lib/access';
 import { getApprovalRequestById, reviewApprovalRequest } from '../../../lib/approvals';
 import { createDocument, deleteDocument, updateDocument } from '../../../lib/admin';
 import { logAudit } from '../../../lib/audit';
+import { getUserById, updateUserEditableProfile } from '../../../lib/users';
+import { sendProfileUpdateReviewEmail } from '../../../lib/email';
+import { updateClubById } from '../../../lib/clubs';
 
 const schema = z.object({
   id: z.coerce.number().int().positive(),
@@ -43,6 +46,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     else await createDocument({ title, description, category, date, href });
   }
 
+  if (parsed.data.decision === 'approved' && req.module === 'profile_update') {
+    const payload = req.payload as Record<string, unknown>;
+    const email = String(payload.email ?? '').trim();
+    const displayName = String(payload.displayName ?? '').trim();
+    const targetUserId = Number(req.entityId ?? 0);
+    if (targetUserId > 0 && email && displayName) {
+      await updateUserEditableProfile(targetUserId, { email, displayName });
+    }
+
+    const clubId = Number(payload.clubId ?? 0);
+    const clubName = String(payload.clubName ?? '').trim();
+    const clubMunicipality = String(payload.clubMunicipality ?? '').trim();
+    const clubCoach = String(payload.clubCoach ?? '').trim();
+    if (clubId > 0) {
+      await updateClubById(clubId, {
+        name: clubName || undefined,
+        municipality: clubMunicipality || undefined,
+        coach: clubCoach || undefined
+      });
+    }
+  }
+
   await reviewApprovalRequest({
     id: parsed.data.id,
     status: parsed.data.decision,
@@ -59,5 +84,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return Response.redirect(new URL('/admin?tab=aprobaciones&saved=1', request.url), 302);
+  if (req.module === 'profile_update') {
+    const payload = req.payload as Record<string, unknown>;
+    const requestedEmail = String(payload.email ?? '').trim();
+    const requestedName = String(payload.displayName ?? '').trim();
+    const targetUserId = Number(req.entityId ?? 0);
+    const targetUser = targetUserId > 0 ? await getUserById(targetUserId) : null;
+    const to = requestedEmail || targetUser?.email || '';
+    const loginUrl = new URL('/login', request.url).toString();
+
+    await sendProfileUpdateReviewEmail({
+      to,
+      displayName: requestedName || targetUser?.displayName || '',
+      decision: parsed.data.decision,
+      reviewNotes: parsed.data.reviewNotes || '',
+      loginUrl
+    });
+  }
+
+  const redirectTab = req.module === 'profile_update' ? 'solicitudes' : 'aprobaciones';
+  return Response.redirect(new URL(`/admin?tab=${redirectTab}&saved=1`, request.url), 302);
 };
