@@ -1,0 +1,187 @@
+import nodemailer from 'nodemailer';
+
+type ClubApprovedEmailInput = {
+  to: string;
+  nombreOrganizacion: string;
+  adminName?: string;
+  loginUrl?: string;
+};
+
+function getEnv(name: string) {
+  const value = import.meta.env[name];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function createTransporter() {
+  const user = getEnv('EMAIL_USER');
+  const pass = getEnv('EMAIL_PASSWORD');
+  if (!user || !pass) return null;
+
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: { user, pass }
+  });
+}
+
+function buildClubApprovedEmail(input: Omit<ClubApprovedEmailInput, 'to'>) {
+  const subject = 'Solicitud aprobada - Liga de Atletismo del Choco';
+  const textBody =
+    `Hola,\n\n` +
+    `La solicitud de registro del club "${input.nombreOrganizacion}" fue aprobada para hacer parte de la Liga de Atletismo del Choco.\n\n` +
+    `Datos del club:\n` +
+    `- Club: ${input.nombreOrganizacion}\n` +
+    `${input.adminName ? `- Administrador: ${input.adminName}\n` : ''}\n` +
+    `Ya puedes iniciar sesion con el correo registrado y la contrasena definida durante el registro.\n\n` +
+    `${input.loginUrl ? `Acceso: ${input.loginUrl}\n\n` : ''}` +
+    `Si no reconoces esta solicitud, responde a este correo.\n\n` +
+    `Saludos,\n` +
+    `Equipo Liga de Atletismo del Choco\n`;
+
+  const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.7;
+        color: #0f172a;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        padding: 40px 20px;
+      }
+      .email-wrapper { max-width: 640px; margin: 0 auto; }
+      .container {
+        background-color: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      }
+      .header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        padding: 42px 40px;
+        text-align: center;
+      }
+      .logo-icon { font-size: 42px; margin-bottom: 14px; display: inline-block; color: #e7d916; }
+      .header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #f8fafc;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+      }
+      .header-subtitle {
+        font-size: 12px;
+        color: rgba(248, 250, 252, 0.7);
+        margin-top: 8px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+      }
+      .content { padding: 40px; background-color: #ffffff; }
+      .content-inner { font-size: 16px; color: #334155; line-height: 1.8; }
+      .content-inner p { margin-bottom: 14px; }
+      .content-inner strong { color: #0f172a; font-weight: 600; }
+      .highlight-box {
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        border-left: 4px solid #5AAC32;
+        padding: 18px 22px;
+        margin: 22px 0;
+        border-radius: 10px;
+      }
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(135deg, #5AAC32 0%, #4a9528 100%);
+        color: #ffffff;
+        padding: 12px 22px;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        box-shadow: 0 8px 18px rgba(90, 172, 50, 0.25);
+      }
+      .footer {
+        background: #f8fafc;
+        padding: 28px 32px;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+      }
+      .footer-text { font-size: 13px; color: #64748b; margin-bottom: 8px; line-height: 1.6; }
+      .company-info { font-size: 12px; color: #94a3b8; }
+      @media only screen and (max-width: 600px) {
+        body { padding: 20px 10px; }
+        .content { padding: 28px 24px; }
+        .header { padding: 34px 24px; }
+        .header h1 { font-size: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-wrapper">
+      <div class="container">
+        <div class="header">
+          <div class="logo-icon">★</div>
+          <h1>Liga de Atletismo</h1>
+          <div class="header-subtitle">Departamento del Choco</div>
+        </div>
+        <div class="content">
+          <div class="content-inner">
+            <p>Hola,</p>
+            <p>
+              La solicitud de registro del club
+              <strong>${input.nombreOrganizacion}</strong> fue aprobada para hacer parte de la Liga.
+            </p>
+            <div class="highlight-box">
+              <p><strong>Club:</strong> ${input.nombreOrganizacion}</p>
+              ${input.adminName ? `<p><strong>Administrador:</strong> ${input.adminName}</p>` : ''}
+            </div>
+            <p>
+              Ya puedes iniciar sesion con el correo registrado y la contrasena definida durante el registro.
+            </p>
+            ${input.loginUrl ? `<p style="margin-top: 18px;"><a href="${input.loginUrl}" class="cta-button">Ir al login</a></p>` : ''}
+            <p style="color:#64748b; font-size: 0.9rem;">
+              Si no reconoces esta solicitud, por favor responde a este correo.
+            </p>
+            <p>Saludos,<br />Equipo Liga de Atletismo del Choco</p>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="footer-text">Este mensaje fue generado automaticamente por la plataforma de la Liga.</div>
+          <div class="company-info">Liga de Atletismo del Choco · Gestion deportiva integral</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+  `.trim();
+
+  return { subject, textBody, htmlBody };
+}
+
+export async function sendClubApprovalEmail(input: ClubApprovedEmailInput) {
+  const transporter = createTransporter();
+  const from = getEnv('EMAIL_FROM') || getEnv('EMAIL_USER');
+  if (!transporter || !from || !input.to) return;
+
+  const { subject, textBody, htmlBody } = buildClubApprovedEmail({
+    nombreOrganizacion: input.nombreOrganizacion,
+    adminName: input.adminName,
+    loginUrl: input.loginUrl
+  });
+
+  try {
+    await transporter.sendMail({
+      from,
+      to: input.to,
+      subject,
+      text: textBody,
+      html: htmlBody
+    });
+  } catch (error) {
+    console.warn('[mail] club approval email failed:', (error as Error)?.message ?? error);
+  }
+}
