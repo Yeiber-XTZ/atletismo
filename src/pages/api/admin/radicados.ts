@@ -7,6 +7,7 @@ import { logAudit } from '../../../lib/audit';
 import type { Role } from '../../../lib/rbac';
 import { db } from '../../../lib/db';
 import { redirectInternal } from '../../../lib/http-redirect';
+import { sendClubApprovalEmail } from '../../../lib/email';
 
 const schema = z.object({
   id: z.coerce.number().int().positive(),
@@ -129,7 +130,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     request
   });
 
-  return redirectInternal('/admin?tab=solicitudes&saved=1', 302);
+  if (parsed.data.decision === 'approved' && radicado.profile === 'club') {
+    const loginUrl = new URL('/login', request.url).toString();
+    await sendClubApprovalEmail({
+      to: radicado.email,
+      nombreOrganizacion: radicado.name,
+      adminName: radicado.name,
+      loginUrl
+    });
+  }
+
+  return Response.redirect(new URL('/admin?tab=solicitudes&saved=1', request.url), 302);
 };
 
 

@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import FooterKinetic from '../../components/FooterKinetic.astro';
@@ -21,38 +21,13 @@ const statusLabel: Record<string, string> = {
 ---
 
 <BaseLayout
-  title="Contacto | Liga de Atletismo del Chocó"
-  description="Contacta a la Liga de Atletismo del Chocó. Canales de atención, PQRS y formulario de contacto."
+  title="Contacto | Liga de Atletismo del ChocÃ³"
+  description="Contacta a la Liga de Atletismo del ChocÃ³. Canales de atenciÃ³n, PQRS y formulario de contacto."
 >
   <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl || '/logo.png'} />
 
-  <main class="pt-[72px]">
-    <section class="bg-surface">
-      <div class="container mx-auto px-6 py-16 md:py-20">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-          <div class="lg:col-span-8">
-            <span class="text-secondary font-black tracking-widest text-xs md:text-sm mb-4 block uppercase">
-              Contacto Directo
-            </span>
-            <h1
-              class="font-headline font-black text-5xl md:text-7xl lg:text-8xl leading-[0.9] text-primary italic uppercase -ml-1"
-            >
-              Conecta con el<br />
-              <span class="text-on-surface-variant">Movimiento</span>
-            </h1>
-          </div>
-          <div class="lg:col-span-4 pb-4">
-            <p class="text-lg text-on-surface-variant max-w-sm border-l-4 border-secondary-container pl-6">
-              Llevamos el atletismo del Chocó al siguiente nivel. Escríbenos para patrocinios, inscripciones o prensa.
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="h-8 md:h-10 bg-inverse-surface kinetic-slant"></div>
-    </section>
-
-    <section class="bg-white">
-      <div class="container mx-auto px-6 py-16 md:py-20">
+  <main class="pt-[96px]">`r`n    <section class="bg-white">
+      <div class="container mx-auto px-6 py-16 md:py-20">`r`n        <div class="mb-10">`r`n          <h1 class="font-headline font-black text-3xl md:text-5xl text-primary uppercase tracking-tight">Contacto</h1>`r`n          <p class="mt-2 text-on-surface-variant">Canales de atencion, PQRS y formulario de contacto.</p>`r`n        </div>
         {radicado ? (
           <div class="mb-10 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
@@ -69,7 +44,7 @@ const statusLabel: Record<string, string> = {
                     Estado actual: <strong class="text-on-surface">{statusLabel[pqrs.status] || pqrs.status}</strong>
                   </p>
                 ) : null}
-                <p class="mt-2 text-sm text-on-surface-variant">Guárdalo para seguimiento.</p>
+                <p class="mt-2 text-sm text-on-surface-variant">GuÃ¡rdalo para seguimiento.</p>
               </div>
             </div>
           </div>
@@ -108,7 +83,7 @@ const statusLabel: Record<string, string> = {
                 <span class="material-symbols-outlined text-[22px]">mail</span>
               </div>
               <div>
-                <h3 class="font-headline font-bold text-primary uppercase text-xs tracking-widest mb-1">Escríbenos</h3>
+                <h3 class="font-headline font-bold text-primary uppercase text-xs tracking-widest mb-1">EscrÃ­benos</h3>
                 <p class="text-xl font-medium font-headline lowercase text-on-surface">
                   {settings.contactEmail || 'contacto@liga-atletismo.com'}
                 </p>
@@ -127,7 +102,7 @@ const statusLabel: Record<string, string> = {
                 <span class="material-symbols-outlined text-[22px]">call</span>
               </div>
               <div>
-                <h3 class="font-headline font-bold text-secondary uppercase text-xs tracking-widest mb-1">Llámanos</h3>
+                <h3 class="font-headline font-bold text-secondary uppercase text-xs tracking-widest mb-1">LlÃ¡manos</h3>
                 <p class="text-xl font-medium font-headline text-on-surface">
                   {settings.contactPhone || '+57 300 000 0000'}
                 </p>
@@ -140,7 +115,7 @@ const statusLabel: Record<string, string> = {
               <div class="flex justify-between items-start">
                 <div>
                   <h3 class="font-headline font-bold text-primary uppercase text-xs tracking-widest mb-1">Nuestra Sede</h3>
-                  <p class="text-2xl font-headline font-bold leading-tight text-on-surface">Quibdó, Chocó<br />Colombia</p>
+                  <p class="text-2xl font-headline font-bold leading-tight text-on-surface">QuibdÃ³, ChocÃ³<br />Colombia</p>
                 </div>
                 <span class="material-symbols-outlined text-[36px] text-on-surface-variant">location_on</span>
               </div>
@@ -178,7 +153,7 @@ const statusLabel: Record<string, string> = {
                     id="contact-name"
                     name="name"
                     class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none"
-                    placeholder="Tu nombre aquí"
+                    placeholder="Tu nombre aquÃ­"
                     type="text"
                     required
                   />
@@ -215,12 +190,12 @@ const statusLabel: Record<string, string> = {
                   class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none appearance-none font-black tracking-tight"
                   required
                 >
-                  <option value="">Selecciona una opción</option>
-                  <option value="peticion">Petición</option>
+                  <option value="">Selecciona una opciÃ³n</option>
+                  <option value="peticion">PeticiÃ³n</option>
                   <option value="queja">Queja</option>
                   <option value="reclamo">Reclamo</option>
                   <option value="sugerencia">Sugerencia</option>
-                  <option value="info">Solicitud de información</option>
+                  <option value="info">Solicitud de informaciÃ³n</option>
                   <option value="otro">Otro</option>
                 </select>
               </div>
@@ -253,7 +228,7 @@ const statusLabel: Record<string, string> = {
                   id="contact-message"
                   name="message"
                   class="w-full bg-surface-container-low border-none p-6 text-on-surface focus:ring-2 focus:ring-primary focus:bg-white transition-all outline-none resize-none"
-                  placeholder="Cuéntanos cómo podemos ayudarte..."
+                  placeholder="CuÃ©ntanos cÃ³mo podemos ayudarte..."
                   rows="6"
                   required
                 ></textarea>
@@ -277,5 +252,7 @@ const statusLabel: Record<string, string> = {
 
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
 </BaseLayout>
+
+
 
 

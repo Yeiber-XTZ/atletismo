@@ -41,6 +41,36 @@ body {
   overflow-x: hidden;
 }
 
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+td,
+th,
+label,
+small {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+pre,
+code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 ::selection {
   background: var(--secondary);
   color: #5b4b00;

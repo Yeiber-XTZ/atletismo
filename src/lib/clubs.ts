@@ -12,7 +12,7 @@ function assertDbReady() {
 
 export async function updateClubById(
   clubId: number,
-  patch: Partial<Pick<Store['clubs'][number], 'coach' | 'contactEmail' | 'contactPhone' | 'category' | 'imageUrl'>> & {
+  patch: Partial<Pick<Store['clubs'][number], 'name' | 'municipality' | 'coach' | 'contactEmail' | 'contactPhone' | 'category' | 'imageUrl'>> & {
     legalDocumentFileId?: number | null;
     ownerUserId?: number | null;
   }
@@ -30,16 +30,20 @@ export async function updateClubById(
 
   await db.query(
     `UPDATE clubs
-     SET coach = COALESCE($1, coach),
-         contact_email = COALESCE($2, contact_email),
-         contact_phone = COALESCE($3, contact_phone),
-         category = COALESCE($4, category),
-         logo_url = COALESCE($5, logo_url),
-         legal_document_file_id = COALESCE($6, legal_document_file_id),
-         owner_id = COALESCE(owner_id, $7),
+     SET name = COALESCE($1, name),
+         municipality = COALESCE($2, municipality),
+         coach = COALESCE($3, coach),
+         contact_email = COALESCE($4, contact_email),
+         contact_phone = COALESCE($5, contact_phone),
+         category = COALESCE($6, category),
+         logo_url = COALESCE($7, logo_url),
+         legal_document_file_id = COALESCE($8, legal_document_file_id),
+         owner_id = COALESCE(owner_id, $9),
          updated_at = NOW()
-     WHERE id = $8`,
+     WHERE id = $10`,
     [
+      patch.name ?? null,
+      patch.municipality ?? null,
       patch.coach ?? null,
       patch.contactEmail ?? null,
       patch.contactPhone ?? null,

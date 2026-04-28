@@ -28,7 +28,6 @@ const errorMessage = Astro.url.searchParams.get('message');
         src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop"
         referrerpolicy="no-referrer"
       />
-      <div class="clubreg-hero-overlay"></div>
       <div class="clubreg-hero-inner">
         <span class="clubreg-kicker">Afiliacion 2026</span>
         <h1>Unete a la <span>Elite del Choco</span></h1>
@@ -40,67 +39,6 @@ const errorMessage = Astro.url.searchParams.get('message');
       <div class="clubreg-container">
         <form method="POST" action="/api/registro" encType="multipart/form-data" class="clubreg-form">
           <input type="hidden" name="profile" value="club" />
-          <div class="grid gap-5 md:grid-cols-2">
-            <div class="md:col-span-2">
-              <label class="form-label">Nombre legal del club *</label>
-              <input class="form-input" type="text" name="name" required placeholder="Nombre del club" />
-            </div>
-            <div>
-              <label class="form-label">Correo oficial del club *</label>
-              <input class="form-input" type="email" name="email" required placeholder="club@correo.com" />
-            </div>
-            <div>
-              <label class="form-label">Telefono *</label>
-              <input class="form-input" type="tel" name="phone" required placeholder="+57 3xx xxx xxxx" pattern="^[0-9+() -]{7,20}$" inputmode="tel" />
-            </div>
-            <div>
-              <label class="form-label">Pais *</label>
-              <select class="form-input js-geo-country" name="countryIso2" required>
-                <option value="">Selecciona pais</option>
-                {geoCountries.map((country) => (
-                  <option value={country.iso2} selected={country.iso2 === 'CO'}>{country.shortName}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Departamento *</label>
-              <select class="form-input js-geo-department" name="departmentCode" required>
-                <option value="">Selecciona departamento</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Municipio *</label>
-              <select class="form-input js-geo-municipality" name="municipalityCode" required>
-                <option value="">Selecciona municipio</option>
-              </select>
-              <input type="hidden" name="municipality" class="js-geo-municipality-name" />
-            </div>
-            <div>
-              <label class="form-label">NIT (si aplica)</label>
-              <input class="form-input" type="text" name="nit" placeholder="NIT" pattern="^[0-9-]{5,20}$" inputmode="numeric" />
-            </div>
-            <div class="md:col-span-2">
-              <label class="form-label">Representante legal *</label>
-              <input class="form-input" type="text" name="legalRepresentative" required placeholder="Nombre completo" />
-            </div>
-            <div class="md:col-span-2">
-              <label class="form-label">Documento de reconocimiento deportivo (URL o referencia)</label>
-              <input class="form-input" type="text" name="recognitionDoc" placeholder="URL / numero de resolucion / referencia" />
-            </div>
-            <div class="md:col-span-2">
-              <label class="form-label">Logo (opcional)</label>
-              <input class="form-input" type="file" name="logoFile" accept="image/*" />
-            </div>
-            <div class="md:col-span-2">
-              <label class="form-label">Documentos anexos (lista/URLs)</label>
-              <textarea class="form-input form-textarea" name="documents" placeholder="Estatutos, acta, certificados, etc."></textarea>
-            </div>
-            <div class="md:col-span-2">
-              <label class="form-label">Contrasena *</label>
-              <input class="form-input" type="password" name="password" required minlength="8" maxlength="200" placeholder="Minimo 8 caracteres" />
-            </div>
-          </div>
-
           <article class="clubreg-card">
             <header class="clubreg-card-head head-accent-yellow">
               <span>Paso 01</span>
@@ -229,15 +167,15 @@ const errorMessage = Astro.url.searchParams.get('message');
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
   <div id="registroFlags" data-success={success ?? ''} data-error={error ?? ''} data-radicado={radicado ?? ''} data-error-message={errorMessage ?? ''} hidden></div>
 
-  <dialog id="registroModal" class="rounded-xl p-0 w-[min(92vw,460px)] backdrop:bg-black/40">
-    <div class="p-5 bg-white border border-gray-200 rounded-xl">
+  <div id="registroModal" class="fixed inset-0 z-[120] hidden items-center justify-center bg-black/40 p-4" aria-hidden="true">
+    <div class="w-[min(92vw,460px)] rounded-xl border border-gray-200 bg-white p-5 shadow-2xl">
       <h3 id="registroModalTitle" class="text-lg font-bold text-on-surface">Registro</h3>
       <p id="registroModalMessage" class="mt-2 text-sm text-[var(--text-secondary)]"></p>
       <div class="mt-4 flex justify-end">
         <button id="registroModalClose" class="btn-primary" type="button">Entendido</button>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -257,8 +195,7 @@ const errorMessage = Astro.url.searchParams.get('message');
 
     .clubreg-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
     .clubreg-hero { position: relative; height: 560px; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); background: #001205; }
-    .clubreg-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.5; filter: contrast(1.2) saturate(1.35); }
-    .clubreg-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 18, 5, 0.25) 0%, rgba(0, 18, 5, 0.86) 80%); }
+    .clubreg-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; filter: none; }
     .clubreg-hero-inner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 0 24px; }
     .clubreg-kicker { display: inline-block; width: fit-content; border-radius: 4px; padding: 6px 12px; margin-bottom: 18px; background: var(--club-secondary); color: #5b4b00; text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; font-weight: 800; font-family: 'Lexend', sans-serif; }
     .clubreg-hero h1 { margin: 0; font-family: 'Lexend', sans-serif; font-weight: 900; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.02em; font-size: clamp(2.8rem, 8vw, 6.4rem); color: #fff; max-width: 920px; }
@@ -326,11 +263,26 @@ const errorMessage = Astro.url.searchParams.get('message');
     const showModal = (title, message) => {
       modalTitle.textContent = title;
       modalMessage.textContent = message;
-      if (modal && typeof modal.showModal === 'function') modal.showModal();
-      else window.alert(`${title}: ${message}`);
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      modal.setAttribute('aria-hidden', 'false');
     };
 
-    closeBtn?.addEventListener('click', () => modal?.close());
+    const closeModal = () => {
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.setAttribute('aria-hidden', 'true');
+    };
+
+    closeBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeModal();
+    });
 
     const getErrorNode = (input) => {
       if (!input) return null;
@@ -494,17 +446,24 @@ const errorMessage = Astro.url.searchParams.get('message');
       }
     });
 
-    const flags = document.getElementById('registroFlags');
-    const successValue = flags?.dataset?.success || '';
-    const errorValue = flags?.dataset?.error || '';
-    const radicadoValue = flags?.dataset?.radicado || '';
-    const errorMessageValue = flags?.dataset?.errorMessage || '';
+    const openFeedbackModalFromFlags = () => {
+      const flags = document.getElementById('registroFlags');
+      const successValue = flags?.dataset?.success || '';
+      const errorValue = flags?.dataset?.error || '';
+      const radicadoValue = flags?.dataset?.radicado || '';
+      const errorMessageValue = flags?.dataset?.errorMessage || '';
 
-    if (successValue && radicadoValue) {
-      showModal('Registro enviado', `Tu solicitud fue enviada correctamente. Radicado: ${radicadoValue}.`);
-    } else if (errorValue) {
-      showModal('No se pudo enviar', errorMessageValue || 'Revisa los datos del formulario e intentalo nuevamente.');
-    }
+      if (successValue) {
+        const baseMessage = 'Tu solicitud fue enviada correctamente.';
+        const radicadoMessage = radicadoValue ? ` Radicado: ${radicadoValue}.` : '';
+        showModal('Registro enviado', `${baseMessage}${radicadoMessage}`);
+      } else if (errorValue) {
+        showModal('No se pudo enviar', errorMessageValue || 'Revisa los datos del formulario e intentalo nuevamente.');
+      }
+    };
+
+    openFeedbackModalFromFlags();
+    document.addEventListener('astro:page-load', openFeedbackModalFromFlags);
 
     initGeo();
   </script>
