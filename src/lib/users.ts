@@ -169,3 +169,14 @@ export async function updateUserPassword(userId: number, newPassword: string) {
   const passwordHash = hashPassword(newPassword);
   await db.query(`UPDATE users SET password_hash=$1, updated_at=NOW() WHERE id=$2`, [passwordHash, userId]);
 }
+
+export async function updateUserEditableProfile(userId: number, patch: { email?: string; displayName?: string }) {
+  await db.query(
+    `UPDATE users
+     SET email = COALESCE($1, email),
+         display_name = COALESCE($2, display_name),
+         updated_at = NOW()
+     WHERE id = $3`,
+    [patch.email?.trim() || null, patch.displayName?.trim() || null, userId]
+  );
+}

@@ -185,3 +185,114 @@ export async function sendClubApprovalEmail(input: ClubApprovedEmailInput) {
     console.warn('[mail] club approval email failed:', (error as Error)?.message ?? error);
   }
 }
+
+type ProfileUpdateReviewEmailInput = {
+  to: string;
+  displayName?: string;
+  decision: 'approved' | 'rejected';
+  reviewNotes?: string;
+  loginUrl?: string;
+};
+
+function buildProfileUpdateReviewEmail(input: Omit<ProfileUpdateReviewEmailInput, 'to'>) {
+  const approved = input.decision === 'approved';
+  const subject = approved
+    ? 'Solicitud de cambio de perfil aprobada - Liga de Atletismo del Choco'
+    : 'Solicitud de cambio de perfil rechazada - Liga de Atletismo del Choco';
+
+  const statusText = approved ? 'aprobada' : 'rechazada';
+  const textBody =
+    `Hola${input.displayName ? ` ${input.displayName}` : ''},\n\n` +
+    `Tu solicitud de cambio de perfil fue ${statusText}.\n\n` +
+    `${input.reviewNotes ? `Notas de revision:\n${input.reviewNotes}\n\n` : ''}` +
+    `${approved
+      ? 'Los cambios solicitados ya fueron aplicados en tu cuenta.\n\n'
+      : 'Tus datos actuales se mantienen sin cambios.\n\n'}` +
+    `${input.loginUrl ? `Puedes ingresar aqui: ${input.loginUrl}\n\n` : ''}` +
+    `Saludos,\nEquipo Liga de Atletismo del Choco\n`;
+
+  const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.7;
+        color: #0f172a;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        padding: 40px 20px;
+      }
+      .email-wrapper { max-width: 640px; margin: 0 auto; }
+      .container { background-color: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+      .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 36px 32px; text-align: center; }
+      .header h1 { font-size: 24px; font-weight: 800; color: #f8fafc; text-transform: uppercase; }
+      .header-subtitle { font-size: 11px; color: rgba(248,250,252,.75); margin-top: 6px; letter-spacing: .2em; text-transform: uppercase; }
+      .content { padding: 32px; }
+      .badge {
+        display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+        background: ${approved ? '#dcfce7' : '#fee2e2'};
+        color: ${approved ? '#166534' : '#991b1b'};
+      }
+      .box { margin-top: 16px; background: #f8fafc; border-left: 4px solid #5AAC32; padding: 14px 16px; border-radius: 8px; }
+      .cta {
+        display: inline-block; margin-top: 18px; background: linear-gradient(135deg, #5AAC32 0%, #4a9528 100%);
+        color: #fff; text-decoration: none; border-radius: 10px; padding: 11px 18px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+      }
+      .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 22px 28px; color: #64748b; font-size: 12px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="email-wrapper">
+      <div class="container">
+        <div class="header">
+          <h1>Liga de Atletismo</h1>
+          <div class="header-subtitle">Departamento del Choco</div>
+        </div>
+        <div class="content">
+          <p>Hola${input.displayName ? ` <strong>${input.displayName}</strong>` : ''},</p>
+          <p style="margin-top:10px;">Tu solicitud de cambio de perfil fue <strong>${statusText}</strong>.</p>
+          <div class="badge">${approved ? 'Aprobada' : 'Rechazada'}</div>
+          ${input.reviewNotes ? `<div class="box"><strong>Notas de revision:</strong><br />${input.reviewNotes}</div>` : ''}
+          <p style="margin-top:14px;">
+            ${approved ? 'Los cambios solicitados ya fueron aplicados en tu cuenta.' : 'Tus datos actuales se mantienen sin cambios.'}
+          </p>
+          ${input.loginUrl ? `<a href="${input.loginUrl}" class="cta">Ir al login</a>` : ''}
+        </div>
+        <div class="footer">Este mensaje fue generado automaticamente por la plataforma de la Liga.</div>
+      </div>
+    </div>
+  </body>
+</html>
+  `.trim();
+
+  return { subject, textBody, htmlBody };
+}
+
+export async function sendProfileUpdateReviewEmail(input: ProfileUpdateReviewEmailInput) {
+  const transporter = createTransporter();
+  const from = getEnv('EMAIL_FROM') || getEnv('EMAIL_USER');
+  if (!transporter || !from || !input.to) return;
+
+  const { subject, textBody, htmlBody } = buildProfileUpdateReviewEmail({
+    displayName: input.displayName,
+    decision: input.decision,
+    reviewNotes: input.reviewNotes,
+    loginUrl: input.loginUrl
+  });
+
+  try {
+    await transporter.sendMail({
+      from,
+      to: input.to,
+      subject,
+      text: textBody,
+      html: htmlBody
+    });
+  } catch (error) {
+    console.warn('[mail] profile update review email failed:', (error as Error)?.message ?? error);
+  }
+}
