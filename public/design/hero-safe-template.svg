@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1000" viewBox="0 0 2400 1000" fill="none">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" stroke="#334155" stroke-opacity="0.15" stroke-width="1"/>
+    </pattern>
+    <style>
+      .label { font-family: Arial, sans-serif; font-size: 28px; fill: #0f172a; font-weight: 700; }
+      .small { font-family: Arial, sans-serif; font-size: 22px; fill: #0f172a; font-weight: 600; }
+      .tiny { font-family: Arial, sans-serif; font-size: 18px; fill: #334155; }
+    </style>
+  </defs>
+
+  <rect width="2400" height="1000" fill="#f8fafc"/>
+  <rect width="2400" height="1000" fill="url(#grid)"/>
+
+  <!-- Top blocked area: navbar + slope -->
+  <rect x="0" y="0" width="2400" height="150" fill="#ef4444" fill-opacity="0.16"/>
+  <text x="32" y="92" class="label">Zona bloqueada superior (15%)</text>
+
+  <!-- Bottom blocked area: slope / footer transition -->
+  <rect x="0" y="880" width="2400" height="120" fill="#f59e0b" fill-opacity="0.18"/>
+  <text x="32" y="952" class="label">Zona bloqueada inferior (12%)</text>
+
+  <!-- Safe zone -->
+  <rect x="120" y="150" width="2160" height="730" fill="#22c55e" fill-opacity="0.10" stroke="#16a34a" stroke-width="4" stroke-dasharray="14 10"/>
+  <text x="150" y="198" class="label">ZONA SEGURA (poner aqui logos, texto y sujetos)</text>
+
+  <!-- Central critical zone -->
+  <rect x="360" y="240" width="1680" height="560" fill="#3b82f6" fill-opacity="0.08" stroke="#2563eb" stroke-width="3" stroke-dasharray="10 8"/>
+  <text x="390" y="286" class="small">Zona critica central (60-65%)</text>
+
+  <!-- Guides -->
+  <line x1="1200" y1="0" x2="1200" y2="1000" stroke="#0f172a" stroke-opacity="0.25" stroke-width="2"/>
+  <line x1="0" y1="500" x2="2400" y2="500" stroke="#0f172a" stroke-opacity="0.25" stroke-width="2"/>
+  <text x="1220" y="36" class="tiny">eje vertical</text>
+  <text x="32" y="490" class="tiny">eje horizontal</text>
+
+  <text x="150" y="838" class="small">Formato base recomendado: 2400x1000 (con overscan vertical)</text>
+</svg>
+

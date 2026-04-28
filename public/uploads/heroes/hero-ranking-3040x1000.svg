@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3040" height="1000" viewBox="0 0 3040 1000">
+  <rect width="3040" height="1000" fill="#06243f"/>
+  <rect width="3040" height="1000" fill="url(#ov)"/>
+  <defs>
+    <linearGradient id="ov" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b6b1f" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#fdd835" stop-opacity=".16"/>
+    </linearGradient>
+  </defs>
+  <g fill="#fdd835" fill-opacity=".18">
+    <circle cx="2500" cy="280" r="160"/>
+    <circle cx="2720" cy="420" r="90"/>
+  </g>
+  <text x="170" y="300" fill="#e7fff0" font-size="164" font-family="Arial Black, Arial">RANKING</text>
+  <text x="170" y="410" fill="#9bfc96" font-size="98" font-family="Arial Black, Arial">DEPARTAMENTAL</text>
+  <text x="172" y="500" fill="#d8e5f7" font-size="44" font-family="Arial">Mejores marcas por prueba, club y municipio.</text>
+</svg>
+

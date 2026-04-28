@@ -717,6 +717,8 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
       line-height: 1.02;
       text-transform: uppercase;
       letter-spacing: -.02em;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .topcard-left .audience {
@@ -724,6 +726,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
       font-size: 1rem;
       font-weight: 500;
       color: rgba(232, 249, 236, 0.78);
+      overflow-wrap: anywhere;
     }
 
     .meta-pills {
@@ -744,6 +747,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
       border: 1px solid rgba(188, 225, 195, 0.34);
       background: rgba(255, 255, 255, 0.08);
       color: #ebffed;
+      overflow-wrap: anywhere;
     }
 
     .pill-status.open {
@@ -841,6 +845,7 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
       color: #587063;
       line-height: 1.56;
       overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .summary-toggle {
@@ -1202,6 +1207,8 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
       color: #426251;
       font-size: 15px;
       font-weight: 600;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .side-tech .ref {
@@ -1321,6 +1328,10 @@ const canPostulate = isClubUser && effectiveClubId > 0 && convocatoriaIsOpen;
 
       .topcard-cta {
         width: 100%;
+      }
+
+      .topcard-left h1 {
+        font-size: clamp(1.7rem, 8vw, 2.3rem);
       }
 
       .selector-grid {

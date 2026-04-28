@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1750" height="1000" viewBox="0 0 1750 1000">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#001f4d"/>
+      <stop offset="45%" stop-color="#006b1b"/>
+      <stop offset="100%" stop-color="#1a8f3f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1750" height="1000" fill="url(#g)"/>
+  <g fill="none" stroke="#fdd835" stroke-opacity=".22" stroke-width="7">
+    <path d="M90 760 Q640 460 1600 620"/>
+    <path d="M40 820 Q600 510 1700 700"/>
+    <path d="M0 900 Q700 560 1750 790"/>
+  </g>
+  <g fill="#9bfc96" fill-opacity=".18">
+    <rect x="1180" y="140" width="420" height="260" rx="26"/>
+    <rect x="1080" y="430" width="520" height="320" rx="30"/>
+  </g>
+  <text x="110" y="260" fill="#f1fff3" font-size="140" font-family="Arial Black, Arial">COMPETENCIAS</text>
+  <text x="110" y="360" fill="#fdd835" font-size="60" font-family="Arial Black, Arial">CALENDARIO OFICIAL</text>
+  <text x="110" y="430" fill="#d8ffe0" font-size="40" font-family="Arial">Eventos, sedes y resultados de la temporada.</text>
+</svg>
+

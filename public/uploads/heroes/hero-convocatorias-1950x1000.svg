@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1950" height="1000" viewBox="0 0 1950 1000">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#003b1f"/>
+      <stop offset="52%" stop-color="#0b6b2f"/>
+      <stop offset="100%" stop-color="#0d8b3a"/>
+    </linearGradient>
+    <radialGradient id="light" cx="76%" cy="34%" r="48%">
+      <stop offset="0%" stop-color="#b8ff9f" stop-opacity=".46"/>
+      <stop offset="100%" stop-color="#b8ff9f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1950" height="1000" fill="url(#bg)"/>
+  <rect width="1950" height="1000" fill="url(#light)"/>
+  <g stroke="#9bfc96" stroke-opacity=".23" stroke-width="6" fill="none">
+    <path d="M0 780 L1950 430"/>
+    <path d="M0 860 L1950 510"/>
+    <path d="M120 0 L980 1000"/>
+    <path d="M300 0 L1160 1000"/>
+  </g>
+  <circle cx="1480" cy="320" r="180" fill="#fdd835" fill-opacity=".22"/>
+  <text x="120" y="235" fill="#d1ffc8" font-size="72" font-family="Arial Black, Arial" letter-spacing="2">CONVOCATORIA</text>
+  <text x="120" y="320" fill="#ffffff" font-size="138" font-family="Arial Black, Arial">ATLETISMO</text>
+  <text x="120" y="440" fill="#fdd835" font-size="112" font-family="Arial Black, Arial">CHOCÓ 2026</text>
+  <text x="122" y="520" fill="#e8fff0" font-size="42" font-family="Arial">Potencia tu talento. Inscripciones abiertas.</text>
+</svg>
+
