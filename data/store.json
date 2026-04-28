@@ -64,15 +64,15 @@
   },
   "publicSite": {
     "pageHeroes": {
-      "laLiga": "/files/55",
-      "convocatorias": "/files/57",
-      "competencias": "",
+      "laLiga": "/files/68",
+      "convocatorias": "/files/63",
+      "competencias": "/files/64",
       "calendario": "",
-      "resultados": "",
-      "ranking": "",
+      "resultados": "/files/67",
+      "ranking": "/files/66",
       "clubes": "",
       "noticias": "",
-      "blog": ""
+      "blog": "/files/65"
     },
     "laLiga": {
       "heroTitle": "La Liga",
