@@ -31,6 +31,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return Response.redirect(new URL('/admin?tab=aprobaciones&error=not_found', request.url), 302);
   }
 
+  if (req.module === 'documents' && auth.user.role !== 'LIGA') {
+    return Response.redirect(new URL('/admin?tab=aprobaciones&error=only_liga_can_approve', request.url), 302);
+  }
+
   if (parsed.data.decision === 'approved' && req.module === 'documents') {
     const payload = req.payload as Record<string, unknown>;
     const intent = String(payload.intent ?? 'create');

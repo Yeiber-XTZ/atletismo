@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { createRequire } from 'node:module';
 
 type ClubApprovedEmailInput = {
   to: string;
@@ -17,7 +17,16 @@ function createTransporter() {
   const pass = getEnv('EMAIL_PASSWORD');
   if (!user || !pass) return null;
 
-  return nodemailer.createTransport({
+  const require = createRequire(import.meta.url);
+  let nodemailerLib: any;
+  try {
+    nodemailerLib = require('nodemailer');
+  } catch {
+    console.warn('[mail] nodemailer no está instalado; se omite envío de correo.');
+    return null;
+  }
+
+  return nodemailerLib.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
