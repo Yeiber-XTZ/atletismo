@@ -305,3 +305,85 @@ export async function sendProfileUpdateReviewEmail(input: ProfileUpdateReviewEma
     console.warn('[mail] profile update review email failed:', (error as Error)?.message ?? error);
   }
 }
+
+type DocumentReviewEmailInput = {
+  to: string;
+  displayName?: string;
+  decision: 'approved' | 'rejected';
+  reviewNotes?: string;
+  documentTitle?: string;
+  loginUrl?: string;
+};
+
+function buildDocumentReviewEmail(input: Omit<DocumentReviewEmailInput, 'to'>) {
+  const approved = input.decision === 'approved';
+  const subject = approved
+    ? 'Solicitud de documento aprobada - Liga de Atletismo del Choco'
+    : 'Solicitud de documento rechazada - Liga de Atletismo del Choco';
+  const statusText = approved ? 'aprobada' : 'rechazada';
+  const docLine = input.documentTitle ? `Documento: ${input.documentTitle}\n` : '';
+
+  const textBody =
+    `Hola${input.displayName ? ` ${input.displayName}` : ''},\n\n` +
+    `Tu solicitud de documento fue ${statusText}.\n` +
+    `${docLine}\n` +
+    `${input.reviewNotes ? `Notas de revision:\n${input.reviewNotes}\n\n` : ''}` +
+    `${approved
+      ? 'El documento fue publicado correctamente.\n\n'
+      : 'El documento no fue publicado. Puedes ajustarlo y enviarlo nuevamente.\n\n'}` +
+    `${input.loginUrl ? `Puedes ingresar aqui: ${input.loginUrl}\n\n` : ''}` +
+    `Saludos,\nEquipo Liga de Atletismo del Choco\n`;
+
+  const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body style="font-family: Inter, Segoe UI, sans-serif; background:#f8fafc; padding:24px; color:#0f172a;">
+    <div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+      <div style="background:#0f172a;color:#f8fafc;padding:20px 24px;">
+        <h1 style="margin:0;font-size:18px;">Liga de Atletismo del Choco</h1>
+      </div>
+      <div style="padding:24px;">
+        <p>Hola${input.displayName ? ` <strong>${input.displayName}</strong>` : ''},</p>
+        <p>Tu solicitud de documento fue <strong>${statusText}</strong>.</p>
+        ${input.documentTitle ? `<p><strong>Documento:</strong> ${input.documentTitle}</p>` : ''}
+        ${input.reviewNotes ? `<p><strong>Notas de revision:</strong><br />${input.reviewNotes}</p>` : ''}
+        <p>${approved ? 'El documento fue publicado correctamente.' : 'El documento no fue publicado. Puedes ajustarlo y enviarlo nuevamente.'}</p>
+        ${input.loginUrl ? `<p><a href="${input.loginUrl}" style="display:inline-block;background:#5AAC32;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;">Ir al login</a></p>` : ''}
+      </div>
+    </div>
+  </body>
+</html>
+  `.trim();
+
+  return { subject, textBody, htmlBody };
+}
+
+export async function sendDocumentReviewEmail(input: DocumentReviewEmailInput) {
+  const transporter = createTransporter();
+  const from = getEnv('EMAIL_FROM') || getEnv('EMAIL_USER');
+  if (!transporter || !from || !input.to) return;
+
+  const { subject, textBody, htmlBody } = buildDocumentReviewEmail({
+    displayName: input.displayName,
+    decision: input.decision,
+    reviewNotes: input.reviewNotes,
+    documentTitle: input.documentTitle,
+    loginUrl: input.loginUrl
+  });
+
+  try {
+    await transporter.sendMail({
+      from,
+      to: input.to,
+      subject,
+      text: textBody,
+      html: htmlBody
+    });
+  } catch (error) {
+    console.warn('[mail] document review email failed:', (error as Error)?.message ?? error);
+  }
+}

@@ -5,7 +5,7 @@ import { getApprovalRequestById, reviewApprovalRequest } from '../../../lib/appr
 import { createDocument, deleteDocument, updateDocument } from '../../../lib/admin';
 import { logAudit } from '../../../lib/audit';
 import { getUserById, updateUserEditableProfile } from '../../../lib/users';
-import { sendProfileUpdateReviewEmail } from '../../../lib/email';
+import { sendDocumentReviewEmail, sendProfileUpdateReviewEmail } from '../../../lib/email';
 import { updateClubById } from '../../../lib/clubs';
 
 const schema = z.object({
@@ -29,10 +29,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const req = await getApprovalRequestById(parsed.data.id);
   if (!req || req.status !== 'pending') {
     return Response.redirect(new URL('/admin?tab=aprobaciones&error=not_found', request.url), 302);
-  }
-
-  if (req.module === 'documents' && auth.user.role !== 'LIGA') {
-    return Response.redirect(new URL('/admin?tab=aprobaciones&error=only_liga_can_approve', request.url), 302);
   }
 
   if (parsed.data.decision === 'approved' && req.module === 'documents') {
@@ -106,6 +102,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   }
 
-  const redirectTab = req.module === 'profile_update' ? 'solicitudes' : 'aprobaciones';
+  if (req.module === 'documents') {
+    const payload = req.payload as Record<string, unknown>;
+    const targetUserId = Number(req.requestedBy ?? 0);
+    const targetUser = targetUserId > 0 ? await getUserById(targetUserId) : null;
+    const to = String(targetUser?.email ?? '').trim();
+    const loginUrl = new URL('/login', request.url).toString();
+    const documentTitle = String(payload.title ?? '').trim();
+
+    await sendDocumentReviewEmail({
+      to,
+      displayName: targetUser?.displayName || '',
+      decision: parsed.data.decision,
+      reviewNotes: parsed.data.reviewNotes || '',
+      documentTitle,
+      loginUrl
+    });
+  }
+
+  const redirectTab = req.module === 'profile_update' || req.module === 'documents' ? 'solicitudes' : 'aprobaciones';
   return Response.redirect(new URL(`/admin?tab=${redirectTab}&saved=1`, request.url), 302);
 };

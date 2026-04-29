@@ -71,7 +71,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       meta: { intent, category, requestedByRole: user.role },
       request
     });
-    return Response.redirect(new URL('/admin?tab=documents&saved=1', request.url), 302);
+    return Response.redirect(new URL('/admin?tab=documents&saved=document_request_pending', request.url), 302);
   }
 
   if (intent === 'update') {
