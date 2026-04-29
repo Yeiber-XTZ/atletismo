@@ -59,6 +59,7 @@ const errorMessages: Record<string, string> = {
   invalid_schema: 'Hay campos inválidos o incompletos. Revisa el formulario.',
   missing_club: 'Tu usuario no tiene club asociado para registrar atletas.',
   missing_municipality: 'Debes seleccionar un municipio válido.',
+  invalid_birthdate: 'La fecha de nacimiento no puede ser futura.',
   duplicate_document: 'Ya existe un atleta con ese número de documento.',
   duplicate_email: 'El correo ya está registrado por otro usuario.'
 };
@@ -66,7 +67,8 @@ const errorMessage = error ? (errorMessages[error] ?? 'Error al guardar los camb
 const savedMessages: Record<string, string> = {
   '1': 'Cambios guardados exitosamente',
   profile_updated: 'Perfil actualizado exitosamente',
-  profile_request_sent: 'Solicitud de cambio enviada. Se aplicará cuando sea aprobada.'
+  profile_request_sent: 'Solicitud de cambio enviada. Se aplicará cuando sea aprobada.',
+  document_request_pending: 'Solicitud enviada. El documento está pendiente de aprobación por la Liga.'
 };
 const savedMessage = saved ? (savedMessages[saved] ?? 'Cambios guardados exitosamente') : '';
 const openCreateDocumentForm = error === 'missing_file' || error === 'invalid_schema';
@@ -190,6 +192,57 @@ const notificationsForUser = canViewNotifications && user?.role ? await listNoti
 const registrationRadicados = canManageApprovals ? await listRadicados('pending') : [];
 const pendingProfileRequests = canManageApprovals
   ? (await listApprovalRequests('pending')).filter((item) => item.module === 'profile_update')
+  : [];
+const pendingDocumentRequests = canManageApprovals
+  ? (await listApprovalRequests('pending')).filter((item) => item.module === 'documents')
+  : [];
+const pendingApprovalNotificationsCount = canManageApprovals
+  ? registrationRadicados.length + pendingDocumentRequests.length + pendingProfileRequests.length
+  : 0;
+const clubDocumentRequests = user?.role === 'CLUB'
+  ? (await listApprovalRequests())
+      .filter((item) => item.module === 'documents' && Number(item.requestedBy ?? 0) === Number(user?.id ?? 0))
+  : [];
+const normalizeDocumentStatus = (status: string) => {
+  const normalized = String(status ?? '').trim().toLowerCase();
+  if (normalized === 'approved') return 'Aprobado';
+  if (normalized === 'rejected') return 'Rechazado';
+  return 'Pendiente';
+};
+const documentStatusBadgeClass = (status: string) => {
+  const normalized = String(status ?? '').trim().toLowerCase();
+  if (normalized === 'approved') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  if (normalized === 'rejected') return 'border-rose-200 bg-rose-50 text-rose-700';
+  return 'border-amber-200 bg-amber-50 text-amber-700';
+};
+const clubDocumentItems = user?.role === 'CLUB'
+  ? [
+      ...docs.map((d) => ({
+        key: `published-${d.id}`,
+        title: d.title,
+        category: d.category,
+        date: d.date,
+        description: d.description,
+        href: d.href,
+        status: 'approved',
+        source: 'published'
+      })),
+      ...clubDocumentRequests
+        .filter((req) => req.status !== 'approved')
+        .map((req) => {
+          const payload = (req.payload ?? {}) as Record<string, unknown>;
+          return {
+            key: `request-${req.id}`,
+            title: String(payload.title ?? 'Documento'),
+            category: String(payload.category ?? ''),
+            date: String(payload.date ?? ''),
+            description: String(payload.description ?? ''),
+            href: String(payload.href ?? ''),
+            status: String(req.status ?? 'pending'),
+            source: 'request'
+          };
+        })
+    ]
   : [];
 const auditLogResult = isAdminRoot
   ? await listAuditLogs({
@@ -551,13 +604,13 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <a
             class="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-gray-600"
             href="/admin?tab=solicitudes"
-            aria-label={`Solicitudes pendientes: ${registrationRadicados.length}`}
-            title={`Solicitudes pendientes: ${registrationRadicados.length}`}
+            aria-label={`Solicitudes pendientes: ${pendingApprovalNotificationsCount}`}
+            title={`Solicitudes pendientes: ${pendingApprovalNotificationsCount}`}
           >
             <span class="material-symbols-outlined">notifications</span>
-            {registrationRadicados.length > 0 ? (
+            {pendingApprovalNotificationsCount > 0 ? (
               <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#e7d916] text-[#2d3e50] text-[10px] font-black leading-[18px] text-center">
-                {registrationRadicados.length > 99 ? '99+' : registrationRadicados.length}
+                {pendingApprovalNotificationsCount > 99 ? '99+' : pendingApprovalNotificationsCount}
               </span>
             ) : null}
           </a>
@@ -1944,7 +1997,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </div>
               <div class="md:col-span-2">
                 <label class="admin-label">Nacimiento</label>
-                <input class="admin-input" type="date" name="birthdate" required />
+                <input class="admin-input" type="date" name="birthdate" max={todayIso} required />
               </div>
               <div class="md:col-span-3">
                 <label class="admin-label">Email</label>
@@ -2151,7 +2204,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                                   <option value={sex.code} selected={a.sexCode === sex.code || a.gender === sex.code}>{sex.name}</option>
                                 ))}
                               </select>
-                              <input class="admin-input min-w-0" type="date" name="birthdate" value={a.birthdate} required />
+                              <input class="admin-input min-w-0" type="date" name="birthdate" value={a.birthdate} max={todayIso} required />
                               <input class="admin-input min-w-0" type="email" name="email" value={a.email} placeholder="Email" />
                               <select class="admin-input min-w-0 js-geo-country" name="countryIso2" data-geo-scope={`edit-${a.id}`}>
                                 <option value="">Selecciona país</option>
@@ -2300,6 +2353,67 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 No hay solicitudes pendientes.
               </div>
             ) : null}
+          </div>
+
+          <div class="pt-4 border-t border-gray-200">
+            <h5 class="text-sm font-semibold text-gray-700">Solicitudes de documentos (CLUB)</h5>
+            <p class="text-xs text-gray-500 mt-1">Al aprobar, el documento se publica. Al rechazar, no se publica en la vista de documentos.</p>
+            <div class="space-y-3 mt-3">
+              {pendingDocumentRequests.map((item) => {
+                const payload = item.payload;
+                const intent = String(payload.intent ?? 'create');
+                const title = String(payload.title ?? '');
+                const category = String(payload.category ?? '');
+                const date = String(payload.date ?? '');
+                const href = String(payload.href ?? '');
+                return (
+                  <form method="POST" action="/api/admin/approvals" class="rounded-xl border border-gray-200 bg-white p-4 grid gap-3 md:grid-cols-10">
+                    <input type="hidden" name="id" value={item.id} />
+                    <div class="md:col-span-3">
+                      <div class="text-xs uppercase tracking-wide text-gray-400">Solicitud</div>
+                      <div class="font-semibold text-gray-700">#{item.id} · Documentos</div>
+                      <div class="text-xs text-gray-500 mt-1">{new Date(item.createdAt).toLocaleString('es-CO')}</div>
+                      <div class="mt-2 inline-flex rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                        Acción: {intent}
+                      </div>
+                    </div>
+                    <div class="md:col-span-5">
+                      <div class="text-xs uppercase tracking-wide text-gray-400">Documento solicitado</div>
+                      <div class="text-sm text-gray-700"><strong>Título:</strong> {title || '-'}</div>
+                      <div class="text-sm text-gray-700"><strong>Categoría:</strong> {category || '-'}</div>
+                      <div class="text-sm text-gray-700"><strong>Fecha:</strong> {date || '-'}</div>
+                      {href ? (
+                        <a class="mt-1 inline-flex items-center gap-1 text-xs text-indigo-700 hover:underline" href={href} target="_blank" rel="noopener noreferrer">
+                          <span class="material-symbols-outlined text-base">attach_file</span>
+                          Ver archivo adjunto
+                        </a>
+                      ) : (
+                        <div class="text-xs text-gray-400 mt-1">Sin archivo adjunto</div>
+                      )}
+                    </div>
+                    <div class="md:col-span-10">
+                      <label class="admin-label">Notas de revisión</label>
+                      <input class="admin-input" name="reviewNotes" placeholder="Opcional" />
+                    </div>
+                    <div class="md:col-span-2 flex items-end justify-end gap-2">
+                      <button class="admin-btn admin-btn-secondary" type="submit" name="decision" value="rejected">
+                        <span class="material-symbols-outlined">close</span>
+                        Rechazar
+                      </button>
+                      <button class="admin-btn admin-btn-primary" type="submit" name="decision" value="approved">
+                        <span class="material-symbols-outlined">check</span>
+                        Aprobar
+                      </button>
+                    </div>
+                  </form>
+                );
+              })}
+              {pendingDocumentRequests.length === 0 ? (
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                  No hay solicitudes de documentos pendientes.
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div class="pt-4 border-t border-gray-200">
@@ -3232,29 +3346,59 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Documentos y Noticias</h4>
         </div>
         <div class="admin-card-body">
-          {user?.role === 'CLUB' || hasPermission(user, 'documents:read_private_asamblea') ? (
+          {user?.role === 'CLUB' ? (
             <>
-              <p class="text-sm text-gray-500 mb-4">Aquí encontrarás documentos, circulares y actas importantes para tu gestión.</p>
+              <p class="text-sm text-gray-500 mb-4">Como club puedes cargar documentos. La Liga debe aprobar cada cargue antes de publicarse.</p>
+              <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 mb-4">
+                <form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="admin-form-row md:grid-cols-6">
+                  <input type="hidden" name="intent" value="create" />
+                  <input class="admin-input" name="title" placeholder="Título" required />
+                  <input class="admin-input" name="category" placeholder="Categoría (ej: Estatutos)" />
+                  <input class="admin-input" type="date" name="date" placeholder="Fecha (YYYY-MM-DD)" />
+                  <div class="md:col-span-2">
+                    <input class="admin-input" type="file" name="file" required />
+                    <p class="text-xs text-gray-500 mt-1">Solo carga local desde tu equipo.</p>
+                  </div>
+                  <button class="admin-btn admin-btn-primary" type="submit">
+                    <span class="material-symbols-outlined">upload</span>
+                    Enviar a aprobación
+                  </button>
+                  <textarea class="admin-input min-h-[80px] md:col-span-6" name="description" placeholder="Descripción del documento"></textarea>
+                  <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-6">
+                    <input type="checkbox" name="isPrivate" value="1" />
+                    Documento privado
+                  </label>
+                </form>
+              </div>
               <div class="space-y-3">
-                {docs.map((d) => (
+                {clubDocumentItems.map((d) => (
                   <article class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
                     <div>
-                      <h5 class="font-bold text-gray-800">{d.title}</h5>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h5 class="font-bold text-gray-800">{d.title}</h5>
+                        <span class:list={['inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold', documentStatusBadgeClass(d.status)]}>
+                          {normalizeDocumentStatus(d.status)}
+                        </span>
+                      </div>
                       <div class="text-xs text-gray-500">Categoría: {d.category || '-'} · Fecha: {d.date || '-'}</div>
                       {d.description && <p class="text-sm text-gray-600 mt-1">{d.description}</p>}
                     </div>
-                    <a href={d.href} class="admin-btn admin-btn-secondary shrink-0" target="_blank" rel="noreferrer">
-                      <span class="material-symbols-outlined">download</span>
-                      Descargar
-                    </a>
+                    {d.href ? (
+                      <a href={d.href} class="admin-btn admin-btn-secondary shrink-0" target="_blank" rel="noreferrer">
+                        <span class="material-symbols-outlined">download</span>
+                        Descargar
+                      </a>
+                    ) : (
+                      <span class="text-xs text-gray-400 shrink-0">Sin archivo disponible</span>
+                    )}
                   </article>
                 ))}
-                {docs.length === 0 && (
+                {clubDocumentItems.length === 0 && (
                   <p class="text-sm text-gray-400">No hay documentos disponibles.</p>
                 )}
               </div>
             </>
-          ) : (
+          ) : hasPermission(user, 'documents:manage') ? (
             <>
               <div class="mb-4">
                 <button type="button" id="toggle-create-document" class="admin-btn admin-btn-secondary">
@@ -3281,10 +3425,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                   <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-3">
                     <input type="checkbox" name="isPrivate" value="1" />
                     Documento privado
-                  </label>
-                  <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-6">
-                    <input type="checkbox" name="isSensitive" value="1" />
-                    Cambio sensible (si lo crea rol LIGA, pasará a aprobación ADMIN)
                   </label>
                 </form>
               </div>
@@ -3322,10 +3462,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         Actualizar
                       </button>
                       <textarea class="admin-input min-h-[80px] md:col-span-5" name="description">{d.description}</textarea>
-                      <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-5">
-                        <input type="checkbox" name="isSensitive" value="1" />
-                        Marcar como sensible para solicitar aprobación
-                      </label>
                       <button class="admin-btn admin-btn-danger" type="submit" name="intent" value="delete">
                         <span class="material-symbols-outlined">delete</span>
                         Eliminar
@@ -3338,6 +3474,28 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     <span class="material-symbols-outlined text-4xl mb-2">description</span>
                     <p class="text-sm">No hay documentos registrados</p>
                   </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <p class="text-sm text-gray-500 mb-4">Aquí encontrarás documentos, circulares y actas importantes para tu gestión.</p>
+              <div class="space-y-3">
+                {docs.map((d) => (
+                  <article class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
+                    <div>
+                      <h5 class="font-bold text-gray-800">{d.title}</h5>
+                      <div class="text-xs text-gray-500">Categoría: {d.category || '-'} · Fecha: {d.date || '-'}</div>
+                      {d.description && <p class="text-sm text-gray-600 mt-1">{d.description}</p>}
+                    </div>
+                    <a href={d.href} class="admin-btn admin-btn-secondary shrink-0" target="_blank" rel="noreferrer">
+                      <span class="material-symbols-outlined">download</span>
+                      Descargar
+                    </a>
+                  </article>
+                ))}
+                {docs.length === 0 && (
+                  <p class="text-sm text-gray-400">No hay documentos disponibles.</p>
                 )}
               </div>
             </>

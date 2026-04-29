@@ -5,10 +5,19 @@ import { createApprovalRequest } from '../../../lib/approvals';
 import { logAudit } from '../../../lib/audit';
 import { saveFileUpload } from '../../../lib/file-upload';
 import { redirectInternal } from '../../../lib/http-redirect';
+import { getUserFromCookies } from '../../../lib/auth';
+import { hasPermission } from '../../../lib/rbac';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const auth = await requirePermissionOrRedirect(cookies, new URL(request.url), 'documents:manage', { loginPath: '/admin/login' });
-  if ('response' in auth) return auth.response;
+  const user = await getUserFromCookies(cookies);
+  if (!user) {
+    return Response.redirect(new URL('/admin/login', request.url), 302);
+  }
+  const canManageDocuments = hasPermission(user, 'documents:manage');
+  const isClub = user.role === 'CLUB';
+  if (!canManageDocuments && !isClub) {
+    return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+  }
 
   const form = await request.formData();
   const intentValues = form.getAll('intent').map((value) => String(value));
@@ -25,15 +34,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const uploadedHref =
     docFile instanceof File && docFile.size > 0
-      ? await saveFileUpload(docFile, Number(auth.user.id) || null, { isPrivate })
+      ? await saveFileUpload(docFile, Number(user.id) || null, { isPrivate })
       : undefined;
   const href = uploadedHref ?? existingHref;
-  const isSensitive = String(form.get('isSensitive') ?? '') === '1';
+
+  if (isClub && intent !== 'create') {
+    return Response.redirect(new URL('/admin?tab=documents&error=forbidden', request.url), 302);
+  }
 
   if (intent === 'delete') {
     await deleteDocument(id);
     await logAudit({
-      userId: Number(auth.user.id) || null,
+      userId: Number(user.id) || null,
       action: 'document_delete',
       entityType: 'documents',
       entityId: String(id),
@@ -42,25 +54,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return redirectInternal('/admin?tab=documents&saved=1', 302);
   }
 
-  const needsApproval = (auth.user.role === 'LIGA' || auth.user.role === 'ORGANO_ADMIN') && isSensitive;
+  const needsApproval = isClub;
 
   if (needsApproval) {
     await createApprovalRequest({
       module: 'documents',
       action: intent || 'create',
       entityId: id ? String(id) : '',
-      requestedBy: Number(auth.user.id) || null,
+      requestedBy: Number(user.id) || null,
       payload: { id, title, description, category, date, href, intent }
     });
     await logAudit({
-      userId: Number(auth.user.id) || null,
+      userId: Number(user.id) || null,
       action: 'approval_requested',
       entityType: 'documents',
       entityId: id ? String(id) : '',
-      meta: { intent, category, sensitive: true },
+      meta: { intent, category, requestedByRole: user.role },
       request
     });
-    return redirectInternal('/admin?tab=documents&saved=1', 302);
+    return redirectInternal('/admin?tab=documents&saved=document_request_pending', 302);
   }
 
   if (intent === 'update') {
@@ -69,7 +81,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
     await updateDocument(id, { title, description, category, date, href });
     await logAudit({
-      userId: Number(auth.user.id) || null,
+      userId: Number(user.id) || null,
       action: 'document_update',
       entityType: 'documents',
       entityId: String(id),
@@ -84,7 +96,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   await createDocument({ title, description, category, date, href });
   await logAudit({
-    userId: Number(auth.user.id) || null,
+    userId: Number(user.id) || null,
     action: 'document_create',
     entityType: 'documents',
     meta: { title, category },

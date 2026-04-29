@@ -6,7 +6,7 @@ import { createDocument, deleteDocument, updateDocument } from '../../../lib/adm
 import { logAudit } from '../../../lib/audit';
 import { redirectInternal } from '../../../lib/http-redirect';
 import { getUserById, updateUserEditableProfile } from '../../../lib/users';
-import { sendProfileUpdateReviewEmail } from '../../../lib/email';
+import { sendDocumentReviewEmail, sendProfileUpdateReviewEmail } from '../../../lib/email';
 import { updateClubById } from '../../../lib/clubs';
 
 const schema = z.object({
@@ -103,7 +103,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   }
 
-  const redirectTab = req.module === 'profile_update' ? 'solicitudes' : 'aprobaciones';
+  if (req.module === 'documents') {
+    const payload = req.payload as Record<string, unknown>;
+    const targetUserId = Number(req.requestedBy ?? 0);
+    const targetUser = targetUserId > 0 ? await getUserById(targetUserId) : null;
+    const to = String(targetUser?.email ?? '').trim();
+    const loginUrl = new URL('/login', request.url).toString();
+    const documentTitle = String(payload.title ?? '').trim();
+
+    await sendDocumentReviewEmail({
+      to,
+      displayName: targetUser?.displayName || '',
+      decision: parsed.data.decision,
+      reviewNotes: parsed.data.reviewNotes || '',
+      documentTitle,
+      loginUrl
+    });
+  }
+
+  const redirectTab = req.module === 'profile_update' || req.module === 'documents' ? 'solicitudes' : 'aprobaciones';
   return redirectInternal(`/admin?tab=${redirectTab}&saved=1`, 302);
 };
 
