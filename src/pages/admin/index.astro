@@ -112,6 +112,7 @@ const municipalityGeoIndex = new Map(
 
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
+const isLigaOrOrgano = user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN';
 const canDelegateAssemblyPermissions = user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN';
 const delegatedAssemblyPermissions = [
   'assembly:self_panel',
@@ -396,6 +397,7 @@ const postulationStatusClass = (status: string) => {
 
 const logoUrl = data.settings.logoUrl || '/logo.png';
 const assignableRoles = ROLES.filter((role) => isSuperAdmin || role !== 'SUPERADMIN');
+const creatableRoles = assignableRoles.filter((role) => !isLigaOrOrgano || role !== 'ADMIN');
 const linesFromArray = (items: string[] | undefined) => (items ?? []).join('\n');
 const downloadsToLines = (downloads: Array<{ label: string; href: string }> | undefined) =>
   (downloads ?? []).map((item) => `${item.label}|${item.href}`).join('\n');
@@ -1727,7 +1729,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               <div class="md:col-span-1">
                 <label class="admin-label">Rol</label>
                 <select class="admin-input" name="role" required>
-                  {assignableRoles.map((r) => (
+                  {creatableRoles.map((r) => (
                     <option value={r}>{r}</option>
                   ))}
                 </select>
