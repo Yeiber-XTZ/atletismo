@@ -3232,9 +3232,30 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           <h4 class="admin-card-title">Documentos y Noticias</h4>
         </div>
         <div class="admin-card-body">
-          {user?.role === 'CLUB' || hasPermission(user, 'documents:read_private_asamblea') ? (
+          {user?.role === 'CLUB' ? (
             <>
-              <p class="text-sm text-gray-500 mb-4">Aquí encontrarás documentos, circulares y actas importantes para tu gestión.</p>
+              <p class="text-sm text-gray-500 mb-4">Como club puedes cargar documentos. La Liga debe aprobar cada cargue antes de publicarse.</p>
+              <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 mb-4">
+                <form method="POST" action="/api/admin/documents" encType="multipart/form-data" class="admin-form-row md:grid-cols-6">
+                  <input type="hidden" name="intent" value="create" />
+                  <input class="admin-input" name="title" placeholder="Título" required />
+                  <input class="admin-input" name="category" placeholder="Categoría (ej: Estatutos)" />
+                  <input class="admin-input" type="date" name="date" placeholder="Fecha (YYYY-MM-DD)" />
+                  <div class="md:col-span-2">
+                    <input class="admin-input" type="file" name="file" required />
+                    <p class="text-xs text-gray-500 mt-1">Solo carga local desde tu equipo.</p>
+                  </div>
+                  <button class="admin-btn admin-btn-primary" type="submit">
+                    <span class="material-symbols-outlined">upload</span>
+                    Enviar a aprobación
+                  </button>
+                  <textarea class="admin-input min-h-[80px] md:col-span-6" name="description" placeholder="Descripción del documento"></textarea>
+                  <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-6">
+                    <input type="checkbox" name="isPrivate" value="1" />
+                    Documento privado
+                  </label>
+                </form>
+              </div>
               <div class="space-y-3">
                 {docs.map((d) => (
                   <article class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
@@ -3254,7 +3275,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                 )}
               </div>
             </>
-          ) : (
+          ) : hasPermission(user, 'documents:manage') ? (
             <>
               <div class="mb-4">
                 <button type="button" id="toggle-create-document" class="admin-btn admin-btn-secondary">
@@ -3281,10 +3302,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                   <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-3">
                     <input type="checkbox" name="isPrivate" value="1" />
                     Documento privado
-                  </label>
-                  <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-6">
-                    <input type="checkbox" name="isSensitive" value="1" />
-                    Cambio sensible (si lo crea rol LIGA, pasará a aprobación ADMIN)
                   </label>
                 </form>
               </div>
@@ -3322,10 +3339,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                         Actualizar
                       </button>
                       <textarea class="admin-input min-h-[80px] md:col-span-5" name="description">{d.description}</textarea>
-                      <label class="inline-flex items-center gap-2 text-xs text-gray-600 md:col-span-5">
-                        <input type="checkbox" name="isSensitive" value="1" />
-                        Marcar como sensible para solicitar aprobación
-                      </label>
                       <button class="admin-btn admin-btn-danger" type="submit" name="intent" value="delete">
                         <span class="material-symbols-outlined">delete</span>
                         Eliminar
@@ -3338,6 +3351,28 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     <span class="material-symbols-outlined text-4xl mb-2">description</span>
                     <p class="text-sm">No hay documentos registrados</p>
                   </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <p class="text-sm text-gray-500 mb-4">Aquí encontrarás documentos, circulares y actas importantes para tu gestión.</p>
+              <div class="space-y-3">
+                {docs.map((d) => (
+                  <article class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
+                    <div>
+                      <h5 class="font-bold text-gray-800">{d.title}</h5>
+                      <div class="text-xs text-gray-500">Categoría: {d.category || '-'} · Fecha: {d.date || '-'}</div>
+                      {d.description && <p class="text-sm text-gray-600 mt-1">{d.description}</p>}
+                    </div>
+                    <a href={d.href} class="admin-btn admin-btn-secondary shrink-0" target="_blank" rel="noreferrer">
+                      <span class="material-symbols-outlined">download</span>
+                      Descargar
+                    </a>
+                  </article>
+                ))}
+                {docs.length === 0 && (
+                  <p class="text-sm text-gray-400">No hay documentos disponibles.</p>
                 )}
               </div>
             </>
