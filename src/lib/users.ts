@@ -36,9 +36,9 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
        ORDER BY id DESC
        LIMIT 1
      ) c ON TRUE
-     WHERE u.email = $1
+     WHERE LOWER(u.email) = LOWER($1)
      LIMIT 1`,
-    [email]
+    [email.trim()]
   );
   const u = userRes.rows[0] as DbUser | undefined;
   if (!u) return null;

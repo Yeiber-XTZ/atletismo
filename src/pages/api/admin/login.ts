@@ -4,14 +4,20 @@ import { verifyPassword } from '../../../lib/security';
 import { getUserByEmail } from '../../../lib/users';
 import { logAudit } from '../../../lib/audit';
 import { isDbUnavailableError } from '../../../lib/db';
+import { hasPendingRadicadoByEmail } from '../../../lib/radicados';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const form = await request.formData();
-  const email = String(form.get('email') ?? '');
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
   const password = String(form.get('password') ?? '');
   try {
     const user = await getUserByEmail(email);
     if (!user) {
+      const hasPending = await hasPendingRadicadoByEmail(email);
+      if (hasPending) {
+        await logAudit({ userId: null, action: 'admin_login_inactive_pending_radicado', meta: { email }, request });
+        return Response.redirect(new URL('/admin/login?error=inactive', request.url), 302);
+      }
       await logAudit({ userId: null, action: 'admin_login_failed', meta: { email }, request });
       return Response.redirect(new URL('/admin/login?error=invalid', request.url), 302);
     }

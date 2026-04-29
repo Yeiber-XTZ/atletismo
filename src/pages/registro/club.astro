@@ -15,6 +15,13 @@ const success = Astro.url.searchParams.get('success');
 const error = Astro.url.searchParams.get('error');
 const radicado = Astro.url.searchParams.get('radicado');
 const errorMessage = Astro.url.searchParams.get('message');
+const feedbackTitle = success ? 'Registro enviado' : error ? 'No se pudo enviar' : '';
+const feedbackMessage = success
+  ? `Tu solicitud fue enviada correctamente${radicado ? `. Radicado: ${radicado}.` : '.'}`
+  : error
+    ? (errorMessage || 'Revisa los datos del formulario e intentalo nuevamente.')
+    : '';
+const isFeedbackOpen = Boolean(feedbackTitle && feedbackMessage);
 ---
 
 <BaseLayout title="Registro Club | Liga de Atletismo del Choco" description="Solicitud de afiliacion/registro de club ante la Liga.">
@@ -168,12 +175,19 @@ const errorMessage = Astro.url.searchParams.get('message');
   <FooterKinetic siteName={settings.siteName} social={settings.social} />
   <div id="registroFlags" data-success={success ?? ''} data-error={error ?? ''} data-radicado={radicado ?? ''} data-error-message={errorMessage ?? ''} hidden></div>
 
-  <div id="registroModal" class="fixed inset-0 z-[120] hidden items-center justify-center bg-black/40 p-4" aria-hidden="true">
+  <div id="registroModal" class={`fixed inset-0 z-[120] ${isFeedbackOpen ? 'flex' : 'hidden'} items-center justify-center bg-black/40 p-4`} aria-hidden={isFeedbackOpen ? 'false' : 'true'}>
     <div class="w-[min(92vw,460px)] rounded-xl border border-gray-200 bg-white p-5 shadow-2xl">
-      <h3 id="registroModalTitle" class="text-lg font-bold text-on-surface">Registro</h3>
-      <p id="registroModalMessage" class="mt-2 text-sm text-[var(--text-secondary)]"></p>
+      <h3 id="registroModalTitle" class="text-lg font-bold text-on-surface">{feedbackTitle || 'Registro'}</h3>
+      <p id="registroModalMessage" class="mt-2 text-sm text-[var(--text-secondary)]">{feedbackMessage}</p>
       <div class="mt-4 flex justify-end">
-        <button id="registroModalClose" class="btn-primary" type="button">Entendido</button>
+        <button
+          id="registroModalClose"
+          class="btn-primary"
+          type="button"
+          onclick="(function(){var m=document.getElementById('registroModal');if(!m)return;m.classList.add('hidden');m.classList.remove('flex');m.setAttribute('aria-hidden','true');})()"
+        >
+          Entendido
+        </button>
       </div>
     </div>
   </div>
@@ -363,6 +377,18 @@ const errorMessage = Astro.url.searchParams.get('message');
       syncMunicipalityName();
     };
 
+    const ensureGeoReady = () => {
+      if (!(countrySelect instanceof HTMLSelectElement) || !(departmentSelect instanceof HTMLSelectElement)) return;
+      initGeo();
+      // En algunas navegaciones internas de Astro el primer render no hidrata a tiempo.
+      if (normalizeCode(countrySelect.value || 'CO') === 'CO' && departmentSelect.options.length <= 1) {
+        requestAnimationFrame(() => {
+          initGeo();
+          setTimeout(initGeo, 0);
+        });
+      }
+    };
+
     countrySelect?.addEventListener('change', () => {
       if (!(departmentSelect instanceof HTMLSelectElement) || !(municipalitySelect instanceof HTMLSelectElement)) return;
       const countryCode = normalizeCode(countrySelect.value || '');
@@ -467,6 +493,7 @@ const errorMessage = Astro.url.searchParams.get('message');
     openFeedbackModalFromFlags();
     document.addEventListener('astro:page-load', openFeedbackModalFromFlags);
 
-    initGeo();
+    ensureGeoReady();
+    document.addEventListener('astro:page-load', ensureGeoReady);
   </script>
 </BaseLayout>

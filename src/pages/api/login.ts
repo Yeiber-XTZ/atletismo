@@ -6,6 +6,7 @@ import { getUserByEmail } from '../../lib/users';
 import { verifyPassword } from '../../lib/security';
 import { logAudit } from '../../lib/audit';
 import { db, isDbUnavailableError } from '../../lib/db';
+import { hasPendingRadicadoByEmail } from '../../lib/radicados';
 
 const schema = z.object({
   email: z.string().email().max(160),
@@ -98,7 +99,7 @@ async function ensureClubLinkedAtLogin(input: {
 export const POST: APIRoute = async ({ request, cookies }) => {
   const form = await request.formData();
   const payload = {
-    email: String(form.get('email') ?? ''),
+    email: String(form.get('email') ?? '').trim().toLowerCase(),
     password: String(form.get('password') ?? ''),
     next: String(form.get('next') ?? '')
   };
@@ -111,6 +112,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const user = await getUserByEmail(parsed.data.email);
     if (!user) {
+      const hasPending = await hasPendingRadicadoByEmail(parsed.data.email);
+      if (hasPending) {
+        await logAudit({ userId: null, action: 'login_inactive_pending_radicado', meta: { email: parsed.data.email }, request });
+        return Response.redirect(new URL(inactiveRedirectPath(parsed.data.next), request.url), 302);
+      }
       await logAudit({ userId: null, action: 'login_failed', meta: { email: parsed.data.email }, request });
       return Response.redirect(new URL(invalidRedirectPath(parsed.data.next), request.url), 302);
     }
