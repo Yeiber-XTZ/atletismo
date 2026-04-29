@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
 import { requirePermissionOrRedirect } from '../../../lib/access';
-import { createFileRecord } from '../../../lib/files';
-import { saveToLocalUploads } from '../../../lib/local-storage';
+import { saveFileUploadRecord } from '../../../lib/file-upload';
 import { logAudit } from '../../../lib/audit';
 import { normalizeInternalPath, redirectInternal } from '../../../lib/http-redirect';
 
@@ -19,32 +18,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const isPrivate = String(form.get('isPrivate') ?? '') === '1';
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const saved = await saveToLocalUploads({ originalName: file.name, buffer });
+  // ✅ Usa file-upload.ts que sí maneja GCS
+  const result = await saveFileUploadRecord(file, Number(auth.user.id) || null, { isPrivate });
+  if (!result) {
+    return redirectInternal('/admin?tab=documents&error=upload_failed', 302);
+  }
 
-  const record = await createFileRecord({
-    ownerUserId: Number(auth.user.id) || null,
-    originalName: file.name,
-    storagePath: saved.storagePath,
-    mimeType: file.type || 'application/octet-stream',
-    sizeBytes: buffer.byteLength,
-    isPrivate
-  });
   await logAudit({
     userId: Number(auth.user.id) || null,
     action: 'file_upload',
     entityType: 'file',
-    entityId: String(record.id),
-    meta: { isPrivate, mimeType: record.mimeType, sizeBytes: record.sizeBytes, originalName: record.originalName },
+    entityId: String(result.fileId),
+    meta: { isPrivate, originalName: file.name },
     request
   });
 
   const safeReturnTo = normalizeInternalPath(returnTo, '/admin?tab=documents');
   const [basePath, rawQuery = ''] = safeReturnTo.split('?');
   const params = new URLSearchParams(rawQuery);
-  params.set('uploaded', `/files/${record.id}`);
+  params.set('uploaded', `/files/${result.fileId}`);
   const nextPath = `${basePath}?${params.toString()}`;
   return redirectInternal(nextPath, 302);
 };
-
-
