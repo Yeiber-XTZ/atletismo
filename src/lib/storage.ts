@@ -1,8 +1,8 @@
 import { Storage } from '@google-cloud/storage';
 
-const projectId = import.meta.env.GCP_PROJECT_ID;
-const bucketName = import.meta.env.GCP_BUCKET;
-const isProduction = import.meta.env.NODE_ENV === 'production';
+const projectId = process.env.GCP_PROJECT_ID;
+const bucketName = process.env.GCP_BUCKET; 
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const useGCS = isProduction &&
   Boolean(projectId) &&
@@ -10,6 +10,9 @@ export const useGCS = isProduction &&
   projectId !== 'your-gcp-project-id' &&
   bucketName !== 'your-bucket-name';
 
+console.log('[storage] GCP_PROJECT_ID:', process.env.GCP_PROJECT_ID ?? 'MISSING');
+console.log('[storage] GCP_BUCKET:', process.env.GCP_BUCKET ?? 'MISSING');
+console.log('[storage] useGCS:', useGCS);
 export let bucket: import('@google-cloud/storage').Bucket | null = null;
 
 if (useGCS) {

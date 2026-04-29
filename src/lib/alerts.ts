@@ -69,7 +69,7 @@ export async function getAdminAlerts(): Promise<AdminAlert[]> {
   const postRes = await db.query(
     `SELECT id, status, updated_at
      FROM postulations
-     WHERE status IN ('Postulada','En revisií³n','En revisión','Incompleta')`
+     WHERE status IN ('Postulada','En revisi ón','En revisión','Incompleta')`
   );
 
   for (const row of postRes.rows as Array<{ id: string; status: string; updated_at: string }>) {
@@ -79,7 +79,7 @@ export async function getAdminAlerts(): Promise<AdminAlert[]> {
       alerts.push({
         type: 'postulation',
         level: age >= 8 ? 'critical' : 'warning',
-        title: `Postulacií³n estancada: ${row.id}`,
+        title: `Postulaci ón estancada: ${row.id}`,
         detail: `${age} dí­a(s) en estado "${row.status}".`,
         href: '/admin?tab=convocatorias'
       });
