@@ -173,6 +173,13 @@ const athletes = canAccessAthletesTab
           status: athleteStatusFilter
         }))
   : [];
+const dashboardAthletes = canAccessAthletesTab
+  ? await listAthletes({
+      clubId: canManageAllAthletes ? undefined : (ownClubId > 0 ? ownClubId : undefined),
+      query: '',
+      status: 'all'
+    })
+  : [];
 const pqrs = isAdminRoot ? await listPqrs(500) : [];
 const canApprovePostulations = hasPermission(user, 'postulations:approve');
 const postulationsDb = (canApprovePostulations || user?.role === 'CLUB') ? await listPostulaciones() : [];
@@ -333,6 +340,167 @@ const proximasCompetencias = (data.competencias ?? []).filter((item) => {
   const value = String(item.date ?? '').trim();
   return value && value >= todayIso;
 }).length;
+const totalPendingApprovals = registrationRadicados.length + pendingDocumentRequests.length + pendingProfileRequests.length;
+const executiveKpis = [
+  {
+    label: 'Pendientes Totales',
+    value: totalPendingApprovals,
+    hint: `${registrationRadicados.length} registro · ${pendingDocumentRequests.length} documentos · ${pendingProfileRequests.length} perfil`,
+    color: 'text-amber-700 bg-amber-100'
+  },
+  {
+    label: 'Tasa Aprobación',
+    value: `${approvalRate}%`,
+    hint: `${postulationsApproved} de ${postulationsTotal} postulaciones`,
+    color: 'text-emerald-700 bg-emerald-100'
+  },
+  {
+    label: 'PQRS Resueltas',
+    value: `${pqrsResolutionRate}%`,
+    hint: `${pqrsResolved} de ${pqrsTotal} casos`,
+    color: 'text-sky-700 bg-sky-100'
+  },
+  {
+    label: 'Actividad 7 Días',
+    value: activityLast7Post + activityLast7Pqrs,
+    hint: `${activityLast7Post} postulaciones · ${activityLast7Pqrs} PQRS`,
+    color: 'text-violet-700 bg-violet-100'
+  }
+];
+const operationalHealthLabel =
+  totalPendingApprovals <= 5 && operationalPulse === 'Estable'
+    ? 'Salud Alta'
+    : totalPendingApprovals <= 12 && operationalPulse !== 'Crítico'
+      ? 'Salud Media'
+      : 'Salud Crítica';
+const operationalHealthClass =
+  operationalHealthLabel === 'Salud Alta'
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    : operationalHealthLabel === 'Salud Media'
+      ? 'bg-amber-100 text-amber-800 border-amber-200'
+      : 'bg-red-100 text-red-800 border-red-200';
+const requestTypeRows = [
+  { label: 'Registro club', value: registrationRadicados.length, color: '#5AAC32' },
+  { label: 'Documentos', value: pendingDocumentRequests.length, color: '#eab308' },
+  { label: 'Cambio perfil', value: pendingProfileRequests.length, color: '#0ea5e9' }
+];
+const requestTypeMax = Math.max(1, ...requestTypeRows.map((row) => row.value));
+const requestStatusRows = [
+  { label: 'Pendientes', value: totalPendingApprovals, color: '#f59e0b' },
+  { label: 'Postulaciones aprobadas', value: postulationsApproved, color: '#22c55e' },
+  { label: 'Postulaciones rechazadas', value: postulationsRejected, color: '#ef4444' }
+];
+const requestStatusTotal = requestStatusRows.reduce((acc, row) => acc + row.value, 0);
+const requestStatusConic = (() => {
+  if (requestStatusTotal <= 0) return '#e2e8f0';
+  let start = 0;
+  const segments: string[] = [];
+  requestStatusRows.forEach((row) => {
+    const size = (row.value / requestStatusTotal) * 360;
+    const end = start + size;
+    segments.push(`${row.color} ${start.toFixed(2)}deg ${end.toFixed(2)}deg`);
+    start = end;
+  });
+  return `conic-gradient(${segments.join(', ')})`;
+})();
+const trendIntakeVsResolved = (analytics?.last7Days ?? []).map((day) => {
+  const intake = Number(day.postulations ?? 0) + Number(day.pqrs ?? 0);
+  const resolvedEstimated = Math.round(intake * ((approvalRate + pqrsResolutionRate) / 200));
+  return {
+    day: String(day.day ?? '').slice(5),
+    intake,
+    resolved: Math.min(intake, Math.max(0, resolvedEstimated))
+  };
+});
+const trendIntakeMax = Math.max(1, ...trendIntakeVsResolved.map((row) => Math.max(row.intake, row.resolved)));
+const dashboardAthletesTotal = dashboardAthletes.length;
+const dashboardAthletesActive = dashboardAthletes.filter((a) => String(a.status ?? '').toLowerCase() === 'active').length;
+const dashboardAthletesInactive = Math.max(0, dashboardAthletesTotal - dashboardAthletesActive);
+const athletesByClubRows = Array.from(
+  dashboardAthletes.reduce((map, athlete) => {
+    const key = String(athlete.clubName || '(Sin club)');
+    map.set(key, (map.get(key) ?? 0) + 1);
+    return map;
+  }, new Map<string, number>())
+)
+  .map(([label, value]) => ({ label, value }))
+  .sort((a, b) => b.value - a.value)
+  .slice(0, 8);
+const athletesByMunicipalityRows = Array.from(
+  dashboardAthletes.reduce((map, athlete) => {
+    const key = String(athlete.municipalityName || athlete.municipality || 'Sin municipio');
+    map.set(key, (map.get(key) ?? 0) + 1);
+    return map;
+  }, new Map<string, number>())
+)
+  .map(([label, value]) => ({ label, value }))
+  .sort((a, b) => b.value - a.value)
+  .slice(0, 8);
+const athletesByClubMax = Math.max(1, ...athletesByClubRows.map((r) => r.value));
+const athletesByMunicipalityMax = Math.max(1, ...athletesByMunicipalityRows.map((r) => r.value));
+const daysSince = (value: string | null | undefined) => {
+  if (!value) return 0;
+  const parsed = new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) return 0;
+  const diff = Date.now() - parsed.getTime();
+  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+};
+const allPendingCreatedAt = [
+  ...registrationRadicados.map((item) => String(item.createdAt ?? '')),
+  ...pendingDocumentRequests.map((item) => String(item.createdAt ?? '')),
+  ...pendingProfileRequests.map((item) => String(item.createdAt ?? ''))
+].filter(Boolean);
+const oldestPendingDays = allPendingCreatedAt.length > 0
+  ? Math.max(...allPendingCreatedAt.map((date) => daysSince(date)))
+  : 0;
+const rejectionRate = postulationsTotal > 0 ? Math.round((postulationsRejected / postulationsTotal) * 100) : 0;
+const clubsWithoutActiveAthletes = Array.from(
+  dashboardAthletes.reduce((map, athlete) => {
+    const clubName = String(athlete.clubName || '(Sin club)');
+    const isActive = String(athlete.status ?? '').toLowerCase() === 'active';
+    const current = map.get(clubName) ?? { total: 0, active: 0 };
+    current.total += 1;
+    if (isActive) current.active += 1;
+    map.set(clubName, current);
+    return map;
+  }, new Map<string, { total: number; active: number }>())
+)
+  .filter(([, stat]) => stat.total > 0 && stat.active === 0)
+  .map(([clubName]) => clubName);
+const smartAlerts = [
+  oldestPendingDays >= 7
+    ? {
+        level: 'high',
+        title: 'Pendientes envejecidos',
+        detail: `Hay solicitudes pendientes con hasta ${oldestPendingDays} día(s) sin resolver.`,
+        actionHref: '/admin?tab=solicitudes',
+        actionLabel: 'Revisar solicitudes'
+      }
+    : null,
+  rejectionRate >= 35
+    ? {
+        level: 'medium',
+        title: 'Tasa alta de rechazo',
+        detail: `La tasa de rechazo de postulaciones está en ${rejectionRate}%.`,
+        actionHref: '/admin?tab=convocatorias',
+        actionLabel: 'Revisar criterios'
+      }
+    : null,
+  clubsWithoutActiveAthletes.length >= 3
+    ? {
+        level: 'medium',
+        title: 'Clubes sin atletas activos',
+        detail: `${clubsWithoutActiveAthletes.length} club(es) no tienen atletas activos visibles.`,
+        actionHref: '/admin?tab=athletes',
+        actionLabel: 'Ver módulo atletas'
+      }
+    : null
+].filter(Boolean) as Array<{ level: 'high' | 'medium' | 'low'; title: string; detail: string; actionHref: string; actionLabel: string }>;
+const alertLevelClass = (level: 'high' | 'medium' | 'low') => {
+  if (level === 'high') return 'border-red-200 bg-red-50 text-red-800';
+  if (level === 'medium') return 'border-amber-200 bg-amber-50 text-amber-800';
+  return 'border-sky-200 bg-sky-50 text-sky-800';
+};
 const metricCards = [
   {
     label: 'Convocatorias Abiertas',
@@ -2817,6 +2985,32 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                   </div>
                 </div>
 
+                <div class="rounded-2xl border border-gray-200 bg-gradient-to-r from-slate-50 to-emerald-50 p-5">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p class="text-xs font-black uppercase tracking-[0.16em] text-[#64748b]">Resumen Ejecutivo</p>
+                      <h4 class="text-2xl font-black text-[#1e293b] mt-1">Control Operativo Diario</h4>
+                    </div>
+                    <span class:list={['inline-flex items-center rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em]', operationalHealthClass]}>
+                      {operationalHealthLabel}
+                    </span>
+                  </div>
+                  <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    {executiveKpis.map((kpi) => (
+                      <article class="rounded-xl border border-white/80 bg-white/90 p-4">
+                        <div class="flex items-center justify-between">
+                          <p class="text-[11px] font-black uppercase tracking-[0.14em] text-[#78909c]">{kpi.label}</p>
+                          <span class:list={['inline-flex h-8 w-8 items-center justify-center rounded-lg', kpi.color]}>
+                            <span class="material-symbols-outlined text-sm">insights</span>
+                          </span>
+                        </div>
+                        <p class="mt-2 text-3xl font-black leading-none text-[#0f172a]">{kpi.value}</p>
+                        <p class="mt-2 text-xs font-semibold text-[#64748b]">{kpi.hint}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                   {metricCards.map((card) => (
                     <article class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -2834,6 +3028,162 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                     </article>
                   ))}
                 </div>
+
+                <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+                  <article class="xl:col-span-7 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <div class="mb-4 flex items-center justify-between">
+                      <h4 class="text-xl font-black text-[#2d3e50]">Solicitudes por Tipo</h4>
+                      <span class="text-xs font-bold text-[#64748b]">Pendientes actuales</span>
+                    </div>
+                    <div class="space-y-3">
+                      {requestTypeRows.map((row) => (
+                        <div>
+                          <div class="mb-1 flex items-center justify-between text-sm">
+                            <span class="font-semibold text-[#334155]">{row.label}</span>
+                            <span class="font-black text-[#0f172a]">{row.value}</span>
+                          </div>
+                          <div class="h-2.5 rounded-full bg-slate-100">
+                            <div class="h-full rounded-full" style={`background:${row.color}; width:${Math.round((row.value / requestTypeMax) * 100)}%;`}></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Lectura rápida</p>
+                      <p class="mt-1 text-sm text-slate-700">Esta vista ayuda a priorizar si el cuello de botella está en registro, documentos o perfil.</p>
+                    </div>
+                  </article>
+
+                  <article class="xl:col-span-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <h4 class="text-xl font-black text-[#2d3e50]">Estados Operativos</h4>
+                    <div class="relative mx-auto mt-4 h-44 w-44">
+                      <div class="absolute inset-0 rounded-full" style={`background:${requestStatusConic};`}></div>
+                      <div class="absolute inset-[24%] flex flex-col items-center justify-center rounded-full bg-white">
+                        <span class="text-2xl font-black text-[#2d3e50]">{requestStatusTotal}</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-[#78909c]">Registros</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 space-y-2">
+                      {requestStatusRows.map((row) => (
+                        <div class="flex items-center justify-between text-sm">
+                          <span class="inline-flex items-center gap-2 font-semibold text-[#334155]">
+                            <span class="h-2.5 w-2.5 rounded-full" style={`background:${row.color};`}></span>
+                            {row.label}
+                          </span>
+                          <span class="font-black text-[#0f172a]">{row.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                </div>
+
+                <article class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                  <div class="mb-4 flex items-center justify-between">
+                    <h4 class="text-xl font-black text-[#2d3e50]">Tendencia Semanal: Entradas vs Resueltas</h4>
+                    <span class="text-xs font-bold text-[#64748b]">Estimación operativa</span>
+                  </div>
+                  <div class="grid gap-2 md:grid-cols-7">
+                    {trendIntakeVsResolved.map((row) => (
+                      <div class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                        <p class="text-[10px] font-black text-slate-500">{row.day}</p>
+                        <div class="mt-2 h-16 flex items-end gap-1">
+                          <div class="w-1/2 rounded-t bg-[#0ea5e9]" style={`height:${Math.max(6, Math.round((row.intake / trendIntakeMax) * 100))}%;`}></div>
+                          <div class="w-1/2 rounded-t bg-[#22c55e]" style={`height:${Math.max(6, Math.round((row.resolved / trendIntakeMax) * 100))}%;`}></div>
+                        </div>
+                        <p class="mt-2 text-[10px] text-slate-600">In: {row.intake} · Out: {row.resolved}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div class="mt-3 flex items-center gap-4 text-xs font-bold text-[#64748b]">
+                    <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-[#0ea5e9]"></span>Entradas</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-[#22c55e]"></span>Resueltas</span>
+                  </div>
+                </article>
+
+                <article class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                  <div class="mb-4 flex items-center justify-between">
+                    <h4 class="text-xl font-black text-[#2d3e50]">Módulo Deportivo</h4>
+                    <span class="text-xs font-bold text-[#64748b]">Atletas por estado, club y municipio</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+                    <div class="xl:col-span-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p class="text-xs font-black uppercase tracking-widest text-slate-500">Estado de atletas</p>
+                      <div class="mt-3 flex items-end justify-between">
+                        <div>
+                          <p class="text-3xl font-black text-slate-900">{dashboardAthletesTotal}</p>
+                          <p class="text-xs text-slate-600">Total atletas</p>
+                        </div>
+                        <div class="text-right text-xs font-semibold text-slate-700">
+                          <p>Activos: {dashboardAthletesActive}</p>
+                          <p>Inactivos: {dashboardAthletesInactive}</p>
+                        </div>
+                      </div>
+                      <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+                        <div class="h-full bg-emerald-500" style={`width:${dashboardAthletesTotal > 0 ? Math.round((dashboardAthletesActive / dashboardAthletesTotal) * 100) : 0}%;`}></div>
+                      </div>
+                    </div>
+
+                    <div class="xl:col-span-4 rounded-xl border border-slate-200 bg-white p-4">
+                      <p class="text-xs font-black uppercase tracking-widest text-slate-500">Top clubes por atletas</p>
+                      <div class="mt-3 space-y-2">
+                        {athletesByClubRows.map((row) => (
+                          <div>
+                            <div class="mb-1 flex items-center justify-between text-xs">
+                              <span class="truncate pr-2 text-slate-700">{row.label}</span>
+                              <span class="font-black text-slate-900">{row.value}</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-slate-100">
+                              <div class="h-full rounded-full bg-[#5AAC32]" style={`width:${Math.round((row.value / athletesByClubMax) * 100)}%;`}></div>
+                            </div>
+                          </div>
+                        ))}
+                        {athletesByClubRows.length === 0 ? <p class="text-xs text-slate-400">Sin datos de clubes.</p> : null}
+                      </div>
+                    </div>
+
+                    <div class="xl:col-span-4 rounded-xl border border-slate-200 bg-white p-4">
+                      <p class="text-xs font-black uppercase tracking-widest text-slate-500">Top municipios por atletas</p>
+                      <div class="mt-3 space-y-2">
+                        {athletesByMunicipalityRows.map((row) => (
+                          <div>
+                            <div class="mb-1 flex items-center justify-between text-xs">
+                              <span class="truncate pr-2 text-slate-700">{row.label}</span>
+                              <span class="font-black text-slate-900">{row.value}</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-slate-100">
+                              <div class="h-full rounded-full bg-[#0ea5e9]" style={`width:${Math.round((row.value / athletesByMunicipalityMax) * 100)}%;`}></div>
+                            </div>
+                          </div>
+                        ))}
+                        {athletesByMunicipalityRows.length === 0 ? <p class="text-xs text-slate-400">Sin datos de municipios.</p> : null}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                  <div class="mb-4 flex items-center justify-between">
+                    <h4 class="text-xl font-black text-[#2d3e50]">Alertas Inteligentes</h4>
+                    <span class="text-xs font-bold text-[#64748b]">Monitoreo automático</span>
+                  </div>
+                  <div class="space-y-3">
+                    {smartAlerts.map((alert) => (
+                      <div class:list={['rounded-xl border p-4', alertLevelClass(alert.level)]}>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                          <p class="text-sm font-black uppercase tracking-wide">{alert.title}</p>
+                          <a class="text-xs font-black underline" href={alert.actionHref}>{alert.actionLabel}</a>
+                        </div>
+                        <p class="mt-1 text-sm">{alert.detail}</p>
+                      </div>
+                    ))}
+                    {smartAlerts.length === 0 ? (
+                      <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+                        <p class="text-sm font-semibold">Sin alertas críticas por ahora. El flujo operativo luce estable.</p>
+                      </div>
+                    ) : null}
+                  </div>
+                </article>
 
                 <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
                   <article class="xl:col-span-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
