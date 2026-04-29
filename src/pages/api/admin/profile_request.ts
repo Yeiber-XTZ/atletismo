@@ -11,7 +11,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return redirectInternal('/login', 302);
   }
   if (user.role === 'SUPERADMIN') {
-    return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    return redirectInternal('/acceso-denegado', 302);
   }
 
   const formData = await request.formData();
@@ -22,7 +22,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const nextClubCoach = String(formData.get('clubCoach') ?? '').trim();
 
   if (!nextEmail || !nextDisplayName) {
-    return Response.redirect(new URL('/admin?tab=perfil&error=invalid_schema', request.url), 302);
+    return redirectInternal('/admin?tab=perfil&error=invalid_schema', 302);
   }
 
   try {
@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         request
       });
 
-      return Response.redirect(new URL('/admin?tab=perfil&saved=profile_updated', request.url), 302);
+      return redirectInternal('/admin?tab=perfil&saved=profile_updated', 302);
     }
 
     // CLUB: crea solicitud y espera aprobación
@@ -82,11 +82,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       request
     });
 
-    return Response.redirect(new URL('/admin?tab=perfil&saved=profile_request_sent', request.url), 302);
+    return redirectInternal('/admin?tab=perfil&saved=profile_request_sent', 302);
   } catch (err: any) {
     const message = String(err?.message ?? '').toLowerCase();
     if (message.includes('duplicate key') || message.includes('users_email_key')) {
-      return Response.redirect(new URL('/admin?tab=perfil&error=duplicate_email', request.url), 302);
+      return redirectInternal('/admin?tab=perfil&error=duplicate_email', 302);
     }
     console.error('Error al manejar solicitud de perfil:', err);
     return redirectInternal('/admin?tab=perfil&error=1', 302);

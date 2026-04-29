@@ -21,7 +21,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const hasPending = await hasPendingRadicadoByEmail(email);
       if (hasPending) {
         await logAudit({ userId: null, action: 'admin_login_inactive_pending_radicado', meta: { email }, request });
-        return Response.redirect(new URL('/admin/login?error=inactive', request.url), 302);
+        return redirectInternal('/admin/login?error=inactive', 302);
       }
       await logAudit({ userId: null, action: 'admin_login_failed', meta: { email }, request });
       return redirectInternal('/admin/login?error=invalid', 302);

@@ -13,6 +13,7 @@ import { slugify } from '../../../../lib/slug';
 import { getClubByOwnerUserId } from '../../../../lib/clubs';
 import { db } from '../../../../lib/db';
 import { findAthleticsEventByName } from '../../../../lib/catalogs';
+import { redirectInternal } from '../../../../lib/http-redirect';
 
 const payloadSchema = z.object({
   clubId: z.coerce.number().int().positive(),
@@ -69,7 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     };
     const payload = payloadSchema.safeParse(payloadRaw);
     if (!payload.success) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payloadRaw.convocatoriaSlug)}?error=invalid_postulation`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payloadRaw.convocatoriaSlug)}?error=invalid_postulation`, 302);
     }
 
     const entriesJson = String(form.get('entriesJson') ?? '').trim();
@@ -78,7 +79,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       try {
         entriesRaw = JSON.parse(entriesJson);
       } catch {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=invalid_batch`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=invalid_batch`, 302);
       }
     } else {
       entriesRaw = [
@@ -91,18 +92,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const entries = entriesSchema.safeParse(entriesRaw);
     if (!entries.success) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=invalid_batch`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=invalid_batch`, 302);
     }
 
     if (!fallbackClubId) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=no_club`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=no_club`, 302);
     }
     assertClubOwnership({ ...user, clubId: fallbackClubId }, payload.data.clubId);
 
     const content = await getHomeData();
     const convocatoria = (content.convocatorias ?? []).find((c) => slugify(c.title) === payload.data.convocatoriaSlug);
     if (!convocatoria) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=not_found`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=not_found`, 302);
     }
 
     const now = new Date();
@@ -114,10 +115,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const closedByStatus = statusLower.includes('cerrad');
     const closedByDate = closeDate ? now.getTime() > closeDate.getTime() : false;
     if (!isOpenByStatus || notStartedByDate) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=not_open`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=not_open`, 302);
     }
     if (closedByStatus || closedByDate) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=closed`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=closed`, 302);
     }
 
     const convocatoriaDisciplines = Array.isArray((convocatoria as any).disciplines)
@@ -152,7 +153,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       ])
     );
     if (athleteNameById.size !== athleteIds.length) {
-      return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=athlete_not_found`, request.url), 302);
+      return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=athlete_not_found`, 302);
     }
 
     const athleteDisciplinesRes = await db.query(
@@ -192,7 +193,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const pairKey = `${athleteId}::${eventName.toLowerCase()}`;
 
       if (seenPairs.has(pairKey)) {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=duplicate`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=duplicate`, 302);
       }
       seenPairs.add(pairKey);
 
@@ -202,7 +203,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         eventCache.set(eventName.toLowerCase(), selectedEvent);
       }
       if (!selectedEvent) {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=invalid_event`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=invalid_event`, 302);
       }
 
       const selectedEventDisciplineNorm = normalizeText(selectedEvent.disciplineName);
@@ -215,10 +216,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           disciplineMatches(disciplineNorm, selectedEventDisciplineNorm)
         )
       ) {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=discipline_disabled`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=discipline_disabled`, 302);
       }
       if (convocatoriaEventsNorm.size > 0 && !convocatoriaEventsNorm.has(selectedEventNameNorm)) {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=event_disabled`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=event_disabled`, 302);
       }
 
       const athleteDisciplines = disciplinesByAthlete.get(athleteId) ?? new Set<string>();
@@ -229,7 +230,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         disciplineMatches(disciplineNorm, selectedEventDisciplineNorm)
       );
       if (!athleteCanRunDiscipline) {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=athlete_discipline_mismatch`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=athlete_discipline_mismatch`, 302);
       }
 
       const duplicated = await existsPostulacionDuplicada({
@@ -239,12 +240,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         eventName: selectedEvent.name
       });
       if (duplicated) {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=duplicate`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=duplicate`, 302);
       }
 
       const currentCount = Number(currentCountByAthlete.get(athleteId) ?? 0);
       if (currentCount >= maxEventsPerAthlete) {
-        return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=max_events_reached`, request.url), 302);
+        return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?error=max_events_reached`, 302);
       }
       currentCountByAthlete.set(athleteId, currentCount + 1);
 
@@ -286,7 +287,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       request
     });
 
-    return Response.redirect(new URL(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?postulated=${createdRows.length}`, request.url), 302);
+    return redirectInternal(`/convocatorias/${encodeURIComponent(payload.data.convocatoriaSlug)}?postulated=${createdRows.length}`, 302);
   } catch (error: any) {
     const status = Number(error?.status || 500);
     if (status === 401) return redirectInternal('/login?next=/convocatorias', 302);

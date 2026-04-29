@@ -28,7 +28,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const intent = String(form.get('intent') ?? '');
 
   if (intent === 'create') {
-    if (!canCreateUser) return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+    if (!canCreateUser) return redirectInternal('/admin?tab=users&error=forbidden_permissions', 302);
     const schema = z.object({
       email: z.string().email().max(160),
       password: z.string().min(8).max(200),
@@ -51,7 +51,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return redirectInternal('/admin?tab=users&error=forbidden_superadmin', 302);
     }
     if (isLigaOrOrgano && !ligaOrganoCreatableRoles.has(parsed.data.role as Role)) {
-      return Response.redirect(new URL('/admin?tab=users&error=forbidden_permissions', request.url), 302);
+      return redirectInternal('/admin?tab=users&error=forbidden_permissions', 302);
     }
 
     await createUser({

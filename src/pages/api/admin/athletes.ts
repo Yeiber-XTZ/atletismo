@@ -7,6 +7,7 @@ import { listGeoCatalogs } from '../../../lib/catalogs';
 import { hasPermission } from '../../../lib/rbac';
 import { createAthlete, deleteAthlete, getAthleteEffectiveClubId, updateAthlete } from '../../../lib/athletes-admin';
 import { saveFileUpload } from '../../../lib/file-upload';
+import { redirectInternal } from '../../../lib/http-redirect';
 
 const athleteBaseSchema = z.object({
   firstName: z.string().min(2).max(80),
@@ -76,12 +77,12 @@ async function resolveMunicipalityNameByCode(codeRaw: string, fallbackNameRaw: s
 export const POST: APIRoute = async ({ request, cookies }) => {
   const user = await getUserFromCookies(cookies);
   if (!user) {
-    return Response.redirect(new URL('/admin/login?next=/admin?tab=athletes', request.url), 302);
+    return redirectInternal('/admin/login?next=/admin?tab=athletes', 302);
   }
   const canManageAll = hasPermission(user, 'athletes:manage');
   const canManageOwn = hasPermission(user, 'athletes:self_manage');
   if (!canManageAll && !canManageOwn) {
-    return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+    return redirectInternal('/acceso-denegado', 302);
   }
 
   const form = await request.formData();
@@ -108,11 +109,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       disciplines: form.getAll('disciplines').map((value) => String(value ?? '').trim()).join('\n'),
       clubId: form.get('clubId')
     });
-    if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
+    if (!parsed.success) return redirectInternal('/admin?tab=athletes&error=invalid_schema', 302);
 
     const effectiveClubId = canManageAll ? Number(parsed.data.clubId ?? 0) : await resolveUserClubId(user);
     if (!Number.isFinite(effectiveClubId) || effectiveClubId <= 0) {
-      return Response.redirect(new URL('/admin?tab=athletes&error=missing_club', request.url), 302);
+      return redirectInternal('/admin?tab=athletes&error=missing_club', 302);
     }
 
     let resolvedPhotoUrl = parsed.data.photoUrl?.trim() || '';
@@ -127,7 +128,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       parsed.data.municipality ?? ''
     );
     if (!municipalityName) {
-      return Response.redirect(new URL('/admin?tab=athletes&error=missing_municipality', request.url), 302);
+      return redirectInternal('/admin?tab=athletes&error=missing_municipality', 302);
     }
 
     try {
@@ -159,10 +160,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         meta: { clubId: effectiveClubId },
         request
       });
-      return Response.redirect(new URL('/admin?tab=athletes&saved=1', request.url), 302);
+      return redirectInternal('/admin?tab=athletes&saved=1', 302);
     } catch (error: any) {
       if (String(error?.code ?? '') === '23505') {
-        return Response.redirect(new URL('/admin?tab=athletes&error=duplicate_document', request.url), 302);
+        return redirectInternal('/admin?tab=athletes&error=duplicate_document', 302);
       }
       throw error;
     }
@@ -190,19 +191,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       disciplines: form.getAll('disciplines').map((value) => String(value ?? '').trim()).join('\n'),
       clubId: form.get('clubId')
     });
-    if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
+    if (!parsed.success) return redirectInternal('/admin?tab=athletes&error=invalid_schema', 302);
 
     const currentClubId = await getAthleteEffectiveClubId(parsed.data.id);
     if (!canManageAll) {
       const userClubId = await resolveUserClubId(user);
       if (!userClubId || currentClubId !== userClubId) {
-        return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+        return redirectInternal('/acceso-denegado', 302);
       }
     }
 
     const effectiveClubId = canManageAll ? Number(parsed.data.clubId ?? 0) : await resolveUserClubId(user);
     if (!Number.isFinite(effectiveClubId) || effectiveClubId <= 0) {
-      return Response.redirect(new URL('/admin?tab=athletes&error=missing_club', request.url), 302);
+      return redirectInternal('/admin?tab=athletes&error=missing_club', 302);
     }
 
     let resolvedPhotoUrl = parsed.data.photoUrl?.trim() || '';
@@ -217,7 +218,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       parsed.data.municipality ?? ''
     );
     if (!municipalityName) {
-      return Response.redirect(new URL('/admin?tab=athletes&error=missing_municipality', request.url), 302);
+      return redirectInternal('/admin?tab=athletes&error=missing_municipality', 302);
     }
 
     try {
@@ -249,10 +250,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         meta: { clubId: effectiveClubId },
         request
       });
-      return Response.redirect(new URL('/admin?tab=athletes&saved=1', request.url), 302);
+      return redirectInternal('/admin?tab=athletes&saved=1', 302);
     } catch (error: any) {
       if (String(error?.code ?? '') === '23505') {
-        return Response.redirect(new URL('/admin?tab=athletes&error=duplicate_document', request.url), 302);
+        return redirectInternal('/admin?tab=athletes&error=duplicate_document', 302);
       }
       throw error;
     }
@@ -262,13 +263,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const parsed = deleteSchema.safeParse({
       id: form.get('id')
     });
-    if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
+    if (!parsed.success) return redirectInternal('/admin?tab=athletes&error=invalid_schema', 302);
 
     const currentClubId = await getAthleteEffectiveClubId(parsed.data.id);
     if (!canManageAll) {
       const userClubId = await resolveUserClubId(user);
       if (!userClubId || currentClubId !== userClubId) {
-        return Response.redirect(new URL('/acceso-denegado', request.url), 302);
+        return redirectInternal('/acceso-denegado', 302);
       }
     }
 
@@ -280,8 +281,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       entityId: String(parsed.data.id),
       request
     });
-    return Response.redirect(new URL('/admin?tab=athletes&saved=1', request.url), 302);
+    return redirectInternal('/admin?tab=athletes&saved=1', 302);
   }
 
-  return Response.redirect(new URL('/admin?tab=athletes&error=unknown_intent', request.url), 302);
+  return redirectInternal('/admin?tab=athletes&error=unknown_intent', 302);
 };

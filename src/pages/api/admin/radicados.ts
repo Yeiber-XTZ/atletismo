@@ -140,7 +140,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   }
 
-  return Response.redirect(new URL('/admin?tab=solicitudes&saved=1', request.url), 302);
+  return redirectInternal('/admin?tab=solicitudes&saved=1', 302);
 };
 
 

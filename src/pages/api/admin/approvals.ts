@@ -104,7 +104,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   const redirectTab = req.module === 'profile_update' ? 'solicitudes' : 'aprobaciones';
-  return Response.redirect(new URL(`/admin?tab=${redirectTab}&saved=1`, request.url), 302);
+  return redirectInternal(`/admin?tab=${redirectTab}&saved=1`, 302);
 };
 
 
