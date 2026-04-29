@@ -112,6 +112,7 @@ const municipalityGeoIndex = new Map(
 
 const isSuperAdmin = user?.role === 'SUPERADMIN';
 const isAdminRoot = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
+const isLigaOrOrgano = user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN';
 const canDelegateAssemblyPermissions = user?.role === 'LIGA' || user?.role === 'ORGANO_ADMIN';
 const delegatedAssemblyPermissions = [
   'assembly:self_panel',
@@ -396,6 +397,7 @@ const postulationStatusClass = (status: string) => {
 
 const logoUrl = data.settings.logoUrl || '/logo.png';
 const assignableRoles = ROLES.filter((role) => isSuperAdmin || role !== 'SUPERADMIN');
+const creatableRoles = assignableRoles.filter((role) => !isLigaOrOrgano || role !== 'ADMIN');
 const linesFromArray = (items: string[] | undefined) => (items ?? []).join('\n');
 const downloadsToLines = (downloads: Array<{ label: string; href: string }> | undefined) =>
   (downloads ?? []).map((item) => `${item.label}|${item.href}`).join('\n');
@@ -1452,25 +1454,29 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                           required
                         />
                       </div>
-                      <div>
-                        <label class="admin-label">Ubicación</label>
-                        <input class="admin-input" name="convLocation" value={conv.location} required />
+                      <div class="md:col-span-3 grid gap-3 md:grid-cols-2">
+                        <div>
+                          <label class="admin-label">Ubicación</label>
+                          <input class="admin-input" name="convLocation" value={conv.location} required />
+                        </div>
+                        <div>
+                          <label class="admin-label">Imagen</label>
+                          <input class="admin-input" type="file" name="convImageFile" accept="image/*" />
+                          <input type="hidden" name="convImageUrl" value={conv.imageUrl ?? ''} />
+                          {conv.imageUrl && (
+                            <p class="text-xs text-gray-500 mt-1">Actual: {conv.imageUrl}</p>
+                          )}
+                        </div>
                       </div>
-                      <div class="md:col-span-3">
-                        <label class="admin-label">Público objetivo</label>
-                        <input class="admin-input" name="convAudience" value={conv.audience} required />
-                      </div>
-                      <div class="md:col-span-3">
-                        <label class="admin-label">Descripción</label>
-                        <textarea class="admin-input min-h-[80px]" name="convDescription" required>{conv.description}</textarea>
-                      </div>
-                      <div>
-                        <label class="admin-label">Requisitos (una línea por requisito)</label>
-                        <textarea class="admin-input min-h-[90px]" name="convRequirements">{linesFromArray(conv.requirements)}</textarea>
-                      </div>
-                      <div>
-                        <label class="admin-label">Categorías (una línea por categoría)</label>
-                        <textarea class="admin-input min-h-[90px]" name="convCategories">{linesFromArray(conv.categories)}</textarea>
+                      <div class="md:col-span-3 grid gap-3 md:grid-cols-2">
+                        <div>
+                          <label class="admin-label">Descripción</label>
+                          <textarea class="admin-input min-h-[90px]" name="convDescription" required>{conv.description}</textarea>
+                        </div>
+                        <div>
+                          <label class="admin-label">Requisitos (una línea por requisito)</label>
+                          <textarea class="admin-input min-h-[90px]" name="convRequirements">{linesFromArray(conv.requirements)}</textarea>
+                        </div>
                       </div>
                       <div class="md:col-span-3 rounded-lg border border-gray-200 bg-white p-3 js-conv-catalog-v3">
                         <label class="admin-label">Disciplina habilitada</label>
@@ -1515,14 +1521,6 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
 
                         <textarea class="sr-only js-conv-disciplines-hidden-v3" name="convDisciplines">{linesFromArray((conv as any).disciplines)}</textarea>
                         <textarea class="sr-only js-conv-events-hidden-v3" name="convEvents">{linesFromArray((conv as any).events)}</textarea>
-                      </div>
-                      <div>
-                        <label class="admin-label">Imagen</label>
-                        <input class="admin-input" type="file" name="convImageFile" accept="image/*" />
-                        <input type="hidden" name="convImageUrl" value={conv.imageUrl ?? ''} />
-                        {conv.imageUrl && (
-                          <p class="text-xs text-gray-500 mt-1">Actual: {conv.imageUrl}</p>
-                        )}
                       </div>
                       <div class="md:col-span-3 flex justify-end gap-2">
                         <button class="admin-btn admin-btn-primary" type="submit">
@@ -1731,7 +1729,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               <div class="md:col-span-1">
                 <label class="admin-label">Rol</label>
                 <select class="admin-input" name="role" required>
-                  {assignableRoles.map((r) => (
+                  {creatableRoles.map((r) => (
                     <option value={r}>{r}</option>
                   ))}
                 </select>
@@ -3905,12 +3903,57 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
           </div>
           <div><label class="admin-label">Apertura</label><input class="admin-input" name="convOpenDate" type="date" /></div>
           <div><label class="admin-label">Cierre</label><input class="admin-input" name="convCloseDate" type="date" /></div>
-          <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
-          <div class="md:col-span-3"><label class="admin-label">Público objetivo</label><input class="admin-input" name="convAudience" required /></div>
-          <div class="md:col-span-3"><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[80px]" name="convDescription" required></textarea></div>
-          <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
-          <div><label class="admin-label">Categorías</label><textarea class="admin-input min-h-[90px]" name="convCategories"></textarea></div>
-          <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
+          <div>
+            <label class="admin-label">Máx pruebas por deportista</label>
+            <input class="admin-input" name="convMaxEventsPerAthlete" type="number" min="1" value="1" required />
+          </div>
+          <div class="md:col-span-3 grid gap-3 md:grid-cols-2">
+            <div><label class="admin-label">Ubicación</label><input class="admin-input" name="convLocation" required /></div>
+            <div><label class="admin-label">Imagen</label><input class="admin-input" type="file" name="convImageFile" accept="image/*" /><input type="hidden" name="convImageUrl" value="" /></div>
+          </div>
+          <div class="md:col-span-3 grid gap-3 md:grid-cols-2">
+            <div><label class="admin-label">Descripción</label><textarea class="admin-input min-h-[90px]" name="convDescription" required></textarea></div>
+            <div><label class="admin-label">Requisitos</label><textarea class="admin-input min-h-[90px]" name="convRequirements"></textarea></div>
+          </div>
+          <div class="md:col-span-3 rounded-lg border border-gray-200 bg-white p-3 js-conv-catalog-v3">
+            <label class="admin-label">Disciplina habilitada</label>
+            <select class="admin-input mt-2 js-conv-discipline-select-v3">
+              <option value="">Selecciona disciplina</option>
+              {athleticsDisciplineNames.map((disciplineName) => (
+                <option value={disciplineName}>{disciplineName}</option>
+              ))}
+            </select>
+
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <button type="button" class="admin-btn admin-btn-primary js-conv-select-visible-events-v3">
+                Seleccionar visibles
+              </button>
+              <button type="button" class="admin-btn admin-btn-secondary js-conv-clear-visible-events-v3">
+                Limpiar visibles
+              </button>
+            </div>
+
+            <label class="admin-label mt-4">Pruebas habilitadas</label>
+            <p class="mt-1 text-xs text-gray-500"><span class="js-conv-events-count-v3">0</span> pruebas seleccionadas</p>
+            <div class="mt-2 max-h-52 overflow-auto rounded border border-gray-200 p-2">
+              <div class="grid gap-2 sm:grid-cols-2">
+                {athleticsEventsCatalog.map((eventItem) => (
+                  <label class="inline-flex items-center gap-2 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700">
+                    <input
+                      class="js-conv-event-check-v3"
+                      type="checkbox"
+                      value={eventItem.name}
+                      data-discipline={eventItem.disciplineName}
+                    />
+                    <span>{eventItem.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <textarea class="sr-only js-conv-disciplines-hidden-v3" name="convDisciplines"></textarea>
+            <textarea class="sr-only js-conv-events-hidden-v3" name="convEvents"></textarea>
+          </div>
           <div class="md:col-span-3 flex justify-end gap-2">
             <button class="admin-btn admin-btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Actualizar convocatoria</button>
             <button type="button" class="admin-btn admin-btn-danger js-remove-row"><span class="material-symbols-outlined">delete</span>Quitar convocatoria</button>

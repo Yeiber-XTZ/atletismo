@@ -1,6 +1,26 @@
 [
   {
     "profile": "club",
+    "name": "Rayados",
+    "email": "rayados@gmail.com",
+    "radicado": "REG-20260429-DDEC9C",
+    "createdAt": "2026-04-29T19:34:16.639Z",
+    "data": {
+      "phone": "3121133121",
+      "countryIso2": "CO",
+      "departmentCode": "27",
+      "municipalityCode": "27001",
+      "municipality": "Quibd�",
+      "nit": "111212121111112",
+      "legalRepresentative": "Oscar Marin",
+      "recognitionDoc": "http://localhost:4321/registro/club",
+      "documents": "",
+      "logoFileUrl": "/files/11",
+      "passwordHash": "scrypt$16384$8$1$scX1Vgq_a4HlHUvEtB2bXA$yKrgpNXwpJgv4oZk6zu5EIjx0-e6J9cEShqj6Ux0HBLabxznP_3vndyRIMcsVr-Go6LfrLM7MpAIFqjK5cq9YQ"
+    }
+  },
+  {
+    "profile": "club",
     "name": "Sabores de Nelly",
     "email": "franklin2mosquera@gmail.com",
     "radicado": "REG-20260428-AF8DE6",

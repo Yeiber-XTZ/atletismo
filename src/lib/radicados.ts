@@ -268,6 +268,40 @@ export async function getRadicadoById(id: number) {
   }
 }
 
+export async function hasPendingRadicadoByEmail(email: string) {
+  assertDbReady();
+  const normalized = String(email ?? '').trim().toLowerCase();
+  if (!normalized) return false;
+
+  const readFromFile = async () => {
+    const file = dataPath('radicados.json');
+    const list = await readJson<RadicadoFileItem[]>(file, []);
+    return list.some((item) => String(item.email ?? '').trim().toLowerCase() === normalized && String(item.status ?? 'pending') === 'pending');
+  };
+
+  if (!hasDatabase) return readFromFile();
+
+  try {
+    return await withRadicadosSchema(async () => {
+      const res = await db.query(
+        `SELECT 1
+         FROM radicados
+         WHERE LOWER(email) = LOWER($1)
+           AND status = 'pending'
+         LIMIT 1`,
+        [normalized]
+      );
+      return Boolean(res.rows[0]);
+    });
+  } catch (error) {
+    if (!requireDatabase() && isDbUnavailableError(error)) {
+      console.warn('[radicados] DB unavailable, using file fallback for hasPendingRadicadoByEmail');
+      return readFromFile();
+    }
+    throw error;
+  }
+}
+
 export async function reviewRadicado(input: {
   id: number;
   status: Extract<RadicadoStatus, 'approved' | 'rejected'>;
