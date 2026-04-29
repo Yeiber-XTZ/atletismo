@@ -9,12 +9,12 @@ import { createAthlete, deleteAthlete, getAthleteEffectiveClubId, updateAthlete 
 import { saveFileUpload } from '../../../lib/file-upload';
 
 const athleteBaseSchema = z.object({
-  firstName: z.string().min(2).max(80),
-  lastName: z.string().min(2).max(120),
-  document: z.string().min(5).max(30).regex(/^[0-9A-Za-z.-]+$/),
-  documentType: z.string().min(2).max(10),
-  sexCode: z.string().min(1).max(20),
-  birthdate: z.string().min(4).max(20),
+  firstName: z.string().trim().min(2).max(80),
+  lastName: z.string().trim().min(2).max(120),
+  document: z.string().trim().min(5).max(30).regex(/^[0-9A-Za-z.-]+$/),
+  documentType: z.enum(['CC', 'TI', 'CE', 'PP']),
+  sexCode: z.string().trim().min(1).max(20),
+  birthdate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
   email: z.string().email().max(180).optional().or(z.literal('')),
   countryIso2: z.string().max(2).optional().or(z.literal('')),
   departmentCode: z.string().max(10).optional().or(z.literal('')),
@@ -24,9 +24,20 @@ const athleteBaseSchema = z.object({
   eps: z.string().max(120).optional().or(z.literal('')),
   emergencyContact: z.string().max(120).optional().or(z.literal('')),
   photoUrl: z.string().max(260).optional().or(z.literal('')),
-  status: z.string().min(2).max(30),
+  status: z.enum(['active', 'inactive']),
   disciplines: z.string().max(1200).optional().or(z.literal(''))
 });
+
+function isBirthdateValidNotFuture(valueRaw: string) {
+  const value = String(valueRaw ?? '').trim();
+  if (!value) return false;
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parsed.getTime() <= today.getTime();
+}
 
 const createSchema = athleteBaseSchema.extend({
   clubId: z.coerce.number().int().positive().optional()
@@ -109,6 +120,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       clubId: form.get('clubId')
     });
     if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
+    if (!isBirthdateValidNotFuture(parsed.data.birthdate)) {
+      return Response.redirect(new URL('/admin?tab=athletes&error=invalid_birthdate', request.url), 302);
+    }
 
     const effectiveClubId = canManageAll ? Number(parsed.data.clubId ?? 0) : await resolveUserClubId(user);
     if (!Number.isFinite(effectiveClubId) || effectiveClubId <= 0) {
@@ -191,6 +205,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       clubId: form.get('clubId')
     });
     if (!parsed.success) return Response.redirect(new URL('/admin?tab=athletes&error=invalid_schema', request.url), 302);
+    if (!isBirthdateValidNotFuture(parsed.data.birthdate)) {
+      return Response.redirect(new URL('/admin?tab=athletes&error=invalid_birthdate', request.url), 302);
+    }
 
     const currentClubId = await getAthleteEffectiveClubId(parsed.data.id);
     if (!canManageAll) {

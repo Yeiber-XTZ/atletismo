@@ -59,6 +59,7 @@ const errorMessages: Record<string, string> = {
   invalid_schema: 'Hay campos inválidos o incompletos. Revisa el formulario.',
   missing_club: 'Tu usuario no tiene club asociado para registrar atletas.',
   missing_municipality: 'Debes seleccionar un municipio válido.',
+  invalid_birthdate: 'La fecha de nacimiento no puede ser futura.',
   duplicate_document: 'Ya existe un atleta con ese número de documento.',
   duplicate_email: 'El correo ya está registrado por otro usuario.'
 };
@@ -1996,7 +1997,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
               </div>
               <div class="md:col-span-2">
                 <label class="admin-label">Nacimiento</label>
-                <input class="admin-input" type="date" name="birthdate" required />
+                <input class="admin-input" type="date" name="birthdate" max={todayIso} required />
               </div>
               <div class="md:col-span-3">
                 <label class="admin-label">Email</label>
@@ -2203,7 +2204,7 @@ const currentLabel = navItems.find((n) => n.id === activeTab)?.label ?? 'Dashboa
                                   <option value={sex.code} selected={a.sexCode === sex.code || a.gender === sex.code}>{sex.name}</option>
                                 ))}
                               </select>
-                              <input class="admin-input min-w-0" type="date" name="birthdate" value={a.birthdate} required />
+                              <input class="admin-input min-w-0" type="date" name="birthdate" value={a.birthdate} max={todayIso} required />
                               <input class="admin-input min-w-0" type="email" name="email" value={a.email} placeholder="Email" />
                               <select class="admin-input min-w-0 js-geo-country" name="countryIso2" data-geo-scope={`edit-${a.id}`}>
                                 <option value="">Selecciona país</option>
